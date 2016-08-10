@@ -1,0 +1,94 @@
+/**********************************************
+______________                ______________
+______________ \  /\  /|\  /| ______________
+______________  \/  \/ | \/ | ______________
+descript:
+author : Young
+Version: VERA.0.0
+creaded: 2016/8/10 下午3:45:02
+madified:
+***********************************************/
+`timescale 1ns/1ps
+module read_line_len_sum #(
+    parameter NOR_BURST_LEN     = 200,
+    parameter MODE      = "ONCE",   //ONCE LINE
+    parameter AXI_DSIZE = 256
+    parameter DSIZE     = 24,
+    parameter LSIZE     = 9
+)(
+    input               clock
+    input               rst_n
+    input [15:0]        vactive                 ,
+    input [15:0]        hactive                 ,
+    input               fsync
+    input               burst_req
+    input               tail_req
+    output              tail_status
+    output[LSIZE-1:0]   tail_len
+);
+
+wire	burst_req_raising;
+wire    burst_req_falling;
+edge_generator #(
+	.MODE		("NORMAL" 	)  // FAST NORMAL BEST
+)gen_burst_edge(
+	.clk		(clock				),
+	.rst_n      (rst_n              ),
+	.in         (burst_req          ),
+	.raising    (burst_req_raising  ),
+	.falling    (burst_req_falling  )
+);
+
+wire	tail_req_raising;
+wire    tail_req_falling;
+edge_generator #(
+	.MODE		("NORMAL" 	)  // FAST NORMAL BEST
+)gen_tail_edge(
+	.clk		(clock				),
+	.rst_n      (rst_n              ),
+	.in         (tail_req           ),
+	.raising    (tail_req_raising   ),
+	.falling    (tail_req_falling   )
+);
+
+
+reg [15:0]            int_len;
+reg [15:0]            mod_len;
+reg [15:0]            num_of_AXID;
+reg                   last_or_no;
+wire[31:0]            all_bits;
+assign  all_bits    = MODE=="LINE"? hactive : (MODE=="ONCE" vactive*hactive : 0);
+always@(posedge clock)begin:FALSE_PATH
+    int_len     <= all_bits*DSIZE/(AXI_DSIZE*NOR_BURST_LEN);
+    num_of_AXID <= all_bits*DSIZE/AXI_DSIZE + last_or_no;
+    mod_len     <= num_of_AXID - int_len*NOR_BURST_LEN;
+    last_or_no  <= (all_bits*DSIZE & (AXI_DSIZE-1)) != 0;
+end
+
+reg [31:0]          len_count;
+
+always@(posedge clock,negedge rst_n)begin
+    if(~rst_n)      len_count   <= 32'hFFFF_FFFF;
+    else begin
+        if(fsync)   len_count   <= num_of_AXID;
+        else if(burst_req_raising)
+                    len_count   <= len_count - int_len;
+        else if(tail_req_raising)
+                    len_count   <= num_of_AXID;
+        else        len_count   <= len_count;
+end end
+
+reg         status_reg;
+
+always@(posedge clock,negedge rst_n)
+    if(~rst_n)  status_reg  <= 1'b0;
+    else begin
+        if(len_count < NOR_BURST_LEN)
+                status_reg  <= 1'b1;
+        else    status_reg  <= 1'b0;
+    end
+
+assign tail_status  = status_reg;
+assign tail_len     = mod_len;
+
+endmodule
