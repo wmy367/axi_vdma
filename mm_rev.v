@@ -14,6 +14,7 @@ module mm_rev #(
     parameter ASIZE      = 29,
     parameter BURST_LEN_SIZE = 9,
     parameter DSIZE      = 24,
+    parameter AXI_DSIZE  = 256,
     parameter MODE      = "ONCE",   //ONCE LINE
     parameter DATA_TYPE = "AXIS",    //AXIS NATIVE
     parameter FRAME_SYNC= "OFF",    //OFF ON
@@ -67,7 +68,9 @@ module mm_rev #(
     output              out_de                  ,
     output[DSIZE-1:0]   odata
 );
-
+localparam LSIZE        = 9;
+localparam THRESHOLD    = 200;
+localparam BURST_LEN    = THRESHOLD;
 //--->> OUT PORT INTERFACE <<----------
 wire            out_port_falign     ;
 wire            out_port_lalign     ;
@@ -118,25 +121,25 @@ out_port #(
 
 //---<< OUT PORT INTERFACE >>----------
 
-wire[255:0]     ds_data;
-wire            ds_rd_en;
-wire            ds_wr_last_en;
+wire[AXI_DSIZE-1:0]     ds_data;
+wire                    ds_rd_en;
+wire                    ds_wr_last_en;
 
 destruct_data #(
-    .ISIZE      (256        ),
+    .ISIZE      (AXI_DSIZE  ),
     .OSIZE      (DSIZE      )
 )destruct_data_inst(
-/*  input               */  .clock       (clock           ,
-/*  input               */  .rst_n       (rst_n           ,
-/*  input               */  .force_rd    (out_port_lalign          ,   //force read out next data
-/*  input               */  .ialign      (out_port_falign          ,
-/*  output              */  .ird_en      (ds_rd_en          ,
-/*  input [ISIZE-1:0]   */  .idata       (ds_data          ,
-/*  input               */  .ord_en      (out_port_rd_en          ,
-/*  output              */  .olast_en    (          ,
-/*  output[OSIZE-1:0]   */  .odata       (out_port_odata          ,
-/*  output              */  .ovalid      (          ,
-/*  output[OSIZE/8-1:0] */  .omask       (
+/*  input               */  .clock       (clock                     ),
+/*  input               */  .rst_n       (rst_n                     ),
+/*  input               */  .force_rd    (out_port_lalign           ),   //force read out next data
+/*  input               */  .ialign      (out_port_falign           ),
+/*  output              */  .ird_en      (ds_rd_en                  ),
+/*  input [ISIZE-1:0]   */  .idata       (ds_data                   ),
+/*  input               */  .ord_en      (out_port_rd_en            ),
+/*  output              */  .olast_en    (                          ),
+/*  output[OSIZE-1:0]   */  .odata       (out_port_odata            ),
+/*  output              */  .ovalid      (                          ),
+/*  output[OSIZE/8-1:0] */  .omask       (                          )
 );
 
 wire[8:0]       rd_data_count;
@@ -170,52 +173,52 @@ wire            req_done;
 wire[LSIZE-1:)] req_len;
 
 read_fifo_status_ctrl #(
-    .THRESHOLD  (200,           ),// EMPTY THRESHOLD
+    .THRESHOLD  (THRESHOLD      ),// EMPTY THRESHOLD
     .FULL_LEN   (256            ),
     .FRAME_SYNC (FRAME_SYNC     ),    //OFF ON
     .LSIZE      (LSIZE          )
 )read_fifo_status_ctrl_inst(
-/*  input                */   .clock            (axi_aclk
-/*  input                */   .rst_n            (axi_resetn
-/*  input                */   .enable           (1'b1
-/*  input [8:0]          */   .count            (wr_data_count
-/*  input                */   .tail_status      (tail_status
-/*  input [LSIZE-1:0]    */   .tail_len         (tail_len
-/*  output               */   .burst_req        (burst_req
-/*  output               */   .tail_req         (tail_req
-/*  input                */   .resp             (req_resp
-/*  input                */   .done             (req_done
-/*  output[LSIZE-1:0]    */   .req_len          (req_len
+/*  input                */   .clock            (axi_aclk               ),
+/*  input                */   .rst_n            (axi_resetn             ),
+/*  input                */   .enable           (1'b1                   ),
+/*  input [8:0]          */   .count            (wr_data_count          ),
+/*  input                */   .tail_status      (tail_status            ),
+/*  input [LSIZE-1:0]    */   .tail_len         (tail_len               ),
+/*  output               */   .burst_req        (burst_req              ),
+/*  output               */   .tail_req         (tail_req               ),
+/*  input                */   .resp             (req_resp               ),
+/*  input                */   .done             (req_done               ),
+/*  output[LSIZE-1:0]    */   .req_len          (req_len                )
 );
 
 read_line_len_sum #(
-    .NOR_BURST_LEN    (200          ),
+    .NOR_BURST_LEN    (BURST_LEN    ),
     .MODE             (MODE         ),   //ONCE LINE
-    .AXI_DSIZE        (256          ),
+    .AXI_DSIZE        (AXI_DSIZE    ),
     .DSIZE            (DSIZE        ),
     .LSIZE            (LSIZE        )
 )read_line_len_sum_inst(
-/*  input             */ .clock                 (axi_aclk
-/*  input             */ .rst_n                 (axi_resetn
-/*  input [15:0]      */ .vactive               (vactive
-/*  input [15:0]      */ .hactive               (hactive
-/*  input             */ .fsync                 (tail_req
-/*  input             */ .burst_req             (burst_req
-/*  input             */ .tail_req              (tail_req
-/*  output            */ .tail_status           (tail_status
-/*  output[LSIZE-1:0] */ .tail_len              (tail_len
+/*  input             */ .clock                 (axi_aclk           ),
+/*  input             */ .rst_n                 (axi_resetn         ),
+/*  input [15:0]      */ .vactive               (vactive            ),
+/*  input [15:0]      */ .hactive               (hactive            ),
+/*  input             */ .fsync                 (tail_req           ),
+/*  input             */ .burst_req             (burst_req          ),
+/*  input             */ .tail_req              (tail_req           ),
+/*  output            */ .tail_status           (tail_status        ),
+/*  output[LSIZE-1:0] */ .tail_len              (tail_len           )
 );
 
 wire[ASIZE-1:0]         curr_address;
 
 a_frame_addr #(
     .ASIZE             (ASIZE          ),
-    .BURST_MAP_ADDR    (THRESHOLD*8*8  )
+    .BURST_MAP_ADDR    (BURST_LEN*8*8  )
 )a_frame_addr_inst(
 /*  input             */  .clock                    (axi_aclk           ),
 /*  input             */  .rst_n                    (axi_resetn         ),
 /*  input             */  .new_base                 (out_port_falign    ),
-/*  input[ASIZE-1:0]  */  .baseaddr                 (                  0)
+/*  input[ASIZE-1:0]  */  .baseaddr                 (                  0),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       (          1024*8*8 ),
 /*  input             */  .burst_req                (burst_req          ),
 /*  input             */  .tail_req                 (tail_req           ),
@@ -228,12 +231,12 @@ axi_inf_read_state_core #(
     .LSIZE          (LSIZE          ),
     .ASIZE          (ASIZE          )
 )axi_inf_read_state_core_inst(
-/*  input             */.read_req           (burst_req || tail_req   ),
-/*  output            */.req_resp           (req_resp       ,
-/*  output            */.req_done           (req_done       ,
-/*  input [LSIZE-1:0] */.req_len            (req_len       ,
-/*  input [ASIZE-1:0] */.req_addr           (curr_address       ,
-/*  output            */.push_data_en       (       ,
+/*  input             */.read_req           (burst_req || tail_req      ),
+/*  output            */.req_resp           (req_resp                   ),
+/*  output            */.req_done           (req_done                   ),
+/*  input [LSIZE-1:0] */.req_len            (req_len                    ),
+/*  input [ASIZE-1:0] */.req_addr           (curr_address               ),
+/*  output            */.push_data_en       (                           ),
 /*  input             */.axi_aclk           (axi_aclk                   ),
 /*  input             */.axi_resetn         (axi_resetn                 ),
     //-- address read signals
