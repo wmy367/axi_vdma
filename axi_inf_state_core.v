@@ -44,8 +44,7 @@ module axi_inf_write_state_core #(
         //-- data write signals
         output             axi_wlast     ,
         input              axi_wvalid    ,
-        input              axi_wready    ,
-
+        input              axi_wready
 );
 //--->> RV signals <<-------
 assign  axi_awid    = ID;
@@ -155,7 +154,7 @@ always@(posedge axi_aclk,negedge axi_resetn)
     else
         case(nstate)
         WAIT_LAST:  pull_en <= 1'b1;
-        default:    pull_en < =1'b0;
+        default:    pull_en <= 1'b0;
         endcase
 assign pull_data_en = pull_en;
 //---<< enable pull data >>------
@@ -195,7 +194,7 @@ module axi_inf_read_state_core #(
     input [DSIZE-1:0]   axi_rdata     ,
     input [1:0]         axi_rresp     ,
     input               axi_rlast     ,
-    input               axi_rvalid    
+    input               axi_rvalid
 );
 //--->> RV <<-------------
 assign axi_arid     = ID;

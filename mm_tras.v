@@ -50,17 +50,17 @@ module mm_tras #(
     input             axi_awvalid   ,
     output            axi_awready   ,
     //--->> Response <<---------
-    output            axi_bready    ;
-    input[IDSIZE-1:0] axi_bid       ;
-    input[1:0]        axi_bresp     ;
-    input             axi_bvalid    ;
+    output            axi_bready    ,
+    input[IDSIZE-1:0] axi_bid       ,
+    input[1:0]        axi_bresp     ,
+    input             axi_bvalid    ,
     //---<< Response >>---------
     //--->> data write <<-------
-    output[DSIZE-1:0]   axi_wdata     ;
-    output[DSIZE/8-1:0] axi_wstrb     ;
-    output              axi_wlast     ;
-    output              axi_wvalid    ;
-    input               axi_wready    ;
+    output[DSIZE-1:0]   axi_wdata     ,
+    output[DSIZE/8-1:0] axi_wstrb     ,
+    output              axi_wlast     ,
+    output              axi_wvalid    ,
+    input               axi_wready
     //---<< data write >>-------
 );
 
@@ -73,7 +73,7 @@ assign rd_clk   = axi_aclk;
 assign rd_rst_n = axi_resetn;
 
 assign wr_clk   = DATA_TYPE=="AXIS"? axi_aclk : clock;
-assign wr_rst_n = DATA_TYPE=="AXIS"? !aresetn  : rst_n
+assign wr_rst_n = DATA_TYPE=="AXIS"? !aresetn  : rst_n;
 
 //--->> IN PORT INTERFACE <<----------
 wire            in_port_falign     ;
@@ -81,7 +81,7 @@ wire            in_port_lalign     ;
 wire            in_port_ealign     ;
 wire            in_port_odata_vld  ;
 wire[DSIZE-1:0] in_port_odata      ;
-wire            fifo_almost_full    ;
+wire            fifo_almost_full   ;
 
 in_port #(
     .DSIZE     (DSIZE     ),
@@ -188,7 +188,7 @@ a_frame_addr #(
 /*  input             */  .clock                    (rd_clk             ),
 /*  input             */  .rst_n                    (rd_rst_n           ),
 /*  input             */  .new_base                 (in_port_falign     ),
-/*  input[ASIZE-1:0]  */  .baseaddr                 (                  0)
+/*  input[ASIZE-1:0]  */  .baseaddr                 (                  0),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       (          1024*8*8 ),
 /*  input             */  .burst_req                (burst_req          ),
 /*  input             */  .tail_req                 (tail_req           ),

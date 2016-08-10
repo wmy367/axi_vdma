@@ -13,7 +13,7 @@ module in_port #(
     parameter DSIZE     = 24,
     parameter MODE      = "ONCE",   //ONCE LINE
     parameter DATA_TYPE = "AXIS",    //AXIS NATIVE
-    parameter FRAME_SYNC= "OFF",    //OFF ON
+    parameter FRAME_SYNC= "OFF"    //OFF ON
 )(
     input               clock                   ,
     input               rst_n                   ,

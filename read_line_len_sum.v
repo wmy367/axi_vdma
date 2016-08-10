@@ -12,18 +12,18 @@ madified:
 module read_line_len_sum #(
     parameter NOR_BURST_LEN     = 200,
     parameter MODE      = "ONCE",   //ONCE LINE
-    parameter AXI_DSIZE = 256
+    parameter AXI_DSIZE = 256,
     parameter DSIZE     = 24,
     parameter LSIZE     = 9
 )(
-    input               clock
-    input               rst_n
+    input               clock                   ,
+    input               rst_n                   ,
     input [15:0]        vactive                 ,
     input [15:0]        hactive                 ,
-    input               fsync
-    input               burst_req
-    input               tail_req
-    output              tail_status
+    input               fsync                   ,
+    input               burst_req               ,
+    input               tail_req                ,
+    output              tail_status             ,
     output[LSIZE-1:0]   tail_len
 );
 
@@ -57,7 +57,7 @@ reg [15:0]            mod_len;
 reg [15:0]            num_of_AXID;
 reg                   last_or_no;
 wire[31:0]            all_bits;
-assign  all_bits    = MODE=="LINE"? hactive : (MODE=="ONCE" vactive*hactive : 0);
+assign  all_bits    = MODE=="LINE"? hactive : (MODE=="ONCE"? vactive*hactive : 0);
 always@(posedge clock)begin:FALSE_PATH
     int_len     <= all_bits*DSIZE/(AXI_DSIZE*NOR_BURST_LEN);
     num_of_AXID <= all_bits*DSIZE/AXI_DSIZE + last_or_no;

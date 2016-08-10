@@ -125,13 +125,14 @@ always@(posedge clock,negedge rst_n)begin:DATA_MAP_BLOCK
         end
         default:;
         endcase
-    end
+end  end
 end else begin
 always@(posedge clock,negedge rst_n)begin:DATA_MAP_BLOCK
     if(~rst_n)  data_reg    <= {OSIZE{1'b0}};
     else begin
         data_reg    <= idata[roint*OSIZE+:OSIZE];
     end
+end
 end
 endgenerate
 

@@ -59,7 +59,7 @@ always@(*)
                 nstate = FSH;
         else    nstate = WAIT_DONE;
     FSHL:       nstate = IDLE;
-    default:    nstate - IDLE;
+    default:    nstate = IDLE;
     endcase
 
 reg     require_reg;

@@ -57,7 +57,7 @@ reg         trigger_req;
 // reg         trigger_tail;
 // reg         tail_exec;
 
-always@posedge clock,negedge rst_n)
+always@(posedge clock,negedge rst_n)
     if(~rst_n)  trigger_req <= 1'b0;
     else        trigger_req <= enable && ((FULL_LEN - THRESHOLD) > count);
 

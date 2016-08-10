@@ -79,7 +79,7 @@ always@(posedge clock,negedge rst_n)
         if(EX_EX == 0)begin
             if( /**/(point == (MSIZE-1))/**/ && iwr_en)
                     owr_reg <= 1'b1;
-            else    owr_reg < =1'b0;
+            else    owr_reg <= 1'b0;
         end else begin
             if( /**/(point == (NSIZE-1))/**/ && iwr_en && ex_flag==2'b00)  // 16
                     owr_reg <= 1'b1;
@@ -88,7 +88,7 @@ always@(posedge clock,negedge rst_n)
             else if((point == (MSIZE-1))/**/ && iwr_en && ex_flag==2'b10)
                     owr_reg <= 1'b1;
             else    owr_reg <= 1'b0;
-    end
+    end end
 
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  map_data_ex <= {ISIZE{1'b0}};
@@ -117,7 +117,7 @@ always@(posedge clcok,negedge rst_n)
                 mask_reg   <= {(MSIZE){1'b0}};
         else if(iwr_en)begin
             if(/**/ (point == (MSIZE-1) && ex_flag != 2'b00)/**/ || (point==(NSIZE-1) && ex_flag == 2'b00))
-                    mask_reg   <= {(MSIZE){1'b0}}
+                    mask_reg   <= {(MSIZE){1'b0}};
             else    mask_reg   <= {mask_reg[MSIZE-2:0],1'b1};
         end else    mask_reg   <= mask_reg;
     end

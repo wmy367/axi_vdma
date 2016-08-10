@@ -170,7 +170,7 @@ wire            burst_req;
 wire            tail_req;
 wire            req_resp;
 wire            req_done;
-wire[LSIZE-1:)] req_len;
+wire[LSIZE-1:0] req_len;
 
 read_fifo_status_ctrl #(
     .THRESHOLD  (THRESHOLD      ),// EMPTY THRESHOLD
