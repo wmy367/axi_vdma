@@ -105,7 +105,7 @@ always@(*)
     endcase
 
 //----->> STATE MCH <<-------------------
-
+reg     tail_exec;
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  tail_exec   <= 1'b0;
     else
@@ -121,7 +121,7 @@ always@(posedge clock,negedge rst_n)
     if(~rst_n)  burst_req_reg   <= 1'b0;
     else
         case(nstate)
-        NEED_WR:
+        NEED_RD:
                 burst_req_reg   <= 1'b1;
         default:burst_req_reg   <= 1'b0;
         endcase
@@ -144,12 +144,12 @@ always@(posedge clock,negedge rst_n)
     if(~rst_n)  length   <= {LSIZE{1'b0}};
     else
         case(nstate)
-        NEED_WR:length   <= THRESHOLD;
+        NEED_RD:length   <= THRESHOLD;
         RD_TAIL:length   <= tail_len;
         default:length   <= length;
         endcase
 
-assign req_len  = lenght;
+assign req_len  = length;
 //---<< length >>---------------
 
 endmodule

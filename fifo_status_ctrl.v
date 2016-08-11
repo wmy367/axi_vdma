@@ -38,6 +38,8 @@ always@(posedge clock,negedge rst_n)
     if(~rst_n)  cstate <= IDLE;
     else        cstate <= nstate;
 
+reg     burst_exec,tail_exec;
+
 always@(*)
     case(cstate)
     IDLE:
@@ -58,7 +60,7 @@ always@(*)
         if(done)
                 nstate = FSH;
         else    nstate = WAIT_DONE;
-    FSHL:       nstate = IDLE;
+    FSH:        nstate = IDLE;
     default:    nstate = IDLE;
     endcase
 
@@ -67,10 +69,23 @@ always@(posedge clock,negedge rst_n)
     if(~rst_n)  require_reg <= 1'b0;
     else
         case(nstate)
-        NEED_WR,WR_TAIL:
+        NEED_WR:
                 require_reg <= 1'b1;
         default:require_reg <= 1'b0;
         endcase
+
+reg     tail_require_reg;
+always@(posedge clock,negedge rst_n)
+    if(~rst_n)  tail_require_reg <= 1'b0;
+    else
+        case(nstate)
+        WR_TAIL:
+                tail_require_reg <= 1'b1;
+        default:tail_require_reg <= 1'b0;
+        endcase
+
+assign burst_req    = require_reg;
+assign tail_req     = tail_require_reg;
 
 //--->> EXECUTE? <<-----
 always@(posedge clock,negedge rst_n)

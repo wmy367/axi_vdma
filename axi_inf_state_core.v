@@ -49,13 +49,17 @@ module axi_inf_write_state_core #(
 //--->> RV signals <<-------
 assign  axi_awid    = ID;
 assign  axi_awaddr  = req_addr;
-assign  axi_awlen   = req_len;
+// assign  axi_awlen   = req_len;
 assign  axi_awsize  = 3'b101;
 assign  axi_awburst = 2'b01;
 assign  axi_awlock  = 1'b0;
 assign  axi_awcache = 4'b0000;
 assign  axi_awprot  = 3'b000;
 assign  axi_awqos   = 4'b0000;
+reg [LSIZE-1:0]     awlen_reg;
+assign axi_awlen = awlen_reg;
+always@(posedge axi_aclk)
+    awlen_reg   <= req_len -1'b1;
 // assign  axi_awvalid = 1'b0;
 //---<< RV signals >>-------
 reg [3:0]       nstate,cstate;
@@ -135,16 +139,23 @@ always@(posedge axi_aclk,negedge axi_resetn)begin
     else begin
         if(aw_valid_reg)
             lcnt    <= {LSIZE{1'b0}};
+        else if(axi_wvalid && axi_wlast && axi_wready)
+            lcnt    <= {LSIZE{1'b0}};
         else begin
             if(axi_wready && axi_wvalid)
                     lcnt <= lcnt + 1'b1;
-            else    lcnt <= {LSIZE{1'b0}};
+            else    lcnt <= lcnt;
 end end end
 
 reg             last_reg;
 always@(posedge axi_aclk,negedge axi_resetn)
     if(~axi_resetn) last_reg    <= 1'b0;
-    else            last_reg    <= lcnt == length;
+    else begin
+        if(axi_wvalid && axi_wlast && axi_wready)
+                last_reg    <= 1'b0;
+        else    last_reg    <= lcnt == length-1'b1;
+    end
+
 assign axi_wlast    = last_reg;
 //---<< LAST DATA >>-------------
 //--->> enable pull data <<------
@@ -158,6 +169,28 @@ always@(posedge axi_aclk,negedge axi_resetn)
         endcase
 assign pull_data_en = pull_en;
 //---<< enable pull data >>------
+//--->> resp done <<-------------
+reg     resp_reg,done_reg;
+
+always@(posedge axi_aclk,negedge axi_resetn)
+    if(~axi_resetn) resp_reg    <= 1'b0;
+    else
+        case(nstate)
+        SET_VLD:    resp_reg    <= 1'b1;
+        default:    resp_reg    <= 1'b0;
+        endcase
+
+always@(posedge axi_aclk,negedge axi_resetn)
+    if(~axi_resetn) done_reg    <= 1'b0;
+    else
+        case(nstate)
+        DONE:       done_reg    <= 1'b1;
+        default:    done_reg    <= 1'b0;
+        endcase
+
+assign req_resp = resp_reg;
+assign req_done = done_reg;
+//---<< resp done >>-------------
 
 endmodule
 
@@ -165,7 +198,8 @@ module axi_inf_read_state_core #(
     parameter IDSIZE    = 3,
     parameter ID        = 0,
     parameter LSIZE     = 10,
-    parameter ASIZE     = 32
+    parameter ASIZE     = 32,
+    parameter DSIZE     = 256
 )(
     input               read_req     ,
     output              req_resp     ,
@@ -199,13 +233,18 @@ module axi_inf_read_state_core #(
 //--->> RV <<-------------
 assign axi_arid     = ID;
 assign axi_araddr   = req_addr;
-assign axi_arlen    = req_len;
+// assign axi_arlen    = req_len-1'b1;
 assign axi_arsize   = 3'b101;
 assign axi_arburst  = 2'b01;
 assign axi_arlock   = 1'b0;
 assign axi_arcache  = 4'b0000;
 assign axi_arprot   = 3'b000;
 assign axi_arqos    = 4'b0000;
+reg [LSIZE-1:0] arlen_reg;
+assign axi_arlen = arlen_reg;
+
+always@(posedge axi_aclk)
+    arlen_reg   <= req_len-1'b1;
 //---<< RV >>-------------
 // assign axi_arvalid
 // assign axi_arready

@@ -13,6 +13,7 @@ module mm_rev #(
     parameter THRESHOLD  = 200,
     parameter ASIZE      = 29,
     parameter BURST_LEN_SIZE = 9,
+    parameter IDSIZE     = 4,
     parameter DSIZE      = 24,
     parameter AXI_DSIZE  = 256,
     parameter MODE      = "ONCE",   //ONCE LINE
@@ -46,7 +47,8 @@ module mm_rev #(
     //-- addr read
     output[IDSIZE-1:0]  axi_arid                ,
     output[ASIZE-1:0]   axi_araddr              ,
-    output[LSIZE-1:0]   axi_arlen               ,
+    output[BURST_LEN_SIZE-1:0]
+                        axi_arlen               ,
     output[2:0]         axi_arsize              ,
     output[1:0]         axi_arburst             ,
     output[0:0]         axi_arlock              ,
@@ -68,8 +70,7 @@ module mm_rev #(
     output              out_de                  ,
     output[DSIZE-1:0]   odata
 );
-localparam LSIZE        = 9;
-localparam THRESHOLD    = 200;
+localparam LSIZE        = BURST_LEN_SIZE;
 localparam BURST_LEN    = THRESHOLD;
 //--->> OUT PORT INTERFACE <<----------
 wire            out_port_falign     ;
@@ -147,7 +148,7 @@ wire[8:0]       wr_data_count;
 
 wire            fifo_rst;
 
-stream_fifo stream_fifo_inst (
+vdma_stream_fifo stream_fifo_inst (
 /*  input               */     .rst               (out_port_falign || !rst_n    ),
 /*  input               */     .wr_clk            (axi_aclk                     ),
 /*  input               */     .rd_clk            (clock                        ),

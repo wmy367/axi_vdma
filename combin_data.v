@@ -31,6 +31,7 @@ reg [ISIZE-1:0]     map_data [MSIZE-1:0];
 reg [ISIZE-1:0]     map_data_ex ;
 
 reg [6:0]           point;
+reg [1:0]           ex_flag;
 
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  point   <= 7'd0;
@@ -59,12 +60,12 @@ integer KK;
         else    map_data[point] <= map_data[point];
 end end
 
-reg [1:0]      ex_flag;
+
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  ex_flag     <= 2'b00;
     else begin
         if(point == NSIZE && EX_EX && iwr_en)begin
-            if(ex_flag == 1'b00)
+            if(ex_flag == 2'b00)
                     ex_flag <= 3'b001;
             else    ex_flag <= {ex_flag[0:0],1'b0};
         end else    ex_flag <= ex_flag;
@@ -90,6 +91,8 @@ always@(posedge clock,negedge rst_n)
             else    owr_reg <= 1'b0;
     end end
 
+assign owr_en = owr_reg;
+
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  map_data_ex <= {ISIZE{1'b0}};
     else begin
@@ -108,9 +111,11 @@ always@(posedge clock,negedge rst_n)
         else    owr_last_reg    <= 1'b0;
     end
 
+assign olast_en = owr_last_reg;
+
 reg [MSIZE-1:0] mask_reg;
 
-always@(posedge clcok,negedge rst_n)
+always@(posedge clock,negedge rst_n)
     if(~rst_n)   mask_reg   <= {(MSIZE){1'b0}};
     else begin
         if(ialign)
@@ -122,7 +127,7 @@ always@(posedge clcok,negedge rst_n)
         end else    mask_reg   <= mask_reg;
     end
 
-
+assign omask = mask_reg;
 
 reg [OSIZE-1:0]     out_reg;
 
@@ -161,5 +166,7 @@ integer KK;
 end
 end
 endgenerate
+
+assign odata    = out_reg;
 
 endmodule

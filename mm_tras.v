@@ -12,7 +12,14 @@ madified:
 module mm_tras #(
     parameter THRESHOLD  = 200,
     parameter ASIZE      = 29,
-    parameter BURST_LEN_SIZE = 9
+    parameter BURST_LEN_SIZE = 9,
+    parameter DSIZE     = 24,
+    parameter AXI_DSIZE = 256,
+    parameter IDSIZE    = 4,
+    parameter ID        = 0,
+    parameter MODE      = "ONCE",   //ONCE LINE
+    parameter DATA_TYPE = "AXIS",    //AXIS NATIVE
+    parameter FRAME_SYNC= "OFF"    //OFF ON
 )(
     input               clock                   ,
     input               rst_n                   ,
@@ -38,17 +45,18 @@ module mm_tras #(
     input             axi_aclk      ,
     input             axi_resetn    ,
     //--->> addr write <<-------
-    input[IDSIZE-1:0] axi_awid      ,
-    input[ASIZE-1:0]  axi_awaddr    ,
-    input[LSIZE-1:0]  axi_awlen     ,
-    input[2:0]        axi_awsize    ,
-    input[1:0]        axi_awburst   ,
-    input[0:0]        axi_awlock    ,
-    input[3:0]        axi_awcache   ,
-    input[2:0]        axi_awprot    ,
-    input[3:0]        axi_awqos     ,
-    input             axi_awvalid   ,
-    output            axi_awready   ,
+    output[IDSIZE-1:0] axi_awid      ,
+    output[ASIZE-1:0]  axi_awaddr    ,
+    output[BURST_LEN_SIZE-1:0]
+                       axi_awlen     ,
+    output[2:0]        axi_awsize    ,
+    output[1:0]        axi_awburst   ,
+    output[0:0]        axi_awlock    ,
+    output[3:0]        axi_awcache   ,
+    output[2:0]        axi_awprot    ,
+    output[3:0]        axi_awqos     ,
+    output             axi_awvalid   ,
+    input              axi_awready   ,
     //--->> Response <<---------
     output            axi_bready    ,
     input[IDSIZE-1:0] axi_bid       ,
@@ -56,13 +64,15 @@ module mm_tras #(
     input             axi_bvalid    ,
     //---<< Response >>---------
     //--->> data write <<-------
-    output[DSIZE-1:0]   axi_wdata     ,
-    output[DSIZE/8-1:0] axi_wstrb     ,
+    output[AXI_DSIZE-1:0]   axi_wdata     ,
+    output[AXI_DSIZE/8-1:0] axi_wstrb     ,
     output              axi_wlast     ,
     output              axi_wvalid    ,
     input               axi_wready
     //---<< data write >>-------
 );
+
+assign axi_wstrb    = {(AXI_DSIZE/8){1'b1}};
 
 wire        rd_clk;
 wire        rd_rst_n;
@@ -81,7 +91,7 @@ wire            in_port_lalign     ;
 wire            in_port_ealign     ;
 wire            in_port_odata_vld  ;
 wire[DSIZE-1:0] in_port_odata      ;
-wire            fifo_almost_full   ;
+// wire            fifo_almost_full   ;
 
 in_port #(
     .DSIZE     (DSIZE     ),
@@ -116,13 +126,13 @@ in_port #(
 /*  output[DSIZE-1:0]  */ .odata                   (in_port_odata           )
 );
 
-wire[255:0]     cb_data;
+wire[AXI_DSIZE-1:0]     cb_data;
 wire            cb_wr_en;
 wire            cb_wr_last_en;
 
 combin_data #(
-    .ISIZE      (DSIZE  ),
-    .OSIZE      (256    )
+    .ISIZE      (DSIZE        ),
+    .OSIZE      (AXI_DSIZE    )
 )combin_data_inst(
 /*    input               */ .clock       (wr_clk    ),
 /*    input               */ .rst_n       (wr_rst_n  ),
@@ -140,11 +150,12 @@ wire[8:0]       rd_data_count;
 wire[8:0]       wr_data_count;
 
 wire            fifo_rst;
+wire            fifo_empty;
 
 assign  fifo_rst    = FRAME_SYNC=="ON"? in_port_falign : 1'b0;
 
-stream_fifo stream_fifo_inst (
-/*  input               */     .rst               (wr_rst_n ||  fifo_rst        ),
+vdma_stream_fifo stream_fifo_inst (
+/*  input               */     .rst               (!wr_rst_n ||  fifo_rst       ),
 /*  input               */     .wr_clk            (wr_clk                       ),
 /*  input               */     .rd_clk            (rd_clk                       ),
 /*  input [DSIZE-1:0]   */     .din               (cb_data                      ),
@@ -153,11 +164,13 @@ stream_fifo stream_fifo_inst (
 /*  output [DSIZE-1:0]  */     .dout              (axi_wdata                    ),
 /*  output              */     .full              (   ),
 /*  output              */     .almost_full       (fifo_almost_full             ),
-/*  output              */     .empty             (   ),
+/*  output              */     .empty             (fifo_empty                   ),
 /*  output              */     .almost_empty      (   ),
 /*  output[8:0]         */     .rd_data_count     (rd_data_count                ),
 /*  output[8:0]         */     .wr_data_count     (wr_data_count                )
 );
+
+assign axi_wvalid   = !fifo_empty;
 
 wire    burst_req    ;
 wire    tail_req     ;
@@ -166,10 +179,11 @@ wire    req_done     ;
 wire[BURST_LEN_SIZE-1:0]    req_length;
 
 fifo_status_ctrl #(
-    .THRESHOLD      (THRESHOLD  ),
+    .THRESHOLD      (THRESHOLD  )
 )fifo_status_ctrl_inst(
 /*  input             */    .clock             (rd_clk              ),
 /*  input             */    .rst_n             (rd_rst_n            ),
+/*  input             */    .fifo_empty        (fifo_empty          ),
 /*  input [8:0]       */    .count             (rd_data_count       ),
 /*  input             */    .tail              (in_port_lalign      ),      // not frame tail
 /*  output            */    .burst_req         (burst_req           ),
@@ -196,10 +210,10 @@ a_frame_addr #(
 );
 
 axi_inf_write_state_core #(
-    .IDSIZE     (3      ),
-    .ID         (0      ),
+    .IDSIZE     (IDSIZE    ),
+    .ID         (ID        ),
     .LSIZE      (BURST_LEN_SIZE     ),
-    .ASIZE      (32     )
+    .ASIZE      (ASIZE     )
 )axi_inf_write_state_core_inst(
 /*      input             */  .write_req            (burst_req || tail_req      ),
 /*      output            */  .req_resp             (req_resp                   ),

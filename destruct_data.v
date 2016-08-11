@@ -78,6 +78,7 @@ always@(posedge clock,negedge rst_n)
         end else    roint <= roint;
     end
 
+reg         read_en;
 
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  read_en     <= 1'b0;

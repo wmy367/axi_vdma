@@ -44,7 +44,7 @@ assign  aclk        = clock;
 assign  aresetn     = rst_n;
 assign  aclken      = 1'b1;
 
-assign  axi_tvalid  = in_vld;
+assign  axi_tvalid  = rd_en;
 assign  axi_tdata   = in_data;
 
 assign  rd_en       = in_de && axi_tready;

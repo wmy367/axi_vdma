@@ -40,7 +40,7 @@ edge_generator #(
 )gen_vs_edge(
 	.clk		(clock				),
 	.rst_n      (rst_n              ),
-	.in         (vs                 ),
+	.in         (vsync              ),
 	.raising    (vs_raising         ),
 	.falling    (vs_falling         )
 );
@@ -80,7 +80,7 @@ always@(posedge clock,negedge rst_n)
     else            frame_blk   <= lcnt == vactive;
 
 wire	frame_blk_raising;
-wire    frame_blkq_falling;
+wire    frame_blk_falling;
 edge_generator #(
 	.MODE		("BEST" 	)  // FAST NORMAL BEST
 )gen_blk_edge(

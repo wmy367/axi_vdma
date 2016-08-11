@@ -17,7 +17,7 @@ module a_frame_addr #(
     input               rst_n,
     input               new_base,
     input[ASIZE-1:0]    baseaddr,
-    input[ASIZE_1:0]    line_increate_addr,
+    input[ASIZE-1:0]    line_increate_addr,
     input               burst_req,
     input               tail_req,
     output[ASIZE-1:0]   out_addr
