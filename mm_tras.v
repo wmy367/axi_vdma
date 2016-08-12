@@ -160,7 +160,7 @@ vdma_stream_fifo stream_fifo_inst (
 /*  input               */     .rd_clk            (rd_clk                       ),
 /*  input [DSIZE-1:0]   */     .din               (cb_data                      ),
 /*  input               */     .wr_en             (cb_wr_en || cb_wr_last_en    ),
-/*  input               */     .rd_en             (pull_data_en                 ),
+/*  input               */     .rd_en             (pull_data_en && axi_wready   ),
 /*  output [DSIZE-1:0]  */     .dout              (axi_wdata                    ),
 /*  output              */     .full              (   ),
 /*  output              */     .almost_full       (fifo_almost_full             ),
@@ -170,7 +170,7 @@ vdma_stream_fifo stream_fifo_inst (
 /*  output[8:0]         */     .wr_data_count     (wr_data_count                )
 );
 
-assign axi_wvalid   = !fifo_empty;
+assign axi_wvalid   = pull_data_en;
 
 wire    burst_req    ;
 wire    tail_req     ;

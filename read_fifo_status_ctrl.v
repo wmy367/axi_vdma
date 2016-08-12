@@ -136,6 +136,9 @@ always@(posedge clock,negedge rst_n)
                 tail_req_reg    <= 1'b1;
         default:tail_req_reg    <= 1'b0;
         endcase
+
+assign burst_req    = burst_req_reg;
+assign tail_req     = tail_req_reg;
 //---<< BURST REQUIRE >>--------
 //--->> length <<---------------
 reg [LSIZE-1:0]     length;

@@ -37,7 +37,7 @@ reg [6:0]          roint;
 reg [LNUM-1:0]     loint;
 reg [OSIZE-1:0]    data_reg;
 reg [OSIZE-1:0]    ex_data;
-reg [OSIZE-1:0]    bk_data;
+// reg [OSIZE-1:0]    bk_data;
 
 
 always@(posedge clock,negedge rst_n)
@@ -88,13 +88,15 @@ always@(posedge clock,negedge rst_n)
         else if(force_rd)
             read_en     <= 1'b1;
         else begin
-            if(ird_en)begin
-                if(point == (NSIZE-1) )
+            if(1'b1)begin
+                if(point == (NSIZE-2) && ord_en)
                         read_en     <= 1'b1;
                 else    read_en     <= 1'b0;
             end else    read_en     <= 1'b0;
         end
     end
+
+assign ird_en   = read_en;
 
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  ex_data <= {OSIZE{1'b0}};
@@ -136,5 +138,7 @@ always@(posedge clock,negedge rst_n)begin:DATA_MAP_BLOCK
 end
 end
 endgenerate
+
+assign odata = data_reg;
 
 endmodule

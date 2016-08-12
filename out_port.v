@@ -25,6 +25,7 @@ module out_port #(
     input               in_hsync                ,
     input               in_de                   ,
     input               fifo_empty              ,
+    input               enable_inner_sync       ,
     //-- axi_stream
     output              aclk                    ,
     output              aclken                  ,
@@ -53,14 +54,14 @@ wire        gen_vsync,gen_hsync,gen_de;
 wire        ng_vsync,ng_hsync;
 
 generate
-if(EX_SYNC=="ON")begin
+if(EX_SYNC=="OFF")begin
 video_sync_generator_B2 #(
 	.MODE		(VIDEO_FORMAT)
 )video_sync_generator_inst(
 /*	input			*/	.pclk 		(clock		),
 /*	input			*/	.rst_n      (rst_n 	    ),
 /*	input			*/	.pause		(~axi_tready && fifo_empty),
-/*	input			*/	.enable     (1'b1		),
+/*	input			*/	.enable     (enable_inner_sync		),
 	//--->> Extend Sync
 /*	output			*/	.vsync  	(gen_vsync  ),
 /*	output			*/	.hsync      (gen_hsync  ),

@@ -125,12 +125,26 @@ assign axi_bready   = b_ready_reg;
 //--->> Response ready <<---------
 //--->> LAST DATA <<-------------
 reg [LSIZE-1:0]     length;
+reg [LSIZE-1:0]     len_sub_2,len_sub_1;
 
-always@(posedge axi_aclk,negedge axi_resetn)
-    if(~axi_resetn) length  <= {LSIZE{1'b0}};
-    else if(write_req)
-            length  <= req_len;
-    else    length  <= length;
+always@(posedge axi_aclk,negedge axi_resetn)begin
+    if(~axi_resetn)begin
+        length      <= {LSIZE{1'b0}};
+        len_sub_1   <= {LSIZE{1'b0}};
+        len_sub_2   <= {LSIZE{1'b0}};
+    end else if(write_req)begin
+            length      <= req_len;
+            if(req_len>0)
+                    len_sub_1   <= req_len-1'b1;
+            else    len_sub_1   <= {LSIZE{1'b0}};
+            if(req_len>1)
+                    len_sub_2   <= req_len-2'd2;
+            else    len_sub_2   <= {LSIZE{1'b0}};
+    end else begin
+        length      <= length;
+        len_sub_1   <= len_sub_1;
+        len_sub_2   <= len_sub_2;
+end end
 
 reg [LSIZE-1:0]     lcnt;
 
@@ -153,8 +167,9 @@ always@(posedge axi_aclk,negedge axi_resetn)
     else begin
         if(axi_wvalid && axi_wlast && axi_wready)
                 last_reg    <= 1'b0;
-        else    last_reg    <= lcnt == length-1'b1;
-    end
+        else begin
+            last_reg    <= ((lcnt == len_sub_2) && (axi_wvalid && axi_wready)) || (lcnt == len_sub_1);
+    end end
 
 assign axi_wlast    = last_reg;
 //---<< LAST DATA >>-------------
@@ -225,7 +240,7 @@ module axi_inf_read_state_core #(
     //-- data read signals
     output              axi_rready    ,
     input [IDSIZE-1:0]  axi_rid       ,
-    input [DSIZE-1:0]   axi_rdata     ,
+    // input [DSIZE-1:0]   axi_rdata     ,
     input [1:0]         axi_rresp     ,
     input               axi_rlast     ,
     input               axi_rvalid
@@ -268,7 +283,7 @@ always@(*)
                 nstate = WAIT_LAST;
         else    nstate = SET_VLD;
     WAIT_LAST:
-        if(axi_rready && axi_rvalid && axi_rvalid && (axi_rid==ID))
+        if(axi_rready && axi_rlast && axi_rvalid && (axi_rid==ID))
                 nstate = DONE;
         else    nstate = WAIT_LAST;
     DONE:       nstate = IDLE;
@@ -296,5 +311,28 @@ always@(posedge axi_aclk,negedge axi_resetn)
         default:    push_en     <= 1'b0;
         endcase
 assign push_data_en = push_en;
+assign axi_rready   = push_en;
 //---<< push data enable >>--------------
+//--->> resp done <<-------------
+reg     resp_reg,done_reg;
+
+always@(posedge axi_aclk,negedge axi_resetn)
+    if(~axi_resetn) resp_reg    <= 1'b0;
+    else
+        case(nstate)
+        SET_VLD:    resp_reg    <= 1'b1;
+        default:    resp_reg    <= 1'b0;
+        endcase
+
+always@(posedge axi_aclk,negedge axi_resetn)
+    if(~axi_resetn) done_reg    <= 1'b0;
+    else
+        case(nstate)
+        DONE:       done_reg    <= 1'b1;
+        default:    done_reg    <= 1'b0;
+        endcase
+
+assign req_resp = resp_reg;
+assign req_done = done_reg;
+//---<< resp done >>-------------
 endmodule
