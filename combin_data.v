@@ -10,7 +10,8 @@ madified:
 ***********************************************/
 module combin_data #(
     parameter ISIZE = 24,
-    parameter OSIZE = 256
+    parameter OSIZE = 256,
+    parameter MODE  = "AXIS"    //AXIS NATIVE
 )(
     input               clock       ,
     input               rst_n       ,
@@ -27,10 +28,27 @@ localparam  NSIZE = OSIZE/ISIZE;
 localparam  MSIZE = OSIZE/ISIZE+(OSIZE%ISIZE != 0);
 localparam  EX_EX = (OSIZE%ISIZE != 0);
 
+//--->> MINI COMBIN <<---
+localparam  CNUM =  OSIZE%ISIZE     == 0 ? 1 :
+                    OSIZE*3%ISIZE   == 0 ? 3 :
+                    OSIZE*5%ISIZE   == 0 ? 5 :
+                    OSIZE*7%ISIZE   == 0 ? 7 :
+                    OSIZE*9%ISIZE   == 0 ? 9 :
+                    OSIZE*11%ISIZE  == 0 ? 11 :
+                    OSIZE*13%ISIZE  == 0 ? 13 :
+                    OSIZE*15%ISIZE  == 0 ? 15 :
+                    OSIZE*17%ISIZE  == 0 ? 17 :
+                    OSIZE*19%ISIZE  == 0 ? 19 :
+                    OSIZE*21%ISIZE  == 0 ? 21 :
+                    OSIZE*23%ISIZE  == 0 ? 23 :
+                    OSIZE*25%ISIZE  == 0 ? 25 : 0;
+//--->> MINI COMBIN <<---
+
 reg [ISIZE-1:0]     map_data [MSIZE-1:0];
 reg [ISIZE-1:0]     map_data_ex ;
 
 reg [6:0]           point;
+reg [6:0]           loint;
 reg [1:0]           ex_flag;
 
 always@(posedge clock,negedge rst_n)
@@ -40,14 +58,50 @@ always@(posedge clock,negedge rst_n)
             if(iwr_en)
                     point   <= 7'd1;
             else    point   <= 7'd0;
-        end else if(ilast && iwr_en)
-                point   <= 7'd0;
-        else if(iwr_en)begin
-            if(/**/ (point == (MSIZE-1) && ex_flag != 2'b00)/**/ || (point==(NSIZE-1) && ex_flag == 2'b00))
+        end else if(ilast)
+            if(MODE == "NATIVE")
                     point   <= 7'd0;
-            else    point   <= point + 1'b1;
+            else    point   <= iwr_en? 7'd0 : point;
+        else if(iwr_en)begin
+            // if(/**/ (point == (MSIZE-1) && ex_flag != 2'b00)/**/ || (point==(NSIZE-1) && ex_flag == 2'b00))
+            if(/**/
+                (
+                    point == (MSIZE-1)
+                )
+                ||
+                (
+                    point == (NSIZE-1)
+                    &&
+                    loint == (CNUM-1)
+                )
+            )begin
+                    point   <= 7'd0;
+            end else
+                    point   <= point + 1'b1;
         end else    point   <= point;
     end
+
+always@(posedge clock,negedge rst_n)begin
+    if(~rst_n)  loint   <= 7'd0;
+    else begin
+        if(ialign)
+            loint   <= 7'd0;
+        else if(ilast)begin
+            if(MODE=="NATIVE")
+                    loint <= 7'd0;
+            else    loint <= iwr_en? 7'd0 : loint;
+        end if(iwr_en)begin
+            if(point == (MSIZE-1) && loint != (CNUM-1) )
+                    loint <= loint + 1'b1;
+            else if (point == (NSIZE-1) && loint == (CNUM-1))
+                    loint <= 7'd0;
+            else    loint <= loint;
+        end else
+            loint <= loint;
+    end
+end
+
+
 
 always@(posedge clock,negedge rst_n)begin:MAP_DATA_BLOCK
 integer KK;
@@ -61,42 +115,28 @@ integer KK;
 end end
 
 
-always@(posedge clock,negedge rst_n)
-    if(~rst_n)  ex_flag     <= 2'b00;
-    else begin
-        if(point == NSIZE && EX_EX && iwr_en)begin
-            if(ex_flag == 2'b00)
-                    ex_flag <= 3'b001;
-            else    ex_flag <= {ex_flag[0:0],1'b0};
-        end else    ex_flag <= ex_flag;
-    end
-
-
 reg     owr_reg;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock,negedge rst_n)begin
     if(~rst_n)  owr_reg <= 1'b0;
     else begin
-        if(EX_EX == 0)begin
-            if( /**/(point == (MSIZE-1))/**/ && iwr_en)
-                    owr_reg <= 1'b1;
-            else    owr_reg <= 1'b0;
+        if(loint != (CNUM-1))begin
+            if(point == (MSIZE-1) && iwr_en)
+                    owr_reg  <= 1'b1;
+            else    owr_reg  <= 1'b0;
         end else begin
-            if( /**/(point == (NSIZE-1))/**/ && iwr_en && ex_flag==2'b00)  // 16
-                    owr_reg <= 1'b1;
-            else if((point == (MSIZE-1))/**/ && iwr_en && ex_flag==2'b01)
-                    owr_reg <= 1'b1;
-            else if((point == (MSIZE-1))/**/ && iwr_en && ex_flag==2'b10)
-                    owr_reg <= 1'b1;
-            else    owr_reg <= 1'b0;
+            if(point == (NSIZE-1) && iwr_en)
+                    owr_reg  <= 1'b1;
+            else    owr_reg  <= 1'b0;
     end end
+end
 
 assign owr_en = owr_reg;
 
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  map_data_ex <= {ISIZE{1'b0}};
     else begin
-        if((point == (MSIZE-1))/**/ && iwr_en && ex_flag !=2'b00)
+        if((point == (MSIZE-1))/**/ && iwr_en )
                 map_data_ex <= map_data[MSIZE-1];
         else    map_data_ex <= map_data_ex;
     end
@@ -121,7 +161,7 @@ always@(posedge clock,negedge rst_n)
         if(ialign)
                 mask_reg   <= {(MSIZE){1'b0}};
         else if(iwr_en)begin
-            if(/**/ (point == (MSIZE-1) && ex_flag != 2'b00)/**/ || (point==(NSIZE-1) && ex_flag == 2'b00))
+            if (point == (MSIZE-1)  || (point==(NSIZE-1) && loint == (CNUM-1)))
                     mask_reg   <= {(MSIZE){1'b0}};
             else    mask_reg   <= {mask_reg[MSIZE-2:0],1'b1};
         end else    mask_reg   <= mask_reg;
@@ -131,41 +171,19 @@ assign omask = mask_reg;
 
 reg [OSIZE-1:0]     out_reg;
 
-genvar II;
-generate
-if(EX_EX)begin
+
 //--->> OSIZE%ISIZE != 0 <<------------
-always@(ex_flag)begin:GEN_OUT_REG_BLOCK
+localparam  OVER_BITS =  (OSIZE%ISIZE)==0? 0 : ISIZE - (OSIZE%ISIZE);
+localparam  LAST_BITS =  (OSIZE%ISIZE);
+always@(*)begin:GEN_OUT_REG_BLOCK
 integer KK;
-    case(ex_flag)
-    2'b00:begin
-        out_reg[15:0]   = map_data_ex[ISIZE-1-:16];
-        for(KK=0;KK<NSIZE;KK=KK+1)
-            out_reg[KK*ISIZE+16+:ISIZE] = map_data[KK];
-    end
-    2'b01:begin
-        out_reg[OSIZE-1-:16] = map_data[MSIZE-1][0+:16];
-        for(KK=0;KK<NSIZE;KK=KK+1)
-            out_reg[KK*ISIZE+:ISIZE] = map_data[KK];
-    end
-    2'b10:begin
-        out_reg[7:0]         = map_data_ex[ISIZE-1-:8];
-        out_reg[OSIZE-1-:8]  = map_data[MSIZE-1][0+:8];
-        for(KK=0;KK<NSIZE;KK=KK+1)
-            out_reg[KK*ISIZE+8+:ISIZE] = map_data[KK];
-    end
-    default:;
-    endcase
+    // out_reg[OSIZE-1-:OVER_BITS*loint]   = map_data_ex[ISIZE-1-:OVER_BITS*loint];
+    out_reg[ISIZE-1:0]   = map_data_ex;
+    for(KK=0;KK<NSIZE;KK=KK+1)
+        out_reg[OVER_BITS*loint+KK*ISIZE+:ISIZE] = map_data[KK];
 end
 //---<< OSIZE%ISIZE != 0 >>------------
-end else begin
-always@(*)begin:GEN_OUT_REG_BLOCK_ON_EX
-integer KK;
-    for(KK=0;KK<NSIZE;KK=KK+1)
-        out_reg[(NSIZE-KK-1)*ISIZE+:ISIZE]    = map_data[KK];
-end
-end
-endgenerate
+
 
 assign odata    = out_reg;
 

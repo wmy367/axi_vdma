@@ -13,7 +13,7 @@ module axi_mm_tb;
 localparam MODE         = "1080P@60";
 localparam  WR_THRESHOLD    = 100,
             RD_THRESHOLD    = 100,
-            PIX_DSIZE       = 24;
+            PIX_DSIZE       = 16;
 
 bit         axi_aclk;
 bit         axi_resetn;
