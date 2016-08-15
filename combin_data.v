@@ -175,12 +175,38 @@ reg [OSIZE-1:0]     out_reg;
 //--->> OSIZE%ISIZE != 0 <<------------
 localparam  OVER_BITS =  (OSIZE%ISIZE)==0? 0 : ISIZE - (OSIZE%ISIZE);
 localparam  LAST_BITS =  (OSIZE%ISIZE);
+localparam  O_L = OVER_BITS > LAST_BITS ? 1 : 0;
 always@(*)begin:GEN_OUT_REG_BLOCK
 integer KK;
     // out_reg[OSIZE-1-:OVER_BITS*loint]   = map_data_ex[ISIZE-1-:OVER_BITS*loint];
-    out_reg[ISIZE-1:0]   = map_data_ex;
-    for(KK=0;KK<NSIZE;KK=KK+1)
-        out_reg[OVER_BITS*loint+KK*ISIZE+:ISIZE] = map_data[KK];
+    // out_reg[ISIZE-1:0]   = map_data_ex;
+    // for(KK=0;KK<NSIZE;KK=KK+1)
+    //     out_reg[OVER_BITS*loint+KK*ISIZE+:ISIZE] = map_data[KK];
+    //
+    // out_reg[OSIZE-1-:ISIZE]   = map_data_ex << (LAST_BITS*loint);
+    // for(KK=0;KK<NSIZE;KK=KK+1)
+    //     out_reg[OSIZE-(OVER_BITS*loint)-KK*ISIZE-:ISIZE] = map_data[KK];
+
+    if(O_L)begin
+        out_reg[OSIZE-1-:ISIZE] = map_data_ex << (LAST_BITS*loint);
+
+        if(EX_EX)begin
+            out_reg[ISIZE-1:0]  = map_data[MSIZE-1]>>(OSIZE%ISIZE-LAST_BITS*loint);
+        end
+
+        for(KK=0;KK<NSIZE;KK=KK+1)
+            out_reg[OSIZE-1-(ISIZE-LAST_BITS*loint)-KK*ISIZE-:ISIZE]  = map_data[KK];
+
+    end else begin
+        out_reg[OSIZE-1-:ISIZE] = map_data_ex << (ISIZE-(OVER_BITS*loint));
+
+        if(EX_EX)begin
+            out_reg[ISIZE-1:0]  = map_data[MSIZE-1] >> (OVER_BITS*loint);
+        end
+
+        for(KK=0;KK<NSIZE;KK=KK+1)
+            out_reg[OSIZE-1-(OVER_BITS*loint)-KK*ISIZE-:ISIZE]  = map_data[KK];
+    end
 end
 //---<< OSIZE%ISIZE != 0 >>------------
 
