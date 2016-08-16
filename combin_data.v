@@ -128,15 +128,14 @@ always@(posedge clock,negedge rst_n)begin
             if(point == (NSIZE-1) && iwr_en)
                     owr_reg  <= 1'b1;
             else    owr_reg  <= 1'b0;
-    end end
+        end
+    end
 end
-
-assign owr_en = owr_reg;
 
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  map_data_ex <= {ISIZE{1'b0}};
     else begin
-        if((point == (MSIZE-1))/**/ && iwr_en )
+        if(iwr_en )
                 map_data_ex <= map_data[MSIZE-1];
         else    map_data_ex <= map_data_ex;
     end
@@ -151,7 +150,6 @@ always@(posedge clock,negedge rst_n)
         else    owr_last_reg    <= 1'b0;
     end
 
-assign olast_en = owr_last_reg;
 
 reg [MSIZE-1:0] mask_reg;
 
@@ -173,10 +171,34 @@ reg [OSIZE-1:0]     out_reg;
 
 
 //--->> OSIZE%ISIZE != 0 <<------------
+reg     owr_reg_lat,owr_last_reg_lat;
+always@(posedge clock,negedge rst_n)begin
+    if(~rst_n)begin
+        owr_reg_lat     <= 1'b0;
+        owr_last_reg_lat<= 1'b0;
+    end else begin
+        owr_reg_lat     <= owr_reg;
+        owr_last_reg_lat<= owr_last_reg;
+    end
+end
+
+reg [6:0]   loint_lat;
+always@(posedge clock)
+    loint_lat   <= loint;
+
+/*
+               LAST_BITS>|    |<OVER_BITS
+                        _|  | |
+|____|____|____|____|____|____| <- combin idata length
+|___________________________|  <- AXI BITS LENGTH
+*/
 localparam  OVER_BITS =  (OSIZE%ISIZE)==0? 0 : ISIZE - (OSIZE%ISIZE);
 localparam  LAST_BITS =  (OSIZE%ISIZE);
 localparam  O_L = OVER_BITS > LAST_BITS ? 1 : 0;
-always@(*)begin:GEN_OUT_REG_BLOCK
+generate
+if(EX_EX)begin
+//=============================================================================//
+always@(*)begin:GEN_OUT_REG_BLOCK_EX
 integer KK;
     // out_reg[OSIZE-1-:OVER_BITS*loint]   = map_data_ex[ISIZE-1-:OVER_BITS*loint];
     // out_reg[ISIZE-1:0]   = map_data_ex;
@@ -188,26 +210,37 @@ integer KK;
     //     out_reg[OSIZE-(OVER_BITS*loint)-KK*ISIZE-:ISIZE] = map_data[KK];
 
     if(O_L)begin
-        out_reg[OSIZE-1-:ISIZE] = map_data_ex << (LAST_BITS*loint);
+        out_reg[OSIZE-1-:ISIZE] = map_data_ex << (LAST_BITS*loint_lat);
 
-        if(EX_EX)begin
-            out_reg[ISIZE-1:0]  = map_data[MSIZE-1]>>(OSIZE%ISIZE-LAST_BITS*loint);
-        end
+        out_reg[ISIZE-1:0]  = map_data[MSIZE-1]>>(OSIZE%ISIZE-LAST_BITS*loint);
 
         for(KK=0;KK<NSIZE;KK=KK+1)
-            out_reg[OSIZE-1-(ISIZE-LAST_BITS*loint)-KK*ISIZE-:ISIZE]  = map_data[KK];
+            out_reg[OSIZE-1-(ISIZE-LAST_BITS*loint_lat)-KK*ISIZE-:ISIZE]  = map_data[KK];
 
     end else begin
-        out_reg[OSIZE-1-:ISIZE] = map_data_ex << (ISIZE-(OVER_BITS*loint));
+        out_reg[OSIZE-1-:ISIZE] = map_data_ex << (ISIZE-(OVER_BITS*loint_lat));
 
-        if(EX_EX)begin
-            out_reg[ISIZE-1:0]  = map_data[MSIZE-1] >> (OVER_BITS*loint);
-        end
+        out_reg[ISIZE-1:0]  = map_data[MSIZE-1] >> (OVER_BITS*loint);
 
         for(KK=0;KK<NSIZE;KK=KK+1)
-            out_reg[OSIZE-1-(OVER_BITS*loint)-KK*ISIZE-:ISIZE]  = map_data[KK];
+            out_reg[OSIZE-1-(OVER_BITS*loint_lat)-KK*ISIZE-:ISIZE]  = map_data[KK];
     end
 end
+assign owr_en = owr_reg;
+assign olast_en = owr_last_reg;
+//=============================================================================//
+end else begin
+//=============================================================================//
+always@(*)begin:GEN_OUT_REG_BLOCK
+integer KK;
+    for(KK=0;KK<NSIZE;KK=KK+1)
+         out_reg[OSIZE-1-KK*ISIZE-:ISIZE] = map_data[KK];
+end
+assign owr_en = owr_reg;
+assign olast_en = owr_last_reg;
+//=============================================================================//
+end
+endgenerate
 //---<< OSIZE%ISIZE != 0 >>------------
 
 

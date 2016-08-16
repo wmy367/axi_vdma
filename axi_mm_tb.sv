@@ -13,7 +13,8 @@ module axi_mm_tb;
 localparam MODE         = "1080P@60";
 localparam  WR_THRESHOLD    = 100,
             RD_THRESHOLD    = 100,
-            PIX_DSIZE       = 16;
+            PIX_DSIZE       = 32,
+            STO_MODE        = "LINE";
 
 bit         axi_aclk;
 bit         axi_resetn;
@@ -97,9 +98,9 @@ mm_tras #(
     .AXI_DSIZE      (256        ),
     .IDSIZE         (4          ),
     .ID             (0          ),
-    .MODE               ("ONCE"         ),   //ONCE LINE
-    .DATA_TYPE          ("NATIVE"       ),    //AXIS NATIVE
-    .FRAME_SYNC         ("OFF"          )//OFF ON
+    .MODE           (STO_MODE       ),   //ONCE LINE
+    .DATA_TYPE      ("NATIVE"       ),    //AXIS NATIVE
+    .FRAME_SYNC     ("OFF"          )//OFF ON
 )mm_tras_inst(
 /*  input             */  .clock                   (pclk            ),
 /*  input             */  .rst_n                   (prst_n          ),
@@ -154,14 +155,14 @@ mm_tras #(
 bit         enable_s_to_mm = 0;
 
 mm_rev #(
-    .THRESHOLD      (RD_THRESHOLD      ),
+    .THRESHOLD      (RD_THRESHOLD   ),
     .ASIZE          (29             ),
     .BURST_LEN_SIZE (9              ),
     .IDSIZE         (4              ),
     .ID             (0              ),
     .DSIZE          (PIX_DSIZE      ),
     .AXI_DSIZE      (256            ),
-    .MODE           ("ONCE"         ),   //ONCE LINE
+    .MODE           (STO_MODE       ),   //ONCE LINE
     .DATA_TYPE      ("NATIVE"       ),    //AXIS NATIVE
     .FRAME_SYNC     ("OFF"          ),    //OFF ON
     .EX_SYNC        ("OFF"          ),     //OFF ON
@@ -240,8 +241,32 @@ initial begin
 end
 
 //--->> destruct data array test <<-------------
-integer ds_data_array [256/PIX_DSIZE-1:0];
+logic[PIX_DSIZE-1:0] ds_data_array [256/PIX_DSIZE+(256%PIX_DSIZE != 0) -1 :0];
 assign ds_data_array    = {>>{mm_rev_inst.destruct_data_inst.idata}};
 //---<< destruct data array test >>-------------
+//--->> combin_data array <<--------------------
+logic[PIX_DSIZE-1:0]    cb_data_array [256/PIX_DSIZE+(256%PIX_DSIZE != 0) -1 :0];
+assign cb_data_array    = {>>{mm_tras_inst.combin_data_inst.odata}};
+//---<< combin_data array >>--------------------
+
+//--->> 24bit <<--------------------------------
+logic[255:0]    matrix_cb [2:0];
+logic[PIX_DSIZE-1:0]    cb_data_array_2 [256*3/PIX_DSIZE-1:0];
+
+assign cb_data_array_2  = {>>{matrix_cb[0],matrix_cb[1],matrix_cb[2]}};
+
+always@(posedge mm_tras_inst.combin_data_inst.iwr_en)begin
+    while(mm_tras_inst.combin_data_inst.iwr_en)begin
+        @(posedge mm_tras_inst.combin_data_inst.owr_en);
+        @(negedge axi_aclk);
+        matrix_cb[0]    = mm_tras_inst.combin_data_inst.odata;
+        @(posedge mm_tras_inst.combin_data_inst.owr_en);
+        @(negedge axi_aclk);
+        matrix_cb[1]    = mm_tras_inst.combin_data_inst.odata;
+        @(posedge mm_tras_inst.combin_data_inst.owr_en);
+        @(negedge axi_aclk);
+        matrix_cb[2]    = mm_tras_inst.combin_data_inst.odata;
+    end
+end
 
 endmodule
