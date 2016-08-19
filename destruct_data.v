@@ -96,6 +96,8 @@ end
 
 reg         read_en;
 
+localparam  READ_MMT = EX_EX? (NSIZE-1-2) : (NSIZE-1-1);
+
 always@(posedge clock,negedge rst_n)begin
     if(~rst_n)  read_en <= 1'b0;
     else begin
@@ -104,7 +106,7 @@ always@(posedge clock,negedge rst_n)begin
                     read_en  <= 1'b1;
             else    read_en  <= 1'b0;
         end else begin
-            if(point == (NSIZE-1-2) && ord_en)
+            if(point == READ_MMT && ord_en)
                     read_en  <= 1'b1;
             else    read_en  <= 1'b0;
         end

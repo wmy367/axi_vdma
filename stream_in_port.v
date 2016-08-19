@@ -53,7 +53,7 @@ endgenerate
 assign  falign      = tip_axi_tuser;
 assign  lalign      = MODE=="LINE"? axi_tlast : 1'b0;
 assign  odata_vld   = axi_tvalid;
-assign  odata       = axi_tvalid;
+assign  odata       = axi_tdata;
 
 
 reg [15:0]      lcnt;
@@ -76,7 +76,7 @@ always@(posedge aclk,negedge aresetn)
     else            frame_blk   <= lcnt == vactive;
 
 wire	frame_blk_raising;
-wire    frame_blkq_falling;
+wire    frame_blk_falling;
 edge_generator #(
 	.MODE		("BEST" 	)  // FAST NORMAL BEST
 )gen_edge(

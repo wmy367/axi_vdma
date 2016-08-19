@@ -158,8 +158,7 @@ stream_out_port #(
 end else if(DATA_TYPE=="NATIVE") begin
 native_out_port #(
     .DSIZE      (DSIZE  ),
-    .MODE       (MODE   ),// ONCE  LINE
-    .FRAME_SYNC (FRAME_SYNC)// OFF ON
+    .MODE       (MODE   )// ONCE  LINE
 )native_out_port_inst(
 /*  input              */ .clock                (clock              ),
 /*  input              */ .rst_n                (rst_n              ),

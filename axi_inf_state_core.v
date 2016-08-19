@@ -59,7 +59,9 @@ assign  axi_awqos   = 4'b0000;
 reg [LSIZE-1:0]     awlen_reg;
 assign axi_awlen = awlen_reg;
 always@(posedge axi_aclk)
-    awlen_reg   <= req_len -1'b1;
+    if(req_len != {LSIZE{1'b0}})
+            awlen_reg   <= req_len -1'b1;
+    else    awlen_reg   <= {LSIZE{1'b0}};
 // assign  axi_awvalid = 1'b0;
 //---<< RV signals >>-------
 reg [3:0]       nstate,cstate;

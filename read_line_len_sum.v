@@ -21,34 +21,34 @@ module read_line_len_sum #(
     input [15:0]        vactive                 ,
     input [15:0]        hactive                 ,
     input               fsync                   ,
-    input               burst_req               ,
-    input               tail_req                ,
+    input               burst_done               ,
+    input               tail_done                ,
     output              tail_status             ,
     output[LSIZE-1:0]   tail_len
 );
 
-wire	burst_req_raising;
-wire    burst_req_falling;
+wire	burst_done_raising;
+wire    burst_done_falling;
 edge_generator #(
 	.MODE		("NORMAL" 	)  // FAST NORMAL BEST
 )gen_burst_edge(
 	.clk		(clock				),
 	.rst_n      (rst_n              ),
-	.in         (burst_req          ),
-	.raising    (burst_req_raising  ),
-	.falling    (burst_req_falling  )
+	.in         (burst_done          ),
+	.raising    (burst_done_raising  ),
+	.falling    (burst_done_falling  )
 );
 
-wire	tail_req_raising;
-wire    tail_req_falling;
+wire	tail_done_raising;
+wire    tail_done_falling;
 edge_generator #(
 	.MODE		("NORMAL" 	)  // FAST NORMAL BEST
 )gen_tail_edge(
 	.clk		(clock				),
 	.rst_n      (rst_n              ),
-	.in         (tail_req           ),
-	.raising    (tail_req_raising   ),
-	.falling    (tail_req_falling   )
+	.in         (tail_done           ),
+	.raising    (tail_done_raising   ),
+	.falling    (tail_done_falling   )
 );
 
 
@@ -71,9 +71,9 @@ always@(posedge clock,negedge rst_n)begin
     if(~rst_n)      len_count   <= 32'hFFFF_FFFF;
     else begin
         if(fsync)   len_count   <= num_of_AXID;
-        else if(burst_req_raising)
-                    len_count   <= len_count - int_len;
-        else if(tail_req_raising)
+        else if(burst_done_raising)
+                    len_count   <= len_count - NOR_BURST_LEN;
+        else if(tail_done_raising)
                     len_count   <= num_of_AXID;
         else        len_count   <= len_count;
 end end

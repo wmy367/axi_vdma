@@ -15,7 +15,7 @@ module fifo_status_ctrl #(
 )(
     input                   clock,
     input                   rst_n,
-    input [8:0]             count,
+    input [9:0]             count,
     input                   tail,
     input                   fifo_empty,
 
@@ -43,10 +43,10 @@ reg     burst_exec,tail_exec;
 always@(*)
     case(cstate)
     IDLE:
-        if(burst_exec && !fifo_empty)
-                nstate = NEED_WR;
-        else if(tail_exec && !fifo_empty)
+        if(tail_exec && !fifo_empty)
                 nstate = WR_TAIL;
+        else if(burst_exec && !fifo_empty)
+                nstate = NEED_WR;
         else    nstate = IDLE;
     NEED_WR:
         if(resp)
@@ -94,15 +94,68 @@ always@(posedge clock,negedge rst_n)
         burst_exec <= count > THRESHOLD;
     end
 
+reg         burst_idle;
+
+always@(posedge clock,negedge rst_n)
+    if(~rst_n)  burst_idle  <= 1'b0;
+    else
+        case(nstate)
+        IDLE:   burst_idle  <= 1'b1;
+        default:burst_idle  <= 1'b0;
+        endcase
+
+reg [3:0]       tnstate,tcstate;
+localparam  TIDLE   = 4'd0,
+            CATCHT  = 4'd1,
+            TAP_1   = 4'd4,
+            EXECT   = 4'd2,
+            TFSH    = 4'd3;
+
+always@(posedge clock,negedge rst_n)
+    if(~rst_n)  tcstate     <= TIDLE;
+    else        tcstate     <= tnstate;
+
+always@(*)
+    case(tcstate)
+    TIDLE:
+        if(tail)
+                tnstate = CATCHT;
+        else    tnstate = IDLE;
+
+    CATCHT:
+        if(burst_idle)begin
+            if(count != 10'd0)
+                    tnstate = TAP_1;
+            else    tnstate = TIDLE;
+        end else
+                tnstate = CATCHT;
+    TAP_1:      tnstate = EXECT;
+    EXECT:
+        if(done)
+                tnstate = TFSH;
+        else    tnstate = EXECT;
+    TFSH:       tnstate = TIDLE;
+    default:    tnstate = TIDLE;
+    endcase
+
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  tail_exec   <= 1'b0;
-    else begin
-        if(count != 9'd0 && !done)begin
-            if(tail_exec == 1'b0)
-                    tail_exec   <= tail;
-            else    tail_exec   <= tail_exec;       //clause
-        end else    tail_exec   <= 1'b0;
-    end
+    else
+        case(tnstate)
+        EXECT:  tail_exec   <= 1'b1;
+        default:tail_exec   <= 1'b0;
+        endcase
+
+
+// always@(posedge clock,negedge rst_n)
+//     if(~rst_n)  tail_exec   <= 1'b0;
+//     else begin
+//         if(count != 9'd0 && !done)begin
+//             if(tail_exec == 1'b0)
+//                     tail_exec   <= tail;
+//             else    tail_exec   <= tail_exec;       //clause
+//         end else    tail_exec   <= 1'b0;
+//     end
 //---<< EXECUTE? >>-----
 //--->> length <<------
 reg [LSIZE-1:0]   len_reg;
@@ -113,6 +166,7 @@ always@(posedge clock,negedge rst_n)
         case(nstate)
         NEED_WR:    len_reg <= THRESHOLD;
         WR_TAIL:    len_reg <= count;
+        WAIT_DONE:  len_reg <= len_reg;
         default:    len_reg <= {LSIZE{1'd0}};
         endcase
 

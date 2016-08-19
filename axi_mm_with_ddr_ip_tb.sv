@@ -9,14 +9,15 @@ creaded: 2016/8/12 上午9:34:45
 madified:
 ***********************************************/
 `timescale 1ns/1ps
-module axi_mm_tb;
+module axi_mm_with_ddr_ip_tb;
 localparam MODE         = "1080P@60";
 localparam  WR_THRESHOLD    = 100,
             RD_THRESHOLD    = 100,
             PIX_DSIZE       = 32,
             STO_MODE        = "LINE",
             FRAME_SYNC      = "OFF",        //only for axi_stream
-            DATA_TYPE       = "AXIS";     //NATIVE AXIS
+            DATA_TYPE       = "AXIS",     //NATIVE AXIS
+            BURST_LEN_SIZE  = 8 ;
 
 bit         axi_aclk;
 bit         axi_resetn;
@@ -27,24 +28,33 @@ bit         aresetn;
 bit         pclk;
 bit         prst_n;
 
+bit         clk_50M ;
+bit         clk_200M;
+
+bit         ui_clk  ;
+bit         ui_rst  ;
+
+assign      axi_aclk    = ui_clk;
+assign      axi_resetn  = !ui_rst;
+
 clock_rst_verb #(
 	.ACTIVE			(0			),
 	.PERIOD_CNT		(0			),
 	.RST_HOLD		(5			),
-	.FreqM			(100      	)
+	.FreqM			(50      	)
 )clock_rst_axi_mm(
-	.clock			(axi_aclk	),
-	.rst_x			(axi_resetn	)
+	.clock			(clk_50M	),
+	.rst_x			(	)
 );
 
 clock_rst_verb #(
 	.ACTIVE			(0			),
 	.PERIOD_CNT		(0			),
 	.RST_HOLD		(5			),
-	.FreqM			(100      	)
+	.FreqM			(200      	)
 )clock_rst_axi_stream(
-	.clock			(aclk	),
-	.rst_x			(aresetn	)
+	.clock			(clk_200M	),
+	.rst_x			(	)
 );
 
 clock_rst_verb #(
@@ -94,6 +104,15 @@ wire                  tans_axi_tready ;
 wire                  tans_axi_tuser  ;
 wire                  tans_axi_tlast  ;
 
+wire                  rev_aclk       ;
+wire                  rev_aclken     ;
+wire                  rev_aresetn    ;
+wire[PIX_DSIZE-1:0]   rev_axi_tdata  ;
+wire                  rev_axi_tvalid ;
+wire                  rev_axi_tready ;
+wire                  rev_axi_tuser  ;
+wire                  rev_axi_tlast  ;
+
 native_to_axis #(
     .DSIZE          (PIX_DSIZE  ),
     .FRAME_SYNC     (FRAME_SYNC )     //OFF ON
@@ -119,14 +138,14 @@ native_to_axis #(
 axi_inf #(
     .IDSIZE    (4               ),
     .ASIZE     (29              ),
-    .LSIZE     (9               ),
+    .LSIZE     (BURST_LEN_SIZE  ),
     .DSIZE     (256             )
 )axi_mm_inf(axi_aclk,axi_resetn);
 
 mm_tras #(
     .THRESHOLD      (WR_THRESHOLD  ),
     .ASIZE          (29         ),
-    .BURST_LEN_SIZE (9          ),
+    .BURST_LEN_SIZE (BURST_LEN_SIZE ),
     .DSIZE          (PIX_DSIZE  ),
     .AXI_DSIZE      (256        ),
     .IDSIZE         (4          ),
@@ -190,7 +209,7 @@ bit         enable_s_to_mm = 0;
 mm_rev #(
     .THRESHOLD      (RD_THRESHOLD   ),
     .ASIZE          (29             ),
-    .BURST_LEN_SIZE (9              ),
+    .BURST_LEN_SIZE (BURST_LEN_SIZE ),
     .IDSIZE         (4              ),
     .ID             (0              ),
     .DSIZE          (PIX_DSIZE      ),
@@ -212,14 +231,14 @@ mm_rev #(
 /*  output             */ .fifo_almost_empty       (                    ),
     //-- AXI
     //-- axi stream ---
-/*  input              */ .aclk                    (aclk                ),
-/*  input              */ .aclken                  (1'b1                ),
-/*  input              */ .aresetn                 (aresetn             ),
-/*  output[DSIZE-1:0]  */ .axi_tdata               (                    ),
-/*  output             */ .axi_tvalid              (                    ),
-/*  input              */ .axi_tready              (1'b1                ),
-/*  output             */ .axi_tuser               (                    ),
-/*  output             */ .axi_tlast               (                    ),
+/*  output             */ .aclk                    (rev_aclk            ),
+/*  output             */ .aclken                  (rev_aclken          ),
+/*  output             */ .aresetn                 (rev_aresetn         ),
+/*  output[DSIZE-1:0]  */ .axi_tdata               (rev_axi_tdata       ),
+/*  output             */ .axi_tvalid              (rev_axi_tvalid      ),
+/*  input              */ .axi_tready              (rev_axi_tready      ),
+/*  output             */ .axi_tuser               (rev_axi_tuser       ),
+/*  output             */ .axi_tlast               (rev_axi_tlast       ),
     //-- axi stream
 /*  input              */ .axi_aclk                (axi_aclk            ),
 /*  input              */ .axi_resetn              (axi_resetn          ),
@@ -251,16 +270,75 @@ mm_rev #(
 /*  output[DSIZE-1:0]  */ .odata                   (                            )
 );
 
-axi_slaver #(
-    .ASIZE  (29         ),
-    .DSIZE  (256        ),
-    .LSIZE  (9          ),
-    .ID     (0          ),
-    .ADDR_STEP  (8*8    )
-)axi_slaver_inst(
-    .inf        (axi_mm_inf)
-);
+// axi_slaver #(
+//     .ASIZE  (29         ),
+//     .DSIZE  (256        ),
+//     .LSIZE  (9          ),
+//     .ID     (0          ),
+//     .ADDR_STEP  (8*8    )
+// )axi_slaver_inst(
+//     .inf        (axi_mm_inf)
+// );
 
+DDR3_IP_CORE_WITH_MODE DDR3_IP_CORE_WITH_MODE_inst(
+// Inputs
+      // Single-ended system clock
+/*    input                         */               .sys_clk_i                 (clk_50M        ),
+      // Single-ended iodelayctrl clk (reference clock)
+/*    input                         */               .clk_ref_i                 (clk_200M       ),
+      // user interface signals
+/*    output                        */               .ui_clk                    (ui_clk         ),
+/*    output                        */               .ui_clk_sync_rst           (ui_rst         ),
+/*    output                        */               .mmcm_locked               (               ),
+
+/*    input                         */               .aresetn                   (1'b1           ),
+/*    output                        */               .app_sr_active             (),
+/*    output                        */               .app_ref_ack               (),
+/*    output                        */               .app_zq_ack                (),
+      // Slave Interface Write Address Ports
+/*    input  [C_S_AXI_ID_WIDTH-1:0]  */              .s_axi_awid                (axi_mm_inf.axi_awid    ),
+/*    input  [C_S_AXI_ADDR_WIDTH-1:0]*/              .s_axi_awaddr              (axi_mm_inf.axi_awaddr  ),
+/*    input  [7:0]                   */              .s_axi_awlen               (axi_mm_inf.axi_awlen   ),
+/*    input  [2:0]                   */              .s_axi_awsize              (axi_mm_inf.axi_awsize  ),
+/*    input  [1:0]                   */              .s_axi_awburst             (axi_mm_inf.axi_awburst ),
+/*    input  [0:0]                   */              .s_axi_awlock              (axi_mm_inf.axi_awlock  ),
+/*    input  [3:0]                   */              .s_axi_awcache             (axi_mm_inf.axi_awcache ),
+/*    input  [2:0]                   */              .s_axi_awprot              (axi_mm_inf.axi_awprot  ),
+/*    input  [3:0]                   */              .s_axi_awqos               (axi_mm_inf.axi_awqos   ),
+/*    input                          */              .s_axi_awvalid             (axi_mm_inf.axi_awvalid ),
+/*    output                         */              .s_axi_awready             (axi_mm_inf.axi_awready ),
+      // Slave Interface Write Data Ports
+/*    input  [C_S_AXI_DATA_WIDTH-1:0]     */         .s_axi_wdata               (axi_mm_inf.axi_wdata   ),
+/*    input  [(C_S_AXI_DATA_WIDTH/8)-1:0] */         .s_axi_wstrb               (axi_mm_inf.axi_wstrb   ),
+/*    input                               */         .s_axi_wlast               (axi_mm_inf.axi_wlast   ),
+/*    input                               */         .s_axi_wvalid              (axi_mm_inf.axi_wvalid  ),
+/*    output                              */         .s_axi_wready              (axi_mm_inf.axi_wready  ),
+      // Slave Interface Write Response Ports
+/*    input                               */         .s_axi_bready              (axi_mm_inf.axi_bready  ),
+/*    output [C_S_AXI_ID_WIDTH-1:0]       */         .s_axi_bid                 (axi_mm_inf.axi_bid     ),
+/*    output [1:0]                        */         .s_axi_bresp               (axi_mm_inf.axi_bresp   ),
+/*    output                              */         .s_axi_bvalid              (axi_mm_inf.axi_bvalid  ),
+      // Slave Interface Read Address Ports
+/*    input  [C_S_AXI_ID_WIDTH-1:0]       */         .s_axi_arid                (axi_mm_inf.axi_arid     ),
+/*    input  [C_S_AXI_ADDR_WIDTH-1:0]     */         .s_axi_araddr              (axi_mm_inf.axi_araddr   ),
+/*    input  [7:0]                        */         .s_axi_arlen               (axi_mm_inf.axi_arlen    ),
+/*    input  [2:0]                        */         .s_axi_arsize              (axi_mm_inf.axi_arsize   ),
+/*    input  [1:0]                        */         .s_axi_arburst             (axi_mm_inf.axi_arburst  ),
+/*    input  [0:0]                        */         .s_axi_arlock              (axi_mm_inf.axi_arlock   ),
+/*    input  [3:0]                        */         .s_axi_arcache             (axi_mm_inf.axi_arcache  ),
+/*    input  [2:0]                        */         .s_axi_arprot              (axi_mm_inf.axi_arprot   ),
+/*    input  [3:0]                        */         .s_axi_arqos               (axi_mm_inf.axi_arqos    ),
+/*    input                               */         .s_axi_arvalid             (axi_mm_inf.axi_arvalid  ),
+/*    output                              */         .s_axi_arready             (axi_mm_inf.axi_arready  ),
+      // Slave Interface Read Data Ports
+/*    input                               */         .s_axi_rready              (axi_mm_inf.axi_rready   ),
+/*    output [C_S_AXI_ID_WIDTH-1:0]       */         .s_axi_rid                 (axi_mm_inf.axi_rid      ),
+/*    output [C_S_AXI_DATA_WIDTH-1:0]     */         .s_axi_rdata               (axi_mm_inf.axi_rdata    ),
+/*    output [1:0]                        */         .s_axi_rresp               (axi_mm_inf.axi_rresp    ),
+/*    output                              */         .s_axi_rlast               (axi_mm_inf.axi_rlast    ),
+/*    output                              */         .s_axi_rvalid              (axi_mm_inf.axi_rvalid   ),
+/*    output                              */         .init_calib_complete       (init_calib_complete     )
+);
 
 initial begin
     axi_slaver_inst.slaver_recieve_burst(1000);

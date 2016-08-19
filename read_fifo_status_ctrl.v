@@ -12,28 +12,33 @@ madified:
 module read_fifo_status_ctrl #(
     parameter   THRESHOLD = 200,        // EMPTY THRESHOLD
     parameter   FULL_LEN  = 256,
-    parameter   FRAME_SYNC= "OFF",    //OFF ON
     parameter   LSIZE     = 9
 )(
     input                   clock,
     input                   rst_n,
     input                   enable,
-    input [8:0]             count,
+    input [9:0]             count,
+    input                   fsync,
     input                   tail_status,
     input [LSIZE-1:0]       tail_len,
 
     output                  burst_req,
     output                  tail_req,
+    output                  burst_done,
+    output                  tail_done,
     input                   resp,
     input                   done,
     output[LSIZE-1:0]       req_len
 );
 
 reg [3:0]           nstate,cstate;
-localparam          IDLE        =   4'd0,
+localparam          W_A_RST     =   4'd7,       //wait addr reset
+                    IDLE        =   4'd0,
                     NEED_RD     =   4'd1,
                     WAIT_DONE   =   4'd2,
-                    FSH         =   4'd3,
+                    RD_FSH      =   4'd3,
+                    TAIL_FSH    =   4'd5,
+                    W_T_DONE    =   4'd6,
                     RD_TAIL     =   4'd4;
 
 always@(posedge clock,negedge rst_n)
@@ -41,49 +46,26 @@ always@(posedge clock,negedge rst_n)
     else        cstate  <= nstate;
 
 //--->> TRIGGER <<--------------------
-// wire	trail_raising;
-// wire    trail_falling;
-// edge_generator #(
-// 	.MODE		("NORMAL" 	)  // FAST NORMAL BEST
-// )gen_tail_edge(
-// 	.clk		(clock				),
-// 	.rst_n      (rst_n              ),
-// 	.in         (tail               ),
-// 	.raising    (tail_raising       ),
-// 	.falling    (tail_falling       )
-// );
 
 reg         trigger_req;
-// reg         trigger_tail;
-// reg         tail_exec;
 
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  trigger_req <= 1'b0;
     else        trigger_req <= enable && ((FULL_LEN - THRESHOLD) > count);
 
-// always@posedge clock,negedge rst_n)begin:NEED_TAIL_PROC
-// reg     tail_req_record;
-//     if(~rst_n)begin
-//         trigger_tail    <= 1'b0;
-//         tail_req_record <= 1'b0;
-//     end else begin
-//         if(tail_raising)
-//                 tail_req_record <= 1'b1;
-//         else if(tail_exec)
-//                 tail_req_record <= 1'b0;
-//         else    tail_req_record <= tail_req_record;
-//
-//         if(enable)begin
-//                 trigger_tail    <= ((FULL_LEN - THRESHOLD) > count) && tail_req_record;
-//         end else if(tail_exec)
-//                 trigger_tail    <= 1'b0;
-//         else    trigger_tail    <= trigger_tail;
-// end end
+//---<< TRIGGER >>--------------------
+reg     rcnt_done;
 
 always@(*)
     case(cstate)
+    W_A_RST:
+        if(rcnt_done)
+                nstate = IDLE;
+        else    nstate = W_A_RST;
     IDLE:
-        if(trigger_req)begin
+        if(fsync)
+            nstate = W_A_RST;
+        else if(trigger_req)begin
             if(!tail_status)
                     nstate = NEED_RD;
             else    nstate = RD_TAIL;
@@ -92,27 +74,39 @@ always@(*)
         if(resp)
                 nstate = WAIT_DONE;
         else    nstate = NEED_RD;
-    RD_TAIL:
-        if(resp)
-                nstate = WAIT_DONE;
-        else    nstate = RD_TAIL;
     WAIT_DONE:
         if(done)
-                nstate = FSH;
+                nstate = RD_FSH;
         else    nstate = WAIT_DONE;
-    FSH:        nstate = IDLE;
+    RD_FSH:     nstate = IDLE;
+    RD_TAIL:
+        if(resp)
+                nstate = W_T_DONE;
+        else    nstate = RD_TAIL;
+    W_T_DONE:
+        if(done)
+                nstate = TAIL_FSH;
+        else    nstate = W_T_DONE;
+    TAIL_FSH:   nstate = IDLE;
     default:    nstate = IDLE;
     endcase
 
-//----->> STATE MCH <<-------------------
-reg     tail_exec;
-always@(posedge clock,negedge rst_n)
-    if(~rst_n)  tail_exec   <= 1'b0;
-    else
+//--->> WAIT ADDR RESET <<-------
+always@(posedge clock,negedge rst_n)begin:WAIT_ADDR_RST_BLOCK
+reg [4:0]       rcnt;
+    if(~rst_n)begin
+        rcnt        <= 5'd0;
+        rcnt_done   <= 1'b0;
+    end else begin
         case(nstate)
-        RD_TAIL:tail_exec   <= 1'b1;
-        default:tail_exec   <= 1'b0;
+        W_A_RST:    rcnt <= rcnt + !fsync;
+        default:    rcnt <= 5'd0;
         endcase
+
+        if(!fsync)
+                rcnt_done   <= rcnt > 5'd30;
+        else    rcnt_done   <= 1'b0;
+end end
 
 //--->> BURST REQUIRE <<--------
 reg         burst_req_reg;
@@ -154,5 +148,29 @@ always@(posedge clock,negedge rst_n)
 
 assign req_len  = length;
 //---<< length >>---------------
+//--->> DONE SIGNAL <<----------
+reg         burst_done_reg;
+reg         tail_done_reg;
+
+always@(posedge clock,negedge rst_n)begin
+    if(~rst_n)begin
+        burst_done_reg  <= 1'b0;
+        tail_done_reg   <= 1'b0;
+    end else begin
+        case(nstate)
+        RD_FSH: burst_done_reg  <= 1'b1;
+        default:burst_done_reg  <= 1'b0;
+        endcase
+
+        case(nstate)
+        TAIL_FSH:
+                tail_done_reg   <= 1'b1;
+        default:tail_done_reg   <= 1'b0;
+        endcase
+end end
+
+assign burst_done   = burst_done_reg;
+assign tail_done    = tail_done_reg;
+//---<< DONE SIGNAL >>----------
 
 endmodule

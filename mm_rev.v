@@ -34,9 +34,9 @@ module mm_rev #(
     output              fifo_almost_empty       ,
     //-- AXI
     //-- axi stream ---
-    input               aclk                    ,
-    input               aclken                  ,
-    input               aresetn                 ,
+    output              aclk                    ,
+    output              aclken                  ,
+    output              aresetn                 ,
     output[DSIZE-1:0]   axi_tdata               ,
     output              axi_tvalid              ,
     input               axi_tready              ,
@@ -124,6 +124,21 @@ out_port #(
 /*  output             */ .rd_en         (out_port_rd_en       )
 );
 
+wire out_port_falign_bc;
+
+broaden_and_cross_clk #(
+	.PHASE	    ("POSITIVE"  ),  //POSITIVE NEGATIVE
+	.LEN		(4           ),
+	.LAT		(2           )
+)broaden_and_cross_clk_inst(
+/*	input			*/    .rclk          (axi_aclk           ),
+/*	input			*/    .rd_rst_n      (axi_resetn         ),
+/*	input			*/    .wclk          (clock              ),
+/*	input			*/    .wr_rst_n      (rst_n              ),
+/*	input			*/    .d             (out_port_falign     ),
+/*	output			*/    .q             (out_port_falign_bc  )
+);
+
 //---<< OUT PORT INTERFACE >>----------
 
 wire[AXI_DSIZE-1:0]     ds_data;
@@ -147,13 +162,13 @@ destruct_data #(
 /*  output[OSIZE/8-1:0] */  .omask       (                          )
 );
 
-wire[8:0]       rd_data_count;
-wire[8:0]       wr_data_count;
+wire[9:0]       rd_data_count;
+wire[9:0]       wr_data_count;
 
 wire            fifo_rst;
 
 vdma_stream_fifo stream_fifo_inst (
-/*  input               */     .rst               (out_port_falign || !rst_n    ),
+/*  input               */     .rst               (out_port_falign_bc || !rst_n    ),
 /*  input               */     .wr_clk            (axi_aclk                     ),
 /*  input               */     .rd_clk            (clock                        ),
 /*  input [DSIZE-1:0]   */     .din               (axi_rdata                    ),
@@ -164,8 +179,8 @@ vdma_stream_fifo stream_fifo_inst (
 /*  output              */     .almost_full       (fifo_almost_full             ),
 /*  output              */     .empty             (fifo_empty                   ),
 /*  output              */     .almost_empty      (fifo_almost_empty            ),
-/*  output[8:0]         */     .rd_data_count     (rd_data_count                ),
-/*  output[8:0]         */     .wr_data_count     (wr_data_count                )
+/*  output[9:0]         */     .rd_data_count     (rd_data_count                ),
+/*  output[9:0]         */     .wr_data_count     (wr_data_count                )
 );
 
 
@@ -176,21 +191,25 @@ wire            tail_req;
 wire            req_resp;
 wire            req_done;
 wire[LSIZE-1:0] req_len;
+wire            burst_done ;
+wire            tail_done  ;
 
 read_fifo_status_ctrl #(
     .THRESHOLD  (THRESHOLD      ),// EMPTY THRESHOLD
     .FULL_LEN   (256            ),
-    .FRAME_SYNC (FRAME_SYNC     ),    //OFF ON
     .LSIZE      (LSIZE          )
 )read_fifo_status_ctrl_inst(
 /*  input                */   .clock            (axi_aclk               ),
 /*  input                */   .rst_n            (axi_resetn             ),
 /*  input                */   .enable           (enable                 ),
+/*  input                */   .fsync            (out_port_falign_bc     ),
 /*  input [8:0]          */   .count            (wr_data_count          ),
 /*  input                */   .tail_status      (tail_status            ),
 /*  input [LSIZE-1:0]    */   .tail_len         (tail_len               ),
 /*  output               */   .burst_req        (burst_req              ),
 /*  output               */   .tail_req         (tail_req               ),
+/*  output               */   .burst_done       (burst_done             ),
+/*  output               */   .tail_done        (tail_done              ),
 /*  input                */   .resp             (req_resp               ),
 /*  input                */   .done             (req_done               ),
 /*  output[LSIZE-1:0]    */   .req_len          (req_len                )
@@ -207,9 +226,9 @@ read_line_len_sum #(
 /*  input             */ .rst_n                 (axi_resetn         ),
 /*  input [15:0]      */ .vactive               (vactive            ),
 /*  input [15:0]      */ .hactive               (hactive            ),
-/*  input             */ .fsync                 (tail_req           ),
-/*  input             */ .burst_req             (burst_req          ),
-/*  input             */ .tail_req              (tail_req           ),
+/*  input             */ .fsync                 (tail_req || out_port_falign_bc      ),
+/*  input             */ .burst_done            (burst_done         ),
+/*  input             */ .tail_done             (tail_done          ),
 /*  output            */ .tail_status           (tail_status        ),
 /*  output[LSIZE-1:0] */ .tail_len              (tail_len           )
 );
@@ -222,7 +241,7 @@ a_frame_addr #(
 )a_frame_addr_inst(
 /*  input             */  .clock                    (axi_aclk           ),
 /*  input             */  .rst_n                    (axi_resetn         ),
-/*  input             */  .new_base                 (out_port_falign    ),
+/*  input             */  .new_base                 (out_port_falign_bc ),
 /*  input[ASIZE-1:0]  */  .baseaddr                 (                  0),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       (          1024*8*8 ),
 /*  input             */  .burst_req                (burst_req          ),

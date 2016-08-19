@@ -11,8 +11,7 @@ madified:
 `timescale 1ns/1ps
 module native_out_port #(
     parameter DSIZE = 24    ,
-    parameter MODE  = "ONCE"    ,// ONCE  LINE
-    parameter FRAME_SYNC = "OFF" // OFF ON
+    parameter MODE  = "ONCE"    // ONCE  LINE
 )(
     input               clock                   ,
     input               rst_n                   ,
