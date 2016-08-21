@@ -340,14 +340,15 @@ DDR3_IP_CORE_WITH_MODE DDR3_IP_CORE_WITH_MODE_inst(
 /*    output                              */         .init_calib_complete       (init_calib_complete     )
 );
 
+// initial begin
+//     axi_slaver_inst.slaver_recieve_burst(1000);
+//     axi_slaver_inst.slaver_transmit_busrt(1000);
+// end
+//
 initial begin
-    axi_slaver_inst.slaver_recieve_burst(1000);
-    axi_slaver_inst.slaver_transmit_busrt(1000);
-end
-
-initial begin
-    axi_slaver_inst.wait_rev_enough_data(238*2);
-    axi_slaver_inst.save_cache_data(PIX_DSIZE);
+    // axi_slaver_inst.wait_rev_enough_data(238*2);
+    // axi_slaver_inst.save_cache_data(PIX_DSIZE);
+    wait(init_calib_complete);
     enable_s_to_mm  = 1;
 end
 
