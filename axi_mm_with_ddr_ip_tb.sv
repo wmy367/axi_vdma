@@ -10,7 +10,7 @@ madified:
 ***********************************************/
 `timescale 1ns/1ps
 module axi_mm_with_ddr_ip_tb;
-localparam MODE         = "1080P@60";
+localparam VIDEO_FORMAT     = "1080P@60";
 localparam  WR_THRESHOLD    = 100,
             RD_THRESHOLD    = 100,
             PIX_DSIZE       = 32,
@@ -69,14 +69,15 @@ clock_rst_verb #(
 
 wire ng_vsync,ng_hsync;
 wire gen_vsync,gen_hsync,gen_de;
+logic    gen_video_enable;
 
 video_sync_generator_B2 #(
-	.MODE		(MODE)
+	.MODE		(VIDEO_FORMAT)
 )video_sync_generator_inst(
 /*	input			*/	.pclk 		(pclk  		),
 /*	input			*/	.rst_n      (prst_n 	),
 /*	input			*/	.pause		(1'b0		),
-/*	input			*/	.enable     (1'b1		),
+/*	input			*/	.enable     (gen_video_enable		),
 	//--->> Extend Sync
 /*	output			*/	.vsync  	(gen_vsync  ),
 /*	output			*/	.hsync      (gen_hsync  ),
@@ -85,6 +86,11 @@ video_sync_generator_B2 #(
 /*  output          */  .ng_vs      (ng_vsync   ),
 /*  output          */  .ng_hs      (ng_hsync   )
 );
+
+int hactive,vactive;
+
+assign hactive = video_sync_generator_inst.H_ACTIVE;
+assign vactive = video_sync_generator_inst.V_ACTIVE;
 
 int         test_data;
 always@(posedge pclk)begin
@@ -156,8 +162,8 @@ mm_tras #(
 )mm_tras_inst(
 /*  input             */  .clock                   (pclk            ),
 /*  input             */  .rst_n                   (prst_n          ),
-/*  input [15:0]      */  .vactive                 (1080            ),
-/*  input [15:0]      */  .hactive                 (1920            ),
+/*  input [15:0]      */  .vactive                 (vactive         ),
+/*  input [15:0]      */  .hactive                 (hactive         ),
 /*  input             */  .vsync                   (gen_vsync       ),
 /*  input             */  .hsync                   (gen_hsync       ),
 /*  input             */  .de                      (gen_de          ),
@@ -218,13 +224,13 @@ mm_rev #(
     .DATA_TYPE      (DATA_TYPE      ),    //AXIS NATIVE
     .FRAME_SYNC     (FRAME_SYNC     ),    //OFF ON
     .EX_SYNC        ("OFF"          ),     //OFF ON
-    .VIDEO_FORMAT   ("1080P@60"     )
+    .VIDEO_FORMAT   (VIDEO_FORMAT   )
 )mm_rev_inst(
 /*  input              */ .clock                   (pclk                ),
 /*  input              */ .rst_n                   (prst_n              ),
 /*  input              */ .enable                  (enable_s_to_mm      ),
-/*  input [15:0]       */ .vactive                 (1080                ),
-/*  input [15:0]       */ .hactive                 (1920                ),
+/*  input [15:0]       */ .vactive                 (vactive             ),
+/*  input [15:0]       */ .hactive                 (hactive             ),
 /*  input              */ .in_vsync                (gen_vsync           ),
 /*  input              */ .in_hsync                (gen_hsync           ),
 /*  input              */ .in_de                   (gen_de              ),
@@ -340,6 +346,12 @@ DDR3_IP_CORE_WITH_MODE DDR3_IP_CORE_WITH_MODE_inst(
 /*    output                              */         .init_calib_complete       (init_calib_complete     )
 );
 
+defparam DDR3_IP_CORE_WITH_MODE_inst.mem_rnk[0].gen_mem[0].u_comp_ddr3.DEBUG = 0;
+defparam DDR3_IP_CORE_WITH_MODE_inst.mem_rnk[0].gen_mem[1].u_comp_ddr3.DEBUG = 0;
+defparam DDR3_IP_CORE_WITH_MODE_inst.mem_rnk[0].gen_mem[2].u_comp_ddr3.DEBUG = 0;
+defparam DDR3_IP_CORE_WITH_MODE_inst.mem_rnk[0].gen_mem[3].u_comp_ddr3.DEBUG = 0;
+
+// assign gen_video_enable = init_calib_complete;
 // initial begin
 //     axi_slaver_inst.slaver_recieve_burst(1000);
 //     axi_slaver_inst.slaver_transmit_busrt(1000);
@@ -349,6 +361,8 @@ initial begin
     // axi_slaver_inst.wait_rev_enough_data(238*2);
     // axi_slaver_inst.save_cache_data(PIX_DSIZE);
     wait(init_calib_complete);
+    gen_video_enable = 1;
+    @(negedge gen_de);
     enable_s_to_mm  = 1;
 end
 

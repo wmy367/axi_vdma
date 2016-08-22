@@ -212,9 +212,9 @@ mm_rev #(
 /*  output             */ .fifo_almost_empty       (                    ),
     //-- AXI
     //-- axi stream ---
-/*  input              */ .aclk                    (aclk                ),
-/*  input              */ .aclken                  (1'b1                ),
-/*  input              */ .aresetn                 (aresetn             ),
+/*  output             */ .aclk                    (                ),
+/*  output             */ .aclken                  (                ),
+/*  output             */ .aresetn                 (                ),
 /*  output[DSIZE-1:0]  */ .axi_tdata               (                    ),
 /*  output             */ .axi_tvalid              (                    ),
 /*  input              */ .axi_tready              (1'b1                ),
