@@ -31,6 +31,8 @@ module mm_tras #(
     input [DSIZE-1:0]   idata                   ,
     input               fsync                   ,
     output              fifo_almost_full        ,
+    input               pend_in                 ,
+    output              pend_out                ,
     //-- AXI
     //-- axi stream ---
     input               aclk                    ,
@@ -250,6 +252,8 @@ axi_inf_write_state_core #(
 /*      input [LSIZE-1:0] */  .req_len              (req_length                 ),
 /*      input [ASIZE-1:0] */  .req_addr             (curr_address               ),
 /*      output            */  .pull_data_en         (pull_data_en               ),
+/*      input             */  .pend_in              (pend_in                    ),
+/*      output            */  .pend_out             (pend_out                   ),
 // -- AXI
 /*      input             */   .axi_aclk            (axi_aclk                   ),
 /*      input             */   .axi_resetn          (axi_resetn                 ),

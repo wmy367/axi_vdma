@@ -15,13 +15,14 @@ module axi_inf_write_state_core #(
     parameter LSIZE     = 10,
     parameter ASIZE     = 32
 )(
-        input               write_req    ,
-        output              req_resp     ,
-        output              req_done     ,
-        input [LSIZE-1:0]   req_len      ,
-        input [ASIZE-1:0]   req_addr     ,
-        output              pull_data_en ,
-
+        input              write_req     ,
+        output             req_resp      ,
+        output             req_done      ,
+        input [LSIZE-1:0]  req_len       ,
+        input [ASIZE-1:0]  req_addr      ,
+        output             pull_data_en  ,
+        input              pend_in       ,
+        output             pend_out      ,
         input              axi_aclk      ,
         input              axi_resetn    ,
         //-- addr write signals
@@ -66,6 +67,7 @@ always@(posedge axi_aclk)
 //---<< RV signals >>-------
 reg [3:0]       nstate,cstate;
 localparam      IDLE        = 4'd0,
+                PEND        = 4'd6,
                 SET_VLD     = 4'd1,
                 WAIT_LAST   = 4'd2,
                 SET_BRDY    = 4'd3,
@@ -79,9 +81,15 @@ always@(posedge axi_aclk,negedge axi_resetn)
 always@(*)
     case(cstate)
     IDLE:
-        if(write_req)
+        if(write_req)begin
+            if(pend_in)
+                    nstate = PEND;
+            else    nstate  = SET_VLD;
+        end else    nstate  = IDLE;
+    PEND:
+        if(write_req && !pend_in)
                 nstate  = SET_VLD;
-        else    nstate  = IDLE;
+        else    nstate  = PEND;
     SET_VLD:
         if(axi_awready)
                 nstate  = WAIT_LAST;
@@ -208,6 +216,19 @@ always@(posedge axi_aclk,negedge axi_resetn)
 assign req_resp = resp_reg;
 assign req_done = done_reg;
 //---<< resp done >>-------------
+//--->> pending <<---------------
+reg     pend_reg;
+always@(posedge axi_aclk,negedge axi_resetn)
+    if(~axi_resetn) pend_reg    <= 1'b0;
+    else
+        case(nstate)
+        IDLE,DONE,BERR:
+                    pend_reg    <= 1'b0;
+        default:    pend_reg    <= 1'b1;
+        endcase
+
+assign  pend_out    = pend_reg;
+//---<< pending >>---------------
 
 endmodule
 
@@ -224,7 +245,8 @@ module axi_inf_read_state_core #(
     input [LSIZE-1:0]   req_len      ,
     input [ASIZE-1:0]   req_addr     ,
     output              push_data_en ,
-
+    input               pend_in       ,
+    output              pend_out      ,
     input               axi_aclk      ,
     input               axi_resetn    ,
     //-- address read signals
@@ -269,7 +291,8 @@ reg [3:0]       cstate,nstate;
 localparam      IDLE        = 4'd0,
                 SET_VLD     = 4'd1,
                 WAIT_LAST   = 4'd2,
-                DONE        = 4'd3;
+                DONE        = 4'd3,
+                PEND        = 4'd4;
 always@(posedge axi_aclk,negedge axi_resetn)
     if(~axi_resetn) cstate <= IDLE;
     else            cstate <= nstate;
@@ -277,9 +300,15 @@ always@(posedge axi_aclk,negedge axi_resetn)
 always@(*)
     case(cstate)
     IDLE:
-        if(read_req)
+        if(read_req)begin
+            if(pend_in)
+                    nstate = PEND;
+            else    nstate = SET_VLD;
+        end else    nstate = IDLE;
+    PEND:
+        if(read_req && !pend_in)
                 nstate = SET_VLD;
-        else    nstate = IDLE;
+        else    nstate = PEND;
     SET_VLD:
         if(axi_arready)
                 nstate = WAIT_LAST;
@@ -337,4 +366,17 @@ always@(posedge axi_aclk,negedge axi_resetn)
 assign req_resp = resp_reg;
 assign req_done = done_reg;
 //---<< resp done >>-------------
+//--->> pending <<---------------
+reg     pend_reg;
+always@(posedge axi_aclk,negedge axi_resetn)
+    if(~axi_resetn) pend_reg    <= 1'b0;
+    else
+        case(nstate)
+        IDLE,DONE:
+                    pend_reg    <= 1'b0;
+        default:    pend_reg    <= 1'b1;
+        endcase
+
+assign  pend_out    = pend_reg;
+//---<< pending >>---------------
 endmodule

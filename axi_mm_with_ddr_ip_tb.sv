@@ -10,10 +10,10 @@ madified:
 ***********************************************/
 `timescale 1ns/1ps
 module axi_mm_with_ddr_ip_tb;
-localparam VIDEO_FORMAT     = "1080P@60";
+localparam VIDEO_FORMAT     = "TEST";
 localparam  WR_THRESHOLD    = 100,
             RD_THRESHOLD    = 100,
-            PIX_DSIZE       = 32,
+            PIX_DSIZE       = 16,
             STO_MODE        = "LINE",
             FRAME_SYNC      = "OFF",        //only for axi_stream
             DATA_TYPE       = "AXIS",     //NATIVE AXIS
@@ -141,6 +141,9 @@ native_to_axis #(
 /*  output             */ .axi_tlast               (tans_axi_tlast      )
 );
 
+wire    pend_trs_rev;
+wire    pend_rev_trs;
+
 axi_inf #(
     .IDSIZE    (4               ),
     .ASIZE     (29              ),
@@ -170,6 +173,8 @@ mm_tras #(
 /*  input [DSIZE-1:0] */  .idata                   (test_data[PIX_DSIZE-1:0]       ),
 /*  input             */  .fsync                   (0               ),
 /*  output            */  .fifo_almost_full        (                ),
+/*  input             */  .pend_in                 (pend_rev_trs    ),
+/*  output            */  .pend_out                (pend_trs_rev    ),
     //-- AXI
     //-- axi stream ---
 /*  input             */  .aclk                    (tans_aclk       ),
@@ -235,6 +240,8 @@ mm_rev #(
 /*  input              */ .in_hsync                (gen_hsync           ),
 /*  input              */ .in_de                   (gen_de              ),
 /*  output             */ .fifo_almost_empty       (                    ),
+/*  input              */ .pend_in                 (pend_trs_rev        ),
+/*  output             */ .pend_out                (pend_rev_trs        ),
     //-- AXI
     //-- axi stream ---
 /*  output             */ .aclk                    (rev_aclk            ),
@@ -242,7 +249,7 @@ mm_rev #(
 /*  output             */ .aresetn                 (rev_aresetn         ),
 /*  output[DSIZE-1:0]  */ .axi_tdata               (rev_axi_tdata       ),
 /*  output             */ .axi_tvalid              (rev_axi_tvalid      ),
-/*  input              */ .axi_tready              (rev_axi_tready      ),
+/*  input              */ .axi_tready              (/*rev_axi_tready*/1'b1      ),
 /*  output             */ .axi_tuser               (rev_axi_tuser       ),
 /*  output             */ .axi_tlast               (rev_axi_tlast       ),
     //-- axi stream
@@ -358,6 +365,8 @@ defparam DDR3_IP_CORE_WITH_MODE_inst.mem_rnk[0].gen_mem[3].u_comp_ddr3.DEBUG = 0
 // end
 //
 initial begin
+    gen_video_enable = 0;
+    enable_s_to_mm   = 0;
     // axi_slaver_inst.wait_rev_enough_data(238*2);
     // axi_slaver_inst.save_cache_data(PIX_DSIZE);
     wait(init_calib_complete);

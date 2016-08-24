@@ -32,6 +32,8 @@ module mm_rev #(
     input               in_hsync                ,
     input               in_de                   ,
     output              fifo_almost_empty       ,
+    input               pend_in                 ,
+    output              pend_out                ,
     //-- AXI
     //-- axi stream ---
     output              aclk                    ,
@@ -165,7 +167,6 @@ destruct_data #(
 wire[9:0]       rd_data_count;
 wire[9:0]       wr_data_count;
 
-wire            fifo_rst;
 
 vdma_stream_fifo stream_fifo_inst (
 /*  input               */     .rst               (out_port_falign_bc || !rst_n    ),
@@ -261,6 +262,8 @@ axi_inf_read_state_core #(
 /*  input [LSIZE-1:0] */.req_len            (req_len                    ),
 /*  input [ASIZE-1:0] */.req_addr           (curr_address               ),
 /*  output            */.push_data_en       (                           ),
+/*  input             */.pend_in            (pend_in                    ),
+/*  output            */.pend_out           (pend_out                   ),
 /*  input             */.axi_aclk           (axi_aclk                   ),
 /*  input             */.axi_resetn         (axi_resetn                 ),
     //-- address read signals

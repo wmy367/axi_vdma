@@ -40,16 +40,38 @@ module stream_out_port #(
     output              rd_en
 );
 
+wire    first_vld_byte_lat1;
+
+latency #(
+    .LAT    (2),
+    .DSIZE  (2)
+)lat_2_clock(
+    clock,
+    rst_n,
+    {rd_en,first_vld_byte},
+    {axi_tvalid,first_vld_byte_lat1}
+);
+
+latency #(
+    .LAT    (1),
+    .DSIZE  (DSIZE)
+)lat_1_clock(
+    clock,
+    rst_n,
+    {in_data},
+    {axi_tdata}
+);
+
 assign  aclk        = clock;
 assign  aresetn     = rst_n;
 assign  aclken      = 1'b1;
 
-assign  axi_tvalid  = rd_en;
-assign  axi_tdata   = in_data;
+// assign  axi_tvalid  = rd_en;
+// assign  axi_tdata   = in_data;
 
 assign  rd_en       = in_de && axi_tready;
 
-assign axi_tuser    = FRAME_SYNC=="OFF"? first_vld_byte : axi_fsync;
+assign axi_tuser    = FRAME_SYNC=="OFF"? first_vld_byte_lat1 : axi_fsync;
 
 wire	in_vs_raising;
 wire    in_vs_falling;
@@ -66,7 +88,7 @@ edge_generator #(
 wire	de_raising;
 wire    de_falling;
 edge_generator #(
-	.MODE		("BEST" 	)  // FAST NORMAL BEST
+	.MODE		("NORMAL" 	)  // FAST NORMAL BEST
 )gen_de_edge(
 	.clk		(clock				),
 	.rst_n      (rst_n              ),
@@ -78,6 +100,8 @@ edge_generator #(
 assign falign   = in_vs_falling;
 assign lalign   = MODE=="LINE"? de_falling : 1'b0;
 assign axi_fsync= in_vs_raising;
+
+assign axi_tlast= de_falling;
 
 reg [15:0]      lcnt;
 

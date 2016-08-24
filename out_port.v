@@ -53,6 +53,13 @@ module out_port #(
 wire        gen_vsync,gen_hsync,gen_de;
 wire        ng_vsync,ng_hsync;
 
+reg         pause;
+always@(axi_tready ,fifo_empty)begin
+    if(axi_tready == 1'b0 && fifo_empty == 1'b1)
+            pause = 1'b1;
+    else    pause = 1'b0;
+end
+
 generate
 if(EX_SYNC=="OFF")begin
 video_sync_generator_B2 #(
@@ -60,7 +67,7 @@ video_sync_generator_B2 #(
 )video_sync_generator_inst(
 /*	input			*/	.pclk 		(clock		),
 /*	input			*/	.rst_n      (rst_n 	    ),
-/*	input			*/	.pause		(~axi_tready && fifo_empty),
+/*	input			*/	.pause		(pause      ),
 /*	input			*/	.enable     (enable_inner_sync		),
 	//--->> Extend Sync
 /*	output			*/	.vsync  	(gen_vsync  ),
