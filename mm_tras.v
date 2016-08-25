@@ -209,19 +209,44 @@ wire    req_resp     ;
 wire    req_done     ;
 wire[BURST_LEN_SIZE-1:0]    req_length;
 
+wire[BURST_LEN_SIZE-1:0]    tail_len;
+wire    burst_done,tail_done;
+
 fifo_status_ctrl #(
-    .THRESHOLD      (THRESHOLD  )
+    .THRESHOLD      (THRESHOLD  ),
+    .LSIZE          (BURST_LEN_SIZE)
 )fifo_status_ctrl_inst(
 /*  input             */    .clock             (rd_clk              ),
 /*  input             */    .rst_n             (rd_rst_n            ),
 /*  input             */    .fifo_empty        (fifo_empty          ),
 /*  input [9:0]       */    .count             (rd_data_count       ),
 /*  input             */    .tail              (in_port_lalign_bc   ),      // not frame tail
+/*  input [LSIZE-1:0] */    .tail_len          (tail_len            ),
 /*  output            */    .burst_req         (burst_req           ),
 /*  output            */    .tail_req          (tail_req            ),      //line tail
+/*  output            */    .burst_done        (burst_done          ),
+/*  output            */    .tail_done         (tail_done           ),
 /*  input             */    .resp              (req_resp            ),
 /*  input             */    .done              (req_done            ),
 /*  output[LSIZE-1:0] */    .req_len           (req_length          )
+);
+
+write_line_len_sum #(
+    .NOR_BURST_LEN      (THRESHOLD  ),
+    .MODE               (MODE       ),   //ONCE LINE
+    .AXI_DSIZE          (AXI_DSIZE  ),
+    .DSIZE              (DSIZE      ),
+    .LSIZE              (BURST_LEN_SIZE)
+)write_line_len_sum_inst(
+/*  input             */  .clock                (rd_clk              ),
+/*  input             */  .rst_n                (rd_rst_n            ),
+/*  input [15:0]      */  .vactive              (vactive             ),
+/*  input [15:0]      */  .hactive              (hactive             ),
+/*  input             */  .fsync                (in_port_falign_bc || tail_req ),
+/*  input             */  .burst_done           (burst_done          ),
+/*  input             */  .tail_done            (tail_done           ),
+/*  output            */  .tail_status          (                    ),
+/*  output[LSIZE-1:0] */  .tail_len             (tail_len            )
 );
 
 wire[ASIZE-1:0]         curr_address;

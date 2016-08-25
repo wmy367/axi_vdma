@@ -17,10 +17,13 @@ module fifo_status_ctrl #(
     input                   rst_n,
     input [9:0]             count,
     input                   tail,
+    input [LSIZE-1:0]       tail_len,
     input                   fifo_empty,
 
     output                  burst_req,
     output                  tail_req,
+    output                  burst_done,
+    output                  tail_done,
     input                   resp,
     input                   done,
     output[LSIZE-1:0]       req_len
@@ -31,7 +34,9 @@ localparam          IDLE        =   4'd0,
                     NEED_WR     =   4'd1,
                     WAIT_DONE   =   4'd2,
                     FSH         =   4'd3,
-                    WR_TAIL     =   4'd4;
+                    WR_TAIL     =   4'd4,
+                    TAIL_DONE   =   4'd5,
+                    TAIL_FSH    =   4'd6;
 
 
 always@(posedge clock,negedge rst_n)
@@ -52,15 +57,21 @@ always@(*)
         if(resp)
                 nstate = WAIT_DONE;
         else    nstate = NEED_WR;
-    WR_TAIL:
-        if(resp)
-                nstate = WAIT_DONE;
-        else    nstate = WR_TAIL;
     WAIT_DONE:
         if(done)
                 nstate = FSH;
         else    nstate = WAIT_DONE;
     FSH:        nstate = IDLE;
+    //------------//
+    WR_TAIL:
+        if(resp)
+                nstate = WAIT_DONE;
+        else    nstate = WR_TAIL;
+    TAIL_DONE:
+        if(done)
+                nstate = TAIL_FSH;
+        else    nstate = TAIL_DONE;
+    TAIL_FSH:   nstate = IDLE;
     default:    nstate = IDLE;
     endcase
 
@@ -165,14 +176,33 @@ always@(posedge clock,negedge rst_n)
     else
         case(nstate)
         NEED_WR:    len_reg <= THRESHOLD;
-        WR_TAIL:    len_reg <= count;
+        WR_TAIL:    len_reg <= tail_len;
         WAIT_DONE:  len_reg <= len_reg;
         default:    len_reg <= {LSIZE{1'd0}};
         endcase
 
 assign  req_len = len_reg;
 //---<< length >>------
+//--->> DONE SIGNAL <<-------
+reg     burst_done_reg,tail_done_reg;
+always@(posedge clock,negedge rst_n)
+    if(~rst_n)  burst_done_reg  <= 1'b0;
+    else
+        case(nstate)
+        FSH:    burst_done_reg  <= 1'b1;
+        default:burst_done_reg  <= 1'b0;
+        endcase
 
+always@(posedge clock,negedge rst_n)
+    if(~rst_n)  tail_done_reg  <= 1'b0;
+    else
+        case(nstate)
+        FSH:    tail_done_reg  <= 1'b1;
+        default:tail_done_reg  <= 1'b0;
+        endcase
 
+assign burst_done   = burst_done_reg;
+assign tail_done    = tail_done_reg;
+//---<< DONE SIGNAL >>-------
 
 endmodule

@@ -10,7 +10,7 @@ madified:
 ***********************************************/
 `timescale 1ns/1ps
 module axi_mm_tb;
-localparam MODE         = "1080P@60";
+localparam MODE         = "TEST";
 localparam  WR_THRESHOLD    = 100,
             RD_THRESHOLD    = 100,
             PIX_DSIZE       = 32,
@@ -76,6 +76,11 @@ video_sync_generator_B2 #(
 /*  output          */  .ng_hs      (ng_hsync   )
 );
 
+int hactive,vactive;
+
+assign hactive = video_sync_generator_inst.H_ACTIVE;
+assign vactive = video_sync_generator_inst.V_ACTIVE;
+
 int         test_data;
 always@(posedge pclk)begin
     if(gen_vsync)
@@ -137,8 +142,8 @@ mm_tras #(
 )mm_tras_inst(
 /*  input             */  .clock                   (pclk            ),
 /*  input             */  .rst_n                   (prst_n          ),
-/*  input [15:0]      */  .vactive                 (1080            ),
-/*  input [15:0]      */  .hactive                 (1920            ),
+/*  input [15:0]      */  .vactive                 (vactive            ),
+/*  input [15:0]      */  .hactive                 (hactive            ),
 /*  input             */  .vsync                   (gen_vsync       ),
 /*  input             */  .hsync                   (gen_hsync       ),
 /*  input             */  .de                      (gen_de          ),
@@ -204,8 +209,8 @@ mm_rev #(
 /*  input              */ .clock                   (pclk                ),
 /*  input              */ .rst_n                   (prst_n              ),
 /*  input              */ .enable                  (enable_s_to_mm      ),
-/*  input [15:0]       */ .vactive                 (1080                ),
-/*  input [15:0]       */ .hactive                 (1920                ),
+/*  input [15:0]       */ .vactive                 (vactive                ),
+/*  input [15:0]       */ .hactive                 (hactive                ),
 /*  input              */ .in_vsync                (gen_vsync           ),
 /*  input              */ .in_hsync                (gen_hsync           ),
 /*  input              */ .in_de                   (gen_de              ),
@@ -264,7 +269,7 @@ axi_slaver #(
 
 initial begin
     axi_slaver_inst.slaver_recieve_burst(1000);
-    axi_slaver_inst.slaver_transmit_busrt(1000);
+//    axi_slaver_inst.slaver_transmit_busrt(1000);
 end
 
 initial begin

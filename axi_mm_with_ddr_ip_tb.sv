@@ -13,8 +13,8 @@ module axi_mm_with_ddr_ip_tb;
 localparam VIDEO_FORMAT     = "TEST";
 localparam  WR_THRESHOLD    = 100,
             RD_THRESHOLD    = 100,
-            PIX_DSIZE       = 16,
-            STO_MODE        = "LINE",
+            PIX_DSIZE       = 24,
+            STO_MODE        = "ONCE",
             FRAME_SYNC      = "OFF",        //only for axi_stream
             DATA_TYPE       = "AXIS",     //NATIVE AXIS
             BURST_LEN_SIZE  = 8 ;
@@ -98,7 +98,7 @@ always@(posedge pclk)begin
             test_data   <= 0;
     else if(gen_de)
             test_data   <= test_data + 1;
-    else    test_data   <= test_data;
+    else    test_data   <= 0;
 end
 
 wire                  tans_aclk       ;
@@ -371,7 +371,8 @@ initial begin
     // axi_slaver_inst.save_cache_data(PIX_DSIZE);
     wait(init_calib_complete);
     gen_video_enable = 1;
-    @(negedge gen_de);
+    repeat(2)
+        @(negedge gen_de);
     enable_s_to_mm  = 1;
 end
 
@@ -403,5 +404,34 @@ always@(posedge mm_tras_inst.combin_data_inst.iwr_en)begin
         matrix_cb[2]    = mm_tras_inst.combin_data_inst.odata;
     end
 end
+
+//--->> AXI4 MORROR <<--------------
+axi_mirror #(
+    .ASIZE      (29     ),
+    .DSIZE      (256    ),
+    .IDSIZE     (4      ),
+    .LSIZE      (BURST_LEN_SIZE),
+    .ID         (0      ),
+    .ADDR_STEP  (1      )
+)axi_mirror_inst(
+    .inf        (axi_mm_inf)
+);
+
+initial begin
+    axi_mirror_inst.slaver_recieve_burst(100);
+    axi_mirror_inst.slaver_transmit_busrt(100);
+end
+
+initial begin
+    axi_mirror_inst.wait_rev_enough_data(1000);
+    axi_mirror_inst.save_rev_cache_data(PIX_DSIZE);
+end
+
+initial begin
+    axi_mirror_inst.wait_trs_enough_data(1000);
+    axi_mirror_inst.save_trs_cache_data(PIX_DSIZE);
+end
+
+//---<< AXI4 MORROR >>--------------
 
 endmodule
