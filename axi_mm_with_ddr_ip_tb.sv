@@ -13,7 +13,7 @@ module axi_mm_with_ddr_ip_tb;
 localparam VIDEO_FORMAT     = "TEST";
 localparam  WR_THRESHOLD    = 100,
             RD_THRESHOLD    = 100,
-            PIX_DSIZE       = 24,
+            PIX_DSIZE       = 32,
             STO_MODE        = "ONCE",
             FRAME_SYNC      = "OFF",        //only for axi_stream
             DATA_TYPE       = "AXIS",     //NATIVE AXIS
@@ -377,19 +377,30 @@ initial begin
 end
 
 //--->> destruct data array test <<-------------
+genvar KK;
 logic[PIX_DSIZE-1:0] ds_data_array [256/PIX_DSIZE+(256%PIX_DSIZE != 0) -1 :0];
-assign ds_data_array    = {>>{mm_rev_inst.destruct_data_inst.idata}};
+generate
+for(KK=0;KK<256/PIX_DSIZE+(256%PIX_DSIZE != 0);KK++)begin : ASSIGNMENT_DS_ARRAY_BLOCK
+    assign ds_data_array[KK]    = mm_rev_inst.destruct_data_inst.idata[0+KK*PIX_DSIZE+:PIX_DSIZE];
+end
+endgenerate
+// assign ds_data_array    = {>>{mm_rev_inst.destruct_data_inst.idata}};
 //---<< destruct data array test >>-------------
 //--->> combin_data array <<--------------------
 logic[PIX_DSIZE-1:0]    cb_data_array [256/PIX_DSIZE+(256%PIX_DSIZE != 0) -1 :0];
-assign cb_data_array    = {>>{mm_tras_inst.axi_wdata}};
+generate
+for(KK=0;KK<256/PIX_DSIZE+(256%PIX_DSIZE != 0);KK++)begin : ASSIGNMENT_CB_ARRAY_BLOCK
+    assign cb_data_array[KK]    = mm_tras_inst.axi_wdata[0+KK*PIX_DSIZE+:PIX_DSIZE];
+end
+endgenerate
+// assign cb_data_array    = {>>{mm_tras_inst.axi_wdata}};
 //---<< combin_data array >>--------------------
 
 //--->> 24bit <<--------------------------------
 logic[255:0]    matrix_cb [2:0];
 logic[PIX_DSIZE-1:0]    cb_data_array_2 [256*3/PIX_DSIZE-1:0];
 
-assign cb_data_array_2  = {>>{matrix_cb[0],matrix_cb[1],matrix_cb[2]}};
+// assign cb_data_array_2  = {>>{matrix_cb[0],matrix_cb[1],matrix_cb[2]}};
 
 always@(posedge mm_tras_inst.combin_data_inst.iwr_en)begin
     while(mm_tras_inst.combin_data_inst.iwr_en)begin
