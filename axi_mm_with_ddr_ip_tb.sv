@@ -13,7 +13,7 @@ module axi_mm_with_ddr_ip_tb;
 localparam VIDEO_FORMAT     = "TEST";
 localparam  WR_THRESHOLD    = 100,
             RD_THRESHOLD    = 100,
-            PIX_DSIZE       = 32,
+            PIX_DSIZE       = 24,
             STO_MODE        = "ONCE",
             FRAME_SYNC      = "OFF",        //only for axi_stream
             DATA_TYPE       = "AXIS",     //NATIVE AXIS
@@ -380,7 +380,7 @@ end
 genvar KK;
 logic[PIX_DSIZE-1:0] ds_data_array [256/PIX_DSIZE+(256%PIX_DSIZE != 0) -1 :0];
 generate
-for(KK=0;KK<256/PIX_DSIZE+(256%PIX_DSIZE != 0);KK++)begin : ASSIGNMENT_DS_ARRAY_BLOCK
+for(KK=0;KK<256/PIX_DSIZE;KK++)begin : ASSIGNMENT_DS_ARRAY_BLOCK
     assign ds_data_array[KK]    = mm_rev_inst.destruct_data_inst.idata[0+KK*PIX_DSIZE+:PIX_DSIZE];
 end
 endgenerate
@@ -389,7 +389,7 @@ endgenerate
 //--->> combin_data array <<--------------------
 logic[PIX_DSIZE-1:0]    cb_data_array [256/PIX_DSIZE+(256%PIX_DSIZE != 0) -1 :0];
 generate
-for(KK=0;KK<256/PIX_DSIZE+(256%PIX_DSIZE != 0);KK++)begin : ASSIGNMENT_CB_ARRAY_BLOCK
+for(KK=0;KK<256/PIX_DSIZE;KK++)begin : ASSIGNMENT_CB_ARRAY_BLOCK
     assign cb_data_array[KK]    = mm_tras_inst.axi_wdata[0+KK*PIX_DSIZE+:PIX_DSIZE];
 end
 endgenerate

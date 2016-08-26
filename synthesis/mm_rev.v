@@ -21,10 +21,12 @@ module mm_rev #(
     parameter DATA_TYPE = "AXIS",    //AXIS NATIVE
     parameter FRAME_SYNC= "OFF",    //OFF ON
     parameter EX_SYNC   = "OFF",     //OFF ON
-    parameter VIDEO_FORMAT= "1080P@60"
+    parameter VIDEO_FORMAT= "1080P@60",
+    parameter INC_ADDR_STEP=1024
 )(
     input               clock                   ,
     input               rst_n                   ,
+    input [ASIZE-1:0]   baseaddr                ,
     input               enable                  ,
     input [15:0]        vactive                 ,
     input [15:0]        hactive                 ,
@@ -95,8 +97,8 @@ out_port #(
 )out_port_inst(
 /*  input              */ .clock         (clock                ),
 /*  input              */ .rst_n         (rst_n                ),
-/*  input [15:0]       */ .vactive       (vactive              ),
-/*  input [15:0]       */ .hactive       (hactive              ),
+/*  input [15:0]       */ .vactive       (vactive              ),//for blank ealign, now is't unused
+/*  input [15:0]       */ .hactive       (hactive              ),//unused
 /*  input              */ .in_vsync      (in_vsync             ),
 /*  input              */ .in_hsync      (in_hsync             ),
 /*  input              */ .in_de         (in_de                ),
@@ -225,8 +227,8 @@ read_line_len_sum #(
 )read_line_len_sum_inst(
 /*  input             */ .clock                 (axi_aclk           ),
 /*  input             */ .rst_n                 (axi_resetn         ),
-/*  input [15:0]      */ .vactive               (vactive            ),
-/*  input [15:0]      */ .hactive               (hactive            ),
+/*  input [15:0]      */ .vactive               (vactive            ),//calculate line length
+/*  input [15:0]      */ .hactive               (hactive            ),//calculate line length
 /*  input             */ .fsync                 (tail_req || out_port_falign_bc      ),
 /*  input             */ .burst_done            (burst_done         ),
 /*  input             */ .tail_done             (tail_done          ),
@@ -243,8 +245,8 @@ a_frame_addr #(
 /*  input             */  .clock                    (axi_aclk           ),
 /*  input             */  .rst_n                    (axi_resetn         ),
 /*  input             */  .new_base                 (out_port_falign_bc ),
-/*  input[ASIZE-1:0]  */  .baseaddr                 (                  0),
-/*  input[ASIZE_1:0]  */  .line_increate_addr       (          1024*8*8 ),
+/*  input[ASIZE-1:0]  */  .baseaddr                 (baseaddr           ),
+/*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
 /*  input             */  .burst_req                (burst_req          ),
 /*  input             */  .tail_req                 (tail_req           ),
 /*  output[ASIZE-1:0] */  .out_addr                 (curr_address       )

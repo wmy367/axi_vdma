@@ -19,10 +19,12 @@ module mm_tras #(
     parameter ID        = 0,
     parameter MODE      = "ONCE",   //ONCE LINE
     parameter DATA_TYPE = "AXIS",    //AXIS NATIVE
-    parameter FRAME_SYNC= "OFF"    //OFF ON
+    parameter FRAME_SYNC= "OFF",    //OFF ON
+    parameter INC_ADDR_STEP = 1024
 )(
     input               clock                   ,
     input               rst_n                   ,
+    input [ASIZE-1:0]   baseaddr                ,
     input [15:0]        vactive                 ,
     input [15:0]        hactive                 ,
     input               vsync                   ,
@@ -103,8 +105,8 @@ in_port #(
 )in_port_inst(
 /*  input              */ .clock                   (clock                   ),
 /*  input              */ .rst_n                   (rst_n                   ),
-/*  input [15:0]       */ .vactive                 (vactive                 ),
-/*  input [15:0]       */ .hactive                 (hactive                 ),
+/*  input [15:0]       */ .vactive                 (vactive                 ),//for blank ealign, now is't unused
+/*  input [15:0]       */ .hactive                 (hactive                 ),//unused
 /*  input              */ .vsync                   (vsync                   ),
 /*  input              */ .hsync                   (hsync                   ),
 /*  input              */ .de                      (de                      ),
@@ -240,8 +242,8 @@ write_line_len_sum #(
 )write_line_len_sum_inst(
 /*  input             */  .clock                (rd_clk              ),
 /*  input             */  .rst_n                (rd_rst_n            ),
-/*  input [15:0]      */  .vactive              (vactive             ),
-/*  input [15:0]      */  .hactive              (hactive             ),
+/*  input [15:0]      */  .vactive              (vactive             ), //calculate line length
+/*  input [15:0]      */  .hactive              (hactive             ), //calculate line length
 /*  input             */  .fsync                (in_port_falign_bc || tail_req ),
 /*  input             */  .burst_done           (burst_done          ),
 /*  input             */  .tail_done            (tail_done           ),
@@ -258,8 +260,8 @@ a_frame_addr #(
 /*  input             */  .clock                    (rd_clk             ),
 /*  input             */  .rst_n                    (rd_rst_n           ),
 /*  input             */  .new_base                 (in_port_falign_bc  ),
-/*  input[ASIZE-1:0]  */  .baseaddr                 (                  0),
-/*  input[ASIZE_1:0]  */  .line_increate_addr       (          1024*8*8 ),
+/*  input[ASIZE-1:0]  */  .baseaddr                 (baseaddr           ),
+/*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
 /*  input             */  .burst_req                (burst_req          ),
 /*  input             */  .tail_req                 (tail_req           ),
 /*  output[ASIZE-1:0] */  .out_addr                 (curr_address       )
