@@ -49,7 +49,6 @@ reg [ISIZE-1:0]     map_data_ex ;
 
 reg [6:0]           point;
 reg [6:0]           loint;
-reg [1:0]           ex_flag;
 
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  point   <= 7'd0;
@@ -63,7 +62,6 @@ always@(posedge clock,negedge rst_n)
                     point   <= 7'd0;
             else    point   <= iwr_en? 7'd0 : point;
         else if(iwr_en)begin
-            // if(/**/ (point == (MSIZE-1) && ex_flag != 2'b00)/**/ || (point==(NSIZE-1) && ex_flag == 2'b00))
             if(/**/
                 (
                     point == (MSIZE-1)

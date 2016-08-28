@@ -42,7 +42,6 @@ module in_port #(
     output[DSIZE-1:0]   odata
 );
 
-reg     chk_fifo_empty;
 
 generate
 if(DATA_TYPE == "AXIS")begin

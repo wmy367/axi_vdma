@@ -10,7 +10,8 @@ madified:
 ***********************************************/
 `timescale 1ns/1ps
 module simple_video_gen #(
-    parameter MODE = "1080P@60"
+    parameter MODE = "1080P@60",
+    parameter DSIZE= 24
 )(
     input       enable,
     video_native_inf.compact_out    inf,
@@ -45,8 +46,9 @@ end
 
 assign inf.data = test_data;
 
+
 native_to_axis #(
-    .DSIZE          (inf.DSIZE  ),
+    .DSIZE          (DSIZE  ),
     .FRAME_SYNC     ("OFF"      )     //OFF ON
 )native_to_axis_inst(
 /*  input              */ .clock                   (inf.pclk    ),
@@ -55,7 +57,7 @@ native_to_axis #(
 /*  input              */ .vsync                   (ng_vsync    ),
 /*  input              */ .hsync                   (ng_hsync    ),
 /*  input              */ .de                      (inf.de      ),
-/*  input [DSIZE-1:0]  */ .idata                   (test_data[inf.DSIZE-1:0]),
+/*  input [DSIZE-1:0]  */ .idata                   (test_data[DSIZE-1:0]),
     //-- axi stream ---
 /*  output             */ .aclk                    (    ),
 /*  output             */ .aclken                  (    ),

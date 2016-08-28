@@ -9,8 +9,7 @@ Version: VERA.0.0
 creaded: 2016/8/26 下午2:42:27
 madified:
 ***********************************************/
-interface vdma_baseaddr_ctrl_inf (
-);
+interface vdma_baseaddr_ctrl_inf;
 logic					clk        	;
 logic					rst_n      	;
 logic					vs       	;

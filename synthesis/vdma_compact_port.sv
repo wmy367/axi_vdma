@@ -68,6 +68,9 @@ logic[ASIZE-1:0]    wr_baseaddr,rd_baseaddr;
 
 vdma_baseaddr_ctrl_inf base_addr_inf();
 
+assign base_addr_inf.clk = vin.pclk;
+assign base_addr_inf.rst_n = vin.prst_n;
+
 generate
 if(PORT_MODE == "WRITE" || PORT_MODE == "BOTH")begin
 //===============================================================//
@@ -158,21 +161,36 @@ always@(*) begin
         wr_baseaddr = BASE_ADDR_0;
     endcase
 end
+
+always@(*) begin
+    case(ctrl_ex_ba0.point)
+    0:  rd_baseaddr = BASE_ADDR_0;
+    1:  rd_baseaddr = BASE_ADDR_1;
+    2:  rd_baseaddr = BASE_ADDR_2;
+    3:  rd_baseaddr = BASE_ADDR_3;
+    4:  rd_baseaddr = BASE_ADDR_4;
+    5:  rd_baseaddr = BASE_ADDR_5;
+    6:  rd_baseaddr = BASE_ADDR_6;
+    7:  rd_baseaddr = BASE_ADDR_7;
+    default:
+        rd_baseaddr = BASE_ADDR_0;
+    endcase
+end
 end else begin//===========================================//
 assign pend_trs_rev = 1'b0;
 
 always@(*) begin
     case(ex_ba_ctrl.point)
-    0:  wr_baseaddr = BASE_ADDR_0;
-    1:  wr_baseaddr = BASE_ADDR_1;
-    2:  wr_baseaddr = BASE_ADDR_2;
-    3:  wr_baseaddr = BASE_ADDR_3;
-    4:  wr_baseaddr = BASE_ADDR_4;
-    5:  wr_baseaddr = BASE_ADDR_5;
-    6:  wr_baseaddr = BASE_ADDR_6;
-    7:  wr_baseaddr = BASE_ADDR_7;
+    0:  rd_baseaddr = BASE_ADDR_0;
+    1:  rd_baseaddr = BASE_ADDR_1;
+    2:  rd_baseaddr = BASE_ADDR_2;
+    3:  rd_baseaddr = BASE_ADDR_3;
+    4:  rd_baseaddr = BASE_ADDR_4;
+    5:  rd_baseaddr = BASE_ADDR_5;
+    6:  rd_baseaddr = BASE_ADDR_6;
+    7:  rd_baseaddr = BASE_ADDR_7;
     default:
-        wr_baseaddr = BASE_ADDR_0;
+        rd_baseaddr = BASE_ADDR_0;
     endcase
 end
 end//=============================================//

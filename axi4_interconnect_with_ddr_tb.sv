@@ -13,7 +13,10 @@ module axi4_interconnet_with_ddr_tb;
 localparam VIDEO_FORMAT     = "TEST";
 localparam  WR_THRESHOLD    = 100,
             RD_THRESHOLD    = 100,
-            PIX_DSIZE       = 24,
+            THRESHOLD       = 100,
+            ASIZE           = 29,
+            PIX_DSIZE       = 32,
+            AXI_DSIZE       = 256,
             STO_MODE        = "ONCE",
             FRAME_SYNC      = "OFF",        //only for axi_stream
             DATA_TYPE       = "AXIS",     //NATIVE AXIS
@@ -110,10 +113,10 @@ AXI4_INFCNT AXI4_INFCNT_inst(
 /*  input          */   .S00_AXI_WLAST                   (axi_s00_inf.axi_wlast      ),
 /*  input          */   .S00_AXI_WVALID                  (axi_s00_inf.axi_wvalid     ),
 /*  output         */   .S00_AXI_WREADY                  (axi_s00_inf.axi_wready     ),
-/*  output [0:0]   */   .S00_AXI_BID                     (axi_s00_inf.axi_bready     ),
-/*  output [1:0]   */   .S00_AXI_BRESP                   (axi_s00_inf.axi_bid        ),
-/*  output         */   .S00_AXI_BVALID                  (axi_s00_inf.axi_bresp      ),
-/*  input          */   .S00_AXI_BREADY                  (axi_s00_inf.axi_bvalid     ),
+/*  output [0:0]   */   .S00_AXI_BID                     (axi_s00_inf.axi_bid        ),
+/*  output [1:0]   */   .S00_AXI_BRESP                   (axi_s00_inf.axi_bresp      ),
+/*  output         */   .S00_AXI_BVALID                  (axi_s00_inf.axi_bvalid     ),
+/*  input          */   .S00_AXI_BREADY                  (axi_s00_inf.axi_bready     ),
 /*  input [0:0]    */   .S00_AXI_ARID                    (axi_s00_inf.axi_arid       ),
 /*  input [28:0]   */   .S00_AXI_ARADDR                  (axi_s00_inf.axi_araddr     ),
 /*  input [7:0]    */   .S00_AXI_ARLEN                   (axi_s00_inf.axi_arlen      ),
@@ -149,10 +152,10 @@ AXI4_INFCNT AXI4_INFCNT_inst(
 /*  input          */   .S01_AXI_WLAST                   (axi_s01_inf.axi_wlast      ),
 /*  input          */   .S01_AXI_WVALID                  (axi_s01_inf.axi_wvalid     ),
 /*  output         */   .S01_AXI_WREADY                  (axi_s01_inf.axi_wready     ),
-/*  output [0:0]   */   .S01_AXI_BID                     (axi_s01_inf.axi_bready     ),
-/*  output [1:0]   */   .S01_AXI_BRESP                   (axi_s01_inf.axi_bid        ),
-/*  output         */   .S01_AXI_BVALID                  (axi_s01_inf.axi_bresp      ),
-/*  input          */   .S01_AXI_BREADY                  (axi_s01_inf.axi_bvalid     ),
+/*  output [0:0]   */   .S01_AXI_BID                     (axi_s01_inf.axi_bid        ),
+/*  output [1:0]   */   .S01_AXI_BRESP                   (axi_s01_inf.axi_bresp      ),
+/*  output         */   .S01_AXI_BVALID                  (axi_s01_inf.axi_bvalid     ),
+/*  input          */   .S01_AXI_BREADY                  (axi_s01_inf.axi_bready     ),
 /*  input [0:0]    */   .S01_AXI_ARID                    (axi_s01_inf.axi_arid       ),
 /*  input [28:0]   */   .S01_AXI_ARADDR                  (axi_s01_inf.axi_araddr     ),
 /*  input [7:0]    */   .S01_AXI_ARLEN                   (axi_s01_inf.axi_arlen      ),
@@ -188,10 +191,10 @@ AXI4_INFCNT AXI4_INFCNT_inst(
 /*  output         */   .M00_AXI_WLAST                   (axi_m00_inf.axi_wlast          ),
 /*  output         */   .M00_AXI_WVALID                  (axi_m00_inf.axi_wvalid         ),
 /*  input          */   .M00_AXI_WREADY                  (axi_m00_inf.axi_wready         ),
-/*  input [3:0]    */   .M00_AXI_BID                     (axi_m00_inf.axi_bready         ),
-/*  input [1:0]    */   .M00_AXI_BRESP                   (axi_m00_inf.axi_bid            ),
-/*  input          */   .M00_AXI_BVALID                  (axi_m00_inf.axi_bresp          ),
-/*  output         */   .M00_AXI_BREADY                  (axi_m00_inf.axi_bvalid         ),
+/*  input [3:0]    */   .M00_AXI_BID                     (axi_m00_inf.axi_bid            ),
+/*  input [1:0]    */   .M00_AXI_BRESP                   (axi_m00_inf.axi_bresp          ),
+/*  input          */   .M00_AXI_BVALID                  (axi_m00_inf.axi_bvalid         ),
+/*  output         */   .M00_AXI_BREADY                  (axi_m00_inf.axi_bready         ),
 /*  output [3:0]   */   .M00_AXI_ARID                    (axi_m00_inf.axi_arid           ),
 /*  output [28:0]  */   .M00_AXI_ARADDR                  (axi_m00_inf.axi_araddr         ),
 /*  output [7:0]   */   .M00_AXI_ARLEN                   (axi_m00_inf.axi_arlen          ),
@@ -260,8 +263,11 @@ vdma_baseaddr_ctrl_inf port0_ba_tmp1();
 vdma_baseaddr_ctrl_inf port0_ba_tmp2();
 vdma_baseaddr_ctrl_inf port0_ba_tmp3();
 //----<< INTERFACE DEFINE >>----------------
+logic[15:0]     vactive0;
+logic[15:0]     hactive0;
 simple_video_gen #(
-    .MODE   ("1080P@60" )
+    .MODE   (VIDEO_FORMAT   ),
+    .DSIZE  (PIX_DSIZE      )
 )simple_video_gen_inst0(
 /*    input       */    .enable (1'b1       ),
 /*    video_native_inf.compact_out */
@@ -270,10 +276,14 @@ simple_video_gen #(
                         .axis   (axi_stream_inf0)
 );
 
+assign vactive0 = simple_video_gen_inst0.video_sync_generator_inst.V_ACTIVE;
+assign hactive0 = simple_video_gen_inst0.video_sync_generator_inst.H_ACTIVE;
+
 logic video_native_ex0_en;
 
 simple_video_gen #(
-    .MODE   ("1080P@60" )
+    .MODE   (VIDEO_FORMAT ),
+    .DSIZE  (PIX_DSIZE      )
 )simple_video_gen_ex0(
 /*    input       */    .enable (video_native_ex0_en ),
 /*    video_native_inf.compact_out */
@@ -289,8 +299,10 @@ initial begin
     video_native_ex0_en = 1;
 end
 
+logic rev_enable0;
+
 vdma_compact_port #(
-    .THRESHOLD         (200     ),
+    .THRESHOLD         (THRESHOLD     ),
     .ASIZE             (29      ),
     .BURST_LEN_SIZE    (9       ),
     .PIX_DSIZE         (PIX_DSIZE      ),
@@ -304,7 +316,7 @@ vdma_compact_port #(
     .OUT_FRAME_SYNC    ("OFF"   ), //OFF ON
     //-->> JUST FOR OUT <<------
     .EX_SYNC           ("OFF"   ),     //OFF ON
-    .VIDEO_FORMAT      ("1080P@60"),
+    .VIDEO_FORMAT      (VIDEO_FORMAT),
     //--<< JUST FOR OUT >>------
     .PORT_MODE         ("BOTH"  ),   // READ WRITE BOTH
     //-->> BASEADDRE LIST <<----
@@ -318,10 +330,10 @@ vdma_compact_port #(
     .BASE_ADDR_7       (0       )
     //--<< BASEADDRE LIST >>----
 )vdma_compact_port_inst(
-/*  input [15:0]   */   .vactive                (   ),
-/*  input [15:0]   */   .hactive                (   ),
-/*  input          */   .in_fsync               (   ),
-/*  input          */   .rev_enable             (   ),
+/*  input [15:0]   */   .vactive                (   vactive0),
+/*  input [15:0]   */   .hactive                (   hactive0),
+/*  input          */   .in_fsync               (   1'b0),
+/*  input          */   .rev_enable             (   rev_enable0),
     //native input port
 /*  video_native_inf.compact_in */ .vin         (video_native_inf0  ),
     //native output ex driver
@@ -335,7 +347,7 @@ vdma_compact_port #(
     // axi4 master
 /*  axi_inf.master*/                .axi4_m     (axi_s00_inf    ),
     // baseaddr ctrl inf
-/*  vdma_baseaddr_ctrl_inf.slaver */.ex_ba_ctrl     (port0_ba_tmp0  ),
+/*  vdma_baseaddr_ctrl_inf.slaver */.ex_ba_ctrl     (port0_ba_tmp3  ),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba0    (port0_ba   ),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba1    (port0_ba_tmp1  ),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba2    (port0_ba_tmp2  )
@@ -391,8 +403,12 @@ vdma_baseaddr_ctrl_inf port1_ba_tmp1();
 vdma_baseaddr_ctrl_inf port1_ba_tmp2();
 vdma_baseaddr_ctrl_inf port1_ba_tmp3();
 //----<< INTERFACE DEFINE >>----------------
+logic[15:0] hactive1;
+logic[15:0] vactive1;
+
 simple_video_gen #(
-    .MODE   ("1080P@60" )
+    .MODE   (VIDEO_FORMAT ),
+    .DSIZE  (PIX_DSIZE      )
 )simple_video_gen_inst1(
 /*    input       */    .enable (1'b1       ),
 /*    video_native_inf.compact_out */
@@ -401,10 +417,14 @@ simple_video_gen #(
                         .axis   (axi_stream_inf1)
 );
 
+assign vactive1 = simple_video_gen_inst1.video_sync_generator_inst.V_ACTIVE;
+assign hactive1 = simple_video_gen_inst1.video_sync_generator_inst.H_ACTIVE;
+
 logic video_native_ex1_en;
 
 simple_video_gen #(
-    .MODE   ("1080P@60" )
+    .MODE   (VIDEO_FORMAT ),
+    .DSIZE  (PIX_DSIZE      )
 )simple_video_gen_ex1(
 /*    input       */    .enable (video_native_ex1_en ),
 /*    video_native_inf.compact_out */
@@ -420,8 +440,10 @@ initial begin
     video_native_ex1_en = 1;
 end
 
+logic   rev_enable1;
+
 vdma_compact_port #(
-    .THRESHOLD         (200     ),
+    .THRESHOLD         (THRESHOLD     ),
     .ASIZE             (29      ),
     .BURST_LEN_SIZE    (9       ),
     .PIX_DSIZE         (PIX_DSIZE      ),
@@ -435,24 +457,24 @@ vdma_compact_port #(
     .OUT_FRAME_SYNC    ("OFF"   ), //OFF ON
     //-->> JUST FOR OUT <<------
     .EX_SYNC           ("OFF"   ),     //OFF ON
-    .VIDEO_FORMAT      ("1080P@60"),
+    .VIDEO_FORMAT      (VIDEO_FORMAT),
     //--<< JUST FOR OUT >>------
     .PORT_MODE         ("BOTH"  ),   // READ WRITE BOTH
     //-->> BASEADDRE LIST <<----
-    .BASE_ADDR_0       (0       ),
-    .BASE_ADDR_1       (0       ),
-    .BASE_ADDR_2       (0       ),
-    .BASE_ADDR_3       (0       ),
-    .BASE_ADDR_4       (0       ),
-    .BASE_ADDR_5       (0       ),
-    .BASE_ADDR_6       (0       ),
-    .BASE_ADDR_7       (0       )
+    .BASE_ADDR_0       (1024*8*8*1024       ),
+    .BASE_ADDR_1       (1024*8*8*1024       ),
+    .BASE_ADDR_2       (1024*8*8*1024       ),
+    .BASE_ADDR_3       (1024*8*8*1024       ),
+    .BASE_ADDR_4       (1024*8*8*1024       ),
+    .BASE_ADDR_5       (1024*8*8*1024       ),
+    .BASE_ADDR_6       (1024*8*8*1024       ),
+    .BASE_ADDR_7       (1024*8*8*1024       )
     //--<< BASEADDRE LIST >>----
 )vdma_compact_port_inst1(
-/*  input [15:0]   */   .vactive                (   ),
-/*  input [15:0]   */   .hactive                (   ),
-/*  input          */   .in_fsync               (   ),
-/*  input          */   .rev_enable             (   ),
+/*  input [15:0]   */   .vactive                (vactive1   ),
+/*  input [15:0]   */   .hactive                (hactive1   ),
+/*  input          */   .in_fsync               (1'b0       ),
+/*  input          */   .rev_enable             (rev_enable1   ),
     //native input port
 /*  video_native_inf.compact_in */ .vin         (video_native_inf1  ),
     //native output ex driver
@@ -471,7 +493,7 @@ vdma_compact_port #(
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba1    (port1_ba_tmp1),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba2    (port1_ba_tmp2)
 );
-
+`ifdef USE_DDR3_IP_CORE
 DDR3_IP_CORE_WITH_MODE DDR3_IP_CORE_WITH_MODE_inst(
 // Inputs
       // Single-ended system clock
@@ -536,6 +558,42 @@ defparam DDR3_IP_CORE_WITH_MODE_inst.mem_rnk[0].gen_mem[0].u_comp_ddr3.DEBUG = 0
 defparam DDR3_IP_CORE_WITH_MODE_inst.mem_rnk[0].gen_mem[1].u_comp_ddr3.DEBUG = 0;
 defparam DDR3_IP_CORE_WITH_MODE_inst.mem_rnk[0].gen_mem[2].u_comp_ddr3.DEBUG = 0;
 defparam DDR3_IP_CORE_WITH_MODE_inst.mem_rnk[0].gen_mem[3].u_comp_ddr3.DEBUG = 0;
+`else
 
+clock_rst_verb #(
+	.ACTIVE			(1			),
+	.PERIOD_CNT		(0			),
+	.RST_HOLD		(5			),
+	.FreqM			(100      	)
+)clock_rst_axi4(
+	.clock			(ui_clk	),
+	.rst_x			(ui_rst	)
+);
+
+axi_slaver #(
+    .ASIZE  (ASIZE         ),
+    .DSIZE  (AXI_DSIZE     ),
+    .LSIZE  (BURST_LEN_SIZE),
+    .ID     (0          ),
+    .ADDR_STEP  (8*8    )
+)axi_slaver_inst(
+    .inf        (axi_m00_inf)
+);
+
+initial begin
+    axi_slaver_inst.slaver_recieve_burst(1000);
+    axi_slaver_inst.slaver_transmit_busrt(1000);
+end
+
+initial begin
+    rev_enable0 = 0;
+    rev_enable1 = 0;
+    axi_slaver_inst.wait_rev_enough_data(238*2);
+    // axi_slaver_inst.save_cache_data(PIX_DSIZE);
+    rev_enable0 = 1;
+    rev_enable1 = 1;
+end
+
+`endif
 
 endmodule
