@@ -64,12 +64,16 @@ module vdma_compact_port #(
 logic pend_rev_trs;
 logic pend_trs_rev;
 
+logic rev_pclk,rev_prst_n;
+
 logic[ASIZE-1:0]    wr_baseaddr,rd_baseaddr;
 
 vdma_baseaddr_ctrl_inf base_addr_inf();
 
 assign base_addr_inf.clk = vin.pclk;
 assign base_addr_inf.rst_n = vin.prst_n;
+assign base_addr_inf.vs =   (IN_DATA_TYPE=="NATIVE")? vin.vsync  :
+                            (IN_DATA_TYPE=="AXIS")? (IN_FRAME_SYNC=="OFF"? axis_in.axi_tuser : in_fsync) : 1'b0;
 
 generate
 if(PORT_MODE == "WRITE" || PORT_MODE == "BOTH")begin
@@ -176,6 +180,11 @@ always@(*) begin
         rd_baseaddr = BASE_ADDR_0;
     endcase
 end
+
+assign ctrl_ex_ba0.clk = rev_pclk;
+assign ctrl_ex_ba0.rst_n = rev_prst_n;
+assign ctrl_ex_ba0.vs   =   (OUT_DATA_TYPE=="NATIVE")? vout.vsync  :
+                            (OUT_DATA_TYPE=="AXIS")?   axis_out.axi_tuser : 1'b0;
 end else begin//===========================================//
 assign pend_trs_rev = 1'b0;
 
@@ -195,7 +204,7 @@ always@(*) begin
 end
 end//=============================================//
 endgenerate
-logic rev_pclk,rev_prst_n;
+
 generate
 if(PORT_MODE=="READ" || PORT_MODE=="BOTH")begin
 
