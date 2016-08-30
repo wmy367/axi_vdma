@@ -76,6 +76,8 @@ module mm_tras #(
     //---<< data write >>-------
 );
 
+localparam  BURST_LEN = THRESHOLD;
+
 assign axi_wstrb    = {(AXI_DSIZE/8){1'b1}};
 
 wire        rd_clk;
@@ -216,6 +218,7 @@ wire    burst_done,tail_done;
 
 fifo_status_ctrl #(
     .THRESHOLD      (THRESHOLD  ),
+    .BURST_LEN      (BURST_LEN  ),
     .LSIZE          (BURST_LEN_SIZE)
 )fifo_status_ctrl_inst(
 /*  input             */    .clock             (rd_clk              ),
@@ -234,7 +237,7 @@ fifo_status_ctrl #(
 );
 
 write_line_len_sum #(
-    .NOR_BURST_LEN      (THRESHOLD  ),
+    .NOR_BURST_LEN      (BURST_LEN  ),
     .MODE               (MODE       ),   //ONCE LINE
     .AXI_DSIZE          (AXI_DSIZE  ),
     .DSIZE              (DSIZE      ),
@@ -255,15 +258,15 @@ wire[ASIZE-1:0]         curr_address;
 
 a_frame_addr #(
     .ASIZE             (ASIZE          ),
-    .BURST_MAP_ADDR    (THRESHOLD*8*8  )
+    .BURST_MAP_ADDR    (BURST_LEN      )
 )a_frame_addr_inst(
 /*  input             */  .clock                    (rd_clk             ),
 /*  input             */  .rst_n                    (rd_rst_n           ),
 /*  input             */  .new_base                 (in_port_falign_bc  ),
 /*  input[ASIZE-1:0]  */  .baseaddr                 (baseaddr           ),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
-/*  input             */  .burst_req                (burst_req          ),
-/*  input             */  .tail_req                 (tail_req           ),
+/*  input             */  .burst_done               (burst_done         ),
+/*  input             */  .tail_done                (tail_done          ),
 /*  output[ASIZE-1:0] */  .out_addr                 (curr_address       )
 );
 

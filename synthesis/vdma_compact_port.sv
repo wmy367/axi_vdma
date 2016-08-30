@@ -10,7 +10,9 @@ madified:
 ***********************************************/
 `timescale 1ns/1ps
 module vdma_compact_port #(
-    parameter THRESHOLD      = 200,
+    parameter WR_THRESHOLD   = 200,
+    parameter RD_THRESHOLD   = 200,
+    parameter FULL_LEN       = 512,
     parameter ASIZE          = 29,
     parameter BURST_LEN_SIZE = 9,
     parameter PIX_DSIZE      = 24,
@@ -69,17 +71,92 @@ logic rev_pclk,rev_prst_n;
 logic[ASIZE-1:0]    wr_baseaddr,rd_baseaddr;
 
 vdma_baseaddr_ctrl_inf base_addr_inf();
+vdma_baseaddr_ctrl_inf inter_base_addr_inf();
 
 assign base_addr_inf.clk = vin.pclk;
 assign base_addr_inf.rst_n = vin.prst_n;
 assign base_addr_inf.vs =   (IN_DATA_TYPE=="NATIVE")? vin.vsync  :
                             (IN_DATA_TYPE=="AXIS")? (IN_FRAME_SYNC=="OFF"? axis_in.axi_tuser : in_fsync) : 1'b0;
 
+//--->> INTRE BASE LINK <<----------
+generate
+if(PORT_MODE == "WRITE")begin
+baseaddr_ctrl baseaddr_ctrl_inst(
+    .write_enable   (1'b1           ),
+    .write          (base_addr_inf  ),
+    .rd0            (ctrl_ex_ba0    ),
+    .rd1            (ctrl_ex_ba1    ),
+    .rd2            (ctrl_ex_ba2    )
+);
+end else if(PORT_MODE == "BOTH")begin
+baseaddr_ctrl baseaddr_ctrl_inst(
+    .write_enable   (1'b1           ),
+    .write          (base_addr_inf  ),
+    .rd0            (inter_base_addr_inf    ),
+    .rd1            (ctrl_ex_ba0    ),
+    .rd2            (ctrl_ex_ba1    )
+);
+end
+endgenerate
+
+//-->> read port base intf
+logic   intf_clk;
+logic   intf_rst_n;
+logic   intf_vs;
+
+assign intf_clk   = rev_pclk;
+assign intf_rst_n = rev_prst_n;
+assign intf_vs    =  (OUT_DATA_TYPE=="NATIVE")? vout.vsync  :
+                     (OUT_DATA_TYPE=="AXIS")?   axis_out.axi_tuser : 1'b0;
+
+generate
+/**/if(PORT_MODE == "BOTH")begin
+/**/always@(*) begin
+/**/    case(inter_base_addr_inf.point)
+/**/    0:  rd_baseaddr = BASE_ADDR_0;
+/**/    1:  rd_baseaddr = BASE_ADDR_1;
+/**/    2:  rd_baseaddr = BASE_ADDR_2;
+/**/    3:  rd_baseaddr = BASE_ADDR_3;
+/**/    4:  rd_baseaddr = BASE_ADDR_4;
+/**/    5:  rd_baseaddr = BASE_ADDR_5;
+/**/    6:  rd_baseaddr = BASE_ADDR_6;
+/**/    7:  rd_baseaddr = BASE_ADDR_7;
+/**/    default:
+/**/        rd_baseaddr = BASE_ADDR_0;
+/**/    endcase
+/**/end
+
+/**/assign inter_base_addr_inf.clk   = intf_clk  ;
+/**/assign inter_base_addr_inf.rst_n = intf_rst_n;
+/**/assign inter_base_addr_inf.vs    = intf_vs   ;
+
+end else if(PORT_MODE == "READ")begin
+    always@(*) begin
+        case(ex_ba_ctrl.point)
+        0:  rd_baseaddr = BASE_ADDR_0;
+        1:  rd_baseaddr = BASE_ADDR_1;
+        2:  rd_baseaddr = BASE_ADDR_2;
+        3:  rd_baseaddr = BASE_ADDR_3;
+        4:  rd_baseaddr = BASE_ADDR_4;
+        5:  rd_baseaddr = BASE_ADDR_5;
+        6:  rd_baseaddr = BASE_ADDR_6;
+        7:  rd_baseaddr = BASE_ADDR_7;
+        default:
+            rd_baseaddr = BASE_ADDR_0;
+        endcase
+    end
+
+    assign ex_ba_ctrl.clk   = intf_clk  ;
+    assign ex_ba_ctrl.rst_n = intf_rst_n;
+    assign ex_ba_ctrl.vs    = intf_vs   ;
+end
+endgenerate
+
 generate
 if(PORT_MODE == "WRITE" || PORT_MODE == "BOTH")begin
 //===============================================================//
 mm_tras #(
-    .THRESHOLD      (THRESHOLD  ),
+    .THRESHOLD      (WR_THRESHOLD  ),
     .ASIZE          (ASIZE      ),
     .BURST_LEN_SIZE (BURST_LEN_SIZE ),
     .DSIZE          (PIX_DSIZE  ),
@@ -143,14 +220,6 @@ mm_tras #(
     //---<< data write >>-------
 );
 
-baseaddr_ctrl baseaddr_ctrl_inst(
-    .write_enable   (1'b1           ),
-    .write          (base_addr_inf  ),
-    .rd0            (ctrl_ex_ba0    ),
-    .rd1            (ctrl_ex_ba1    ),
-    .rd2            (ctrl_ex_ba2    )
-);
-
 always@(*) begin
     case(base_addr_inf.point)
     0:  wr_baseaddr = BASE_ADDR_0;
@@ -166,25 +235,6 @@ always@(*) begin
     endcase
 end
 
-always@(*) begin
-    case(ctrl_ex_ba0.point)
-    0:  rd_baseaddr = BASE_ADDR_0;
-    1:  rd_baseaddr = BASE_ADDR_1;
-    2:  rd_baseaddr = BASE_ADDR_2;
-    3:  rd_baseaddr = BASE_ADDR_3;
-    4:  rd_baseaddr = BASE_ADDR_4;
-    5:  rd_baseaddr = BASE_ADDR_5;
-    6:  rd_baseaddr = BASE_ADDR_6;
-    7:  rd_baseaddr = BASE_ADDR_7;
-    default:
-        rd_baseaddr = BASE_ADDR_0;
-    endcase
-end
-
-assign ctrl_ex_ba0.clk = rev_pclk;
-assign ctrl_ex_ba0.rst_n = rev_prst_n;
-assign ctrl_ex_ba0.vs   =   (OUT_DATA_TYPE=="NATIVE")? vout.vsync  :
-                            (OUT_DATA_TYPE=="AXIS")?   axis_out.axi_tuser : 1'b0;
 end else begin//===========================================//
 assign pend_trs_rev = 1'b0;
 
@@ -206,13 +256,14 @@ end//=============================================//
 endgenerate
 
 generate
-if(PORT_MODE=="READ" || PORT_MODE=="BOTH")begin
+if(PORT_MODE=="READ" || PORT_MODE=="BOTH")begin:MM_REV_BLOCK
 
 assign rev_pclk     = (EX_SYNC=="ON")? vex.pclk : vout.pclk;
 assign rev_prst_n   = (EX_SYNC=="ON")? vex.prst_n : vout.prst_n;
 
 mm_rev #(
-    .THRESHOLD      (THRESHOLD      ),
+    .THRESHOLD      (RD_THRESHOLD      ),
+    .FULL_LEN       (FULL_LEN       ),
     .ASIZE          (ASIZE          ),
     .BURST_LEN_SIZE (BURST_LEN_SIZE ),
     .IDSIZE         (IDSIZE         ),

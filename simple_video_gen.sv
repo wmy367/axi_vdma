@@ -34,13 +34,27 @@ video_sync_generator_B2 #(
 /*  output          */  .ng_hs      (ng_hsync   )
 );
 
-int test_data;
+bit [7:0]   div8 = 8'b0000_0001;
 
 always@(posedge inf.pclk)begin
+    if(inf.de)begin
+        div8 <= {div8[6:0],div8[7]};
+    end else begin
+        div8 <= div8;
+end end
+
+int test_data;
+
+always@(posedge inf.pclk)begin:TEST_DATA_BLOCK
+int tmp_data;
     if(inf.vsync)
-            test_data   <= 0;
+            tmp_data   <= 0;
     else if(inf.de)
-            test_data   <= test_data + 1;
+            tmp_data   <= tmp_data + div8[7];
+    else    tmp_data   <= tmp_data;
+
+    if(div8[7])
+            test_data   <= tmp_data;
     else    test_data   <= 0;
 end
 

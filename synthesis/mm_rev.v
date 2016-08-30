@@ -11,6 +11,7 @@ madified:
 `timescale 1ns/1ps
 module mm_rev #(
     parameter THRESHOLD  = 200,
+    parameter FULL_LEN   = 512,
     parameter ASIZE      = 29,
     parameter BURST_LEN_SIZE = 9,
     parameter IDSIZE     = 4,
@@ -199,7 +200,8 @@ wire            tail_done  ;
 
 read_fifo_status_ctrl #(
     .THRESHOLD  (THRESHOLD      ),// EMPTY THRESHOLD
-    .FULL_LEN   (256            ),
+    .BURST_LEN  (BURST_LEN      ),
+    .FULL_LEN   (FULL_LEN       ),
     .LSIZE      (LSIZE          )
 )read_fifo_status_ctrl_inst(
 /*  input                */   .clock            (axi_aclk               ),
@@ -240,15 +242,15 @@ wire[ASIZE-1:0]         curr_address;
 
 a_frame_addr #(
     .ASIZE             (ASIZE          ),
-    .BURST_MAP_ADDR    (BURST_LEN*8*8  )
+    .BURST_MAP_ADDR    (BURST_LEN      )
 )a_frame_addr_inst(
 /*  input             */  .clock                    (axi_aclk           ),
 /*  input             */  .rst_n                    (axi_resetn         ),
 /*  input             */  .new_base                 (out_port_falign_bc ),
 /*  input[ASIZE-1:0]  */  .baseaddr                 (baseaddr           ),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
-/*  input             */  .burst_req                (burst_req          ),
-/*  input             */  .tail_req                 (tail_req           ),
+/*  input             */  .burst_done               (burst_done         ),
+/*  input             */  .tail_done                (tail_done          ),
 /*  output[ASIZE-1:0] */  .out_addr                 (curr_address       )
 );
 

@@ -283,7 +283,9 @@ reg [LSIZE-1:0] arlen_reg;
 assign axi_arlen = arlen_reg;
 
 always@(posedge axi_aclk)
-    arlen_reg   <= req_len-1'b1;
+    if(|req_len)
+            arlen_reg   <= req_len-1'b1;
+    else    arlen_reg   <= arlen_reg;
 //---<< RV >>-------------
 // assign axi_arvalid
 // assign axi_arready

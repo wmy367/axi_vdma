@@ -20,7 +20,9 @@ localparam  WR_THRESHOLD    = 100,
             STO_MODE        = "ONCE",
             FRAME_SYNC      = "OFF",        //only for axi_stream
             DATA_TYPE       = "AXIS",     //NATIVE AXIS
-            BURST_LEN_SIZE  = 8 ;
+            BURST_LEN_SIZE  = 8 ,
+            VDMA_PORT0_EN   = 1,
+            VDMA_PORT1_EN   = 1;
 //----->> CLOCK RST <<-------------------
 bit         axi_aclk;
 bit         axi_resetn;
@@ -248,8 +250,9 @@ axi_stream_inf #(
 )axi_stream_ex0(
 /*  input bit */  .aclk         (pclk   ),
 /*  input bit */  .aresetn      (prst_n ),
-/*  input bit */  .aclken       (1'b1   )
+/*  input bit */  .aclken       (VDMA_PORT0_EN   )
 );
+assign axi_stream_ex0.axi_tready    = 1'b1;
 
 axi_stream_inf #(
     .DSIZE  (PIX_DSIZE)
@@ -269,7 +272,7 @@ simple_video_gen #(
     .MODE   (VIDEO_FORMAT   ),
     .DSIZE  (PIX_DSIZE      )
 )simple_video_gen_inst0(
-/*    input       */    .enable (1'b1       ),
+/*    input       */    .enable (VDMA_PORT0_EN    ),
 /*    video_native_inf.compact_out */
                         .inf    (video_native_inf0),
 /*    axi_stream_inf.master*/
@@ -390,6 +393,7 @@ axi_stream_inf #(
 /*  input bit */  .aresetn      (prst_n ),
 /*  input bit */  .aclken       (1'b1   )
 );
+assign axi_stream_ex1.axi_tready    = 1'b1;
 
 axi_stream_inf #(
     .DSIZE  (PIX_DSIZE)
@@ -410,7 +414,7 @@ simple_video_gen #(
     .MODE   (VIDEO_FORMAT ),
     .DSIZE  (PIX_DSIZE      )
 )simple_video_gen_inst1(
-/*    input       */    .enable (1'b1       ),
+/*    input       */    .enable (VDMA_PORT1_EN    ),
 /*    video_native_inf.compact_out */
                         .inf    (video_native_inf1),
 /*    axi_stream_inf.master*/
@@ -574,8 +578,8 @@ axi_slaver #(
     .ASIZE  (ASIZE         ),
     .DSIZE  (AXI_DSIZE     ),
     .LSIZE  (BURST_LEN_SIZE),
-    .ID     (0          ),
-    .ADDR_STEP  (8*8    )
+    .ADDR_STEP  (8*8    ),
+    .MUTEX_WR_RD("ON")
 )axi_slaver_inst(
     .inf        (axi_m00_inf)
 );
@@ -590,8 +594,8 @@ initial begin
     rev_enable1 = 0;
     axi_slaver_inst.wait_rev_enough_data(238*2);
     // axi_slaver_inst.save_cache_data(PIX_DSIZE);
-    rev_enable0 = 1;
-    rev_enable1 = 1;
+    rev_enable0 = VDMA_PORT0_EN;
+    rev_enable1 = VDMA_PORT1_EN;
 end
 
 `endif

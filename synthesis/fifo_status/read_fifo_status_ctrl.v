@@ -12,6 +12,7 @@ madified:
 module read_fifo_status_ctrl #(
     parameter   THRESHOLD = 200,        // EMPTY THRESHOLD
     parameter   FULL_LEN  = 256,
+    parameter   BURST_LEN = 100,
     parameter   LSIZE     = 9,
     parameter   WR_RD     = "READ"     // READ WRITE FIFO STATUS
 )(
@@ -147,7 +148,7 @@ always@(posedge clock,negedge rst_n)
     if(~rst_n)  length   <= {LSIZE{1'b0}};
     else
         case(nstate)
-        NEED_RD:length   <= THRESHOLD;
+        NEED_RD:length   <= BURST_LEN;
         RD_TAIL:length   <= tail_len;
         default:length   <= length;
         endcase

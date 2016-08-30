@@ -11,6 +11,7 @@ madified:
 `timescale 1ns/1ps
 module fifo_status_ctrl #(
     parameter   THRESHOLD = 200,
+    parameter   BURST_LEN = 100,
     parameter   LSIZE     = 9
 )(
     input                   clock,
@@ -175,7 +176,7 @@ always@(posedge clock,negedge rst_n)
     if(~rst_n)  len_reg     <= {LSIZE{1'd0}};
     else
         case(nstate)
-        NEED_WR:    len_reg <= THRESHOLD;
+        NEED_WR:    len_reg <= BURST_LEN;
         WR_TAIL:    len_reg <= tail_len;
         WAIT_DONE:  len_reg <= len_reg;
         default:    len_reg <= {LSIZE{1'd0}};

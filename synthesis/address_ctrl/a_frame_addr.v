@@ -18,34 +18,34 @@ module a_frame_addr #(
     input               new_base,
     input[ASIZE-1:0]    baseaddr,
     input[ASIZE-1:0]    line_increate_addr,
-    input               burst_req,
-    input               tail_req,
+    input               burst_done,
+    input               tail_done,
     output[ASIZE-1:0]   out_addr
 );
 
 
-wire	burst_req_raising;
-wire    burst_req_falling;
+wire	burst_done_raising;
+wire    burst_done_falling;
 edge_generator #(
 	.MODE		("NORMAL" 	)  // FAST NORMAL BEST
 )gen_burst_edge(
 	.clk		(clock				),
 	.rst_n      (rst_n              ),
-	.in         (burst_req          ),
-	.raising    (burst_req_raising  ),
-	.falling    (burst_req_falling  )
+	.in         (burst_done          ),
+	.raising    (burst_done_raising  ),
+	.falling    (burst_done_falling  )
 );
 
-wire	tail_req_raising;
-wire    tail_req_falling;
+wire	tail_done_raising;
+wire    tail_done_falling;
 edge_generator #(
 	.MODE		("NORMAL" 	)  // FAST NORMAL BEST
 )gen_tail_edge(
 	.clk		(clock				),
 	.rst_n      (rst_n              ),
-	.in         (tail_req           ),
-	.raising    (tail_req_raising   ),
-	.falling    (tail_req_falling   )
+	.in         (tail_done           ),
+	.raising    (tail_done_raising   ),
+	.falling    (tail_done_falling   )
 );
 
 
@@ -56,9 +56,9 @@ always@(posedge clock,negedge rst_n)
     else begin
         if(new_base)
                 curr_addr   <= baseaddr;
-        else if(burst_req_falling)
+        else if(burst_done_raising)
                 curr_addr   <= curr_addr + BURST_MAP_ADDR;
-        else if(tail_req_falling)
+        else if(tail_done_raising)
                 curr_addr   <= curr_addr + line_increate_addr;
         else    curr_addr   <= curr_addr;
     end
