@@ -12,9 +12,9 @@ madified:
 `timescale 1ns/1ps
 module axi4_interconnect_with_ddr_wrap_tb;
 localparam VIDEO_FORMAT     = "TEST";
-localparam  WR_THRESHOLD    = 128,
-            RD_THRESHOLD    = 64,
-            FULL_LEN        = 256,
+localparam  WR_THRESHOLD    = 64,
+            RD_THRESHOLD    = 128,
+            FULL_LEN        = 512,
             ASIZE           = 29,
             PIX_DSIZE       = 32,
             AXI_DSIZE       = 256,
@@ -23,7 +23,7 @@ localparam  WR_THRESHOLD    = 128,
             DATA_TYPE       = "AXIS",     //NATIVE AXIS
             BURST_LEN_SIZE  = 8 ,
             VDMA_PORT0_EN   = 1,
-            VDMA_PORT1_EN   = 0;
+            VDMA_PORT1_EN   = 1;
 //----->> CLOCK RST <<-------------------
 bit         axi_aclk;
 bit         axi_resetn;
@@ -447,24 +447,24 @@ initial begin
     rev_enable1 = 0;
     wait(init_calib_complete);
     video_gen_1_en  = VDMA_PORT1_EN;
-    repeat(2)begin
+    repeat(3)begin
         @(negedge video_native_inf1.de);
     end
-    // rev_enable1 = VDMA_PORT1_EN;
-    rev_enable1 = 0;
+    rev_enable1 = VDMA_PORT1_EN;
+    //rev_enable1 = 0;
 end
 
-// always@(posedge axi_stream_ex0.aclk)begin:ASSERT_OUT_DATA
-// logic[PIX_DSIZE-1:0]    data;
-//     if(axi_stream_ex0.axi_tvalid)begin
-//         assert( (axi_stream_ex0.axi_tdata == data + 1) || (axi_stream_ex0.axi_tdata==0))
-//         else begin
-//             $warning("AXIS DATA ERROR");
-//             $stop;
-//         end
-//     end
-//     data = axi_stream_ex0.axi_tdata;
-// end
+always@(negedge axi_stream_ex0.aclk)begin:ASSERT_OUT_DATA
+logic[PIX_DSIZE-1:0]    data;
+    if(axi_stream_ex0.axi_tvalid)begin
+        assert( (axi_stream_ex0.axi_tdata == data + 1) || (axi_stream_ex0.axi_tdata==0))
+        else begin
+            $warning("AXIS DATA ERROR");
+            $stop;
+        end
+    end
+    data = axi_stream_ex0.axi_tvalid? axi_stream_ex0.axi_tdata : data ;
+end
 
 always@(posedge axi_stream_ex0.axi_tvalid)begin : DE_ASSERT
 int  cnt;
@@ -478,7 +478,7 @@ int  cnt;
                 $waring("DE || AXI_TVALID ERROR");
                 $stop;
             end
-            assert(axi_stream_ex0.axi_tdata == 1919)
+            assert((axi_stream_ex0.axi_tdata+1)%1920 == 0)
             else begin
                 $warning("LAST DATA ERROR");
                 $stop;

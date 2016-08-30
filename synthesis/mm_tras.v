@@ -258,7 +258,7 @@ wire[ASIZE-1:0]         curr_address;
 
 a_frame_addr #(
     .ASIZE             (ASIZE          ),
-    .BURST_MAP_ADDR    (BURST_LEN      )
+    .BURST_MAP_ADDR    (BURST_LEN*32      )
 )a_frame_addr_inst(
 /*  input             */  .clock                    (rd_clk             ),
 /*  input             */  .rst_n                    (rd_rst_n           ),

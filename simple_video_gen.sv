@@ -51,11 +51,19 @@ int tmp_data;
             tmp_data   <= 0;
     else if(inf.de)
             tmp_data   <= tmp_data + div8[7];
+            // tmp_data   <= tmp_data + 1'b1;
     else    tmp_data   <= tmp_data;
 
-    if(div8[7])
+    if(div8[6])
             test_data   <= tmp_data;
     else    test_data   <= 0;
+
+    if(inf.vsync)
+            test_data   <= 0;
+    else if(inf.de)
+            test_data   <= test_data + 1'b1;
+    else    test_data   <= 0;
+
 end
 
 assign inf.data = test_data;
