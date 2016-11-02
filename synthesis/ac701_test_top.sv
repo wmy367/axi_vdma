@@ -31,7 +31,8 @@ module ac701_test_top (
     output              hdmi_vs,
     output              hdmi_hs,
     output              hdmi_de,
-    output[23:0]        hdmi_data
+    output[23:0]        hdmi_data,
+    output              hdmi_clk
 );
 //----->> CLOCK RST <<---------------
 wire        app_clk;
@@ -73,7 +74,7 @@ localparam      ADDR_WIDTH  = 28,
                 DATA_WIDTH  = 512;
 
 //--->> interface define <<-------------------
-`include "C:/Users/wmy367/Documents/GitHub/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
+`include "/home/young/work/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
 //---<< interface define >>-------------------
 //--->> TEST COLOR PARTTEN <<-----------------
 logic[15:0]     vactive0;
@@ -284,5 +285,19 @@ assign  hdmi_vs   = video_native_out0.vsync;
 assign  hdmi_hs   = video_native_out0.hsync;
 assign  hdmi_de   = video_native_out0.de;
 assign  hdmi_data = video_native_out0.data;
+
+ODDR #(
+  .DDR_CLK_EDGE("OPPOSITE_EDGE"), // "OPPOSITE_EDGE" or "SAME_EDGE"
+  .INIT(1'b0),    // Initial value of Q: 1'b0 or 1'b1
+  .SRTYPE("SYNC") // Set/Reset type: "SYNC" or "ASYNC"
+) hdmi_clk_inst (
+  .Q        (hdmi_clk),   // 1-bit DDR output
+  .C        (pclk),   // 1-bit clock input
+  .CE       (1), // 1-bit clock enable input
+  .D1       (0), // 1-bit data input (positive edge)
+  .D2       (1), // 1-bit data input (negative edge)
+  .R        (0),   // 1-bit reset
+  .S        (0)    // 1-bit set
+);
 
 endmodule
