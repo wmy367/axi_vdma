@@ -24,7 +24,8 @@ module read_line_len_sum #(
     input               burst_done               ,
     input               tail_done                ,
     output              tail_status             ,
-    output[LSIZE-1:0]   tail_len
+    output[LSIZE-1:0]   tail_len                ,
+    output              tail_leave
 );
 
 wire	burst_done_raising;
@@ -71,9 +72,11 @@ always@(posedge clock,negedge rst_n)begin
     if(~rst_n)      len_count   <= 32'hFFFF_FFFF;
     else begin
         if(fsync)   len_count   <= num_of_AXID;
-        else if(burst_done_raising)
+        // else if(burst_done_raising)
+        else if(burst_done_falling)
                     len_count   <= len_count - NOR_BURST_LEN;
-        else if(tail_done_raising)
+        // else if(tail_done_raising)
+        else if(tail_done_falling)
                     len_count   <= num_of_AXID;
         else        len_count   <= len_count;
 end end
@@ -89,6 +92,16 @@ always@(posedge clock,negedge rst_n)
     end
 
 assign tail_status  = status_reg;
-assign tail_len     = mod_len;
+assign tail_len     = (mod_len==0)? NOR_BURST_LEN : mod_len;
+
+reg         tail_leave_reg;
+
+always@(posedge clock,negedge rst_n)
+    if(~rst_n)  tail_leave_reg  <= 1'b0;
+    else begin
+        tail_leave_reg = len_count <= NOR_BURST_LEN;
+    end
+
+assign tail_leave   = tail_leave_reg;
 
 endmodule

@@ -14,10 +14,10 @@ module vdma_compact_port #(
     parameter RD_THRESHOLD   = 200,
     parameter FULL_LEN       = 512,
     parameter ASIZE          = 29,
-    parameter BURST_LEN_SIZE = 9,
+    parameter BURST_LEN_SIZE = 8,
     parameter PIX_DSIZE      = 24,
     parameter AXI_DSIZE      = 256,
-    parameter IDSIZE         = 4,
+    parameter IDSIZE         = 1,
     parameter ID             = 0,
     parameter STORAGE_MODE  = "ONCE",   //ONCE LINE
     parameter IN_DATA_TYPE  = "AXIS",    //AXIS NATIVE

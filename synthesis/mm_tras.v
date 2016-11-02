@@ -20,7 +20,8 @@ module mm_tras #(
     parameter MODE      = "ONCE",   //ONCE LINE
     parameter DATA_TYPE = "AXIS",    //AXIS NATIVE
     parameter FRAME_SYNC= "OFF",    //OFF ON
-    parameter INC_ADDR_STEP = 1024
+    parameter INC_ADDR_STEP = 1024,
+    parameter SIM       = "OFF"
 )(
     input               clock                   ,
     input               rst_n                   ,
@@ -167,7 +168,9 @@ wire            cb_wr_last_en;
 
 combin_data #(
     .ISIZE      (DSIZE        ),
-    .OSIZE      (AXI_DSIZE    )
+    .OSIZE      (AXI_DSIZE    ),
+    .DATA_TYPE  (DATA_TYPE    ),
+    .MODE       (MODE         )
 )combin_data_inst(
 /*    input               */ .clock       (wr_clk    ),
 /*    input               */ .rst_n       (wr_rst_n  ),
@@ -186,9 +189,11 @@ wire[9:0]       wr_data_count;
 
 wire            fifo_rst;
 wire            fifo_empty;
+wire            pull_data_en;
 
 assign  fifo_rst    = FRAME_SYNC=="ON"? in_port_falign : 1'b0;
-
+generate
+if(AXI_DSIZE == 256)begin
 vdma_stream_fifo stream_fifo_inst (
 /*  input               */     .rst               (!wr_rst_n ||  fifo_rst       ),
 /*  input               */     .wr_clk            (wr_clk                       ),
@@ -204,6 +209,52 @@ vdma_stream_fifo stream_fifo_inst (
 /*  output[9:0]         */     .rd_data_count     (rd_data_count                ),
 /*  output[9:0]         */     .wr_data_count     (wr_data_count                )
 );
+end else if(AXI_DSIZE == 512)begin
+vdma_stream_fifo_512 stream_fifo_inst (
+/*  input               */     .rst               (!wr_rst_n ||  fifo_rst       ),
+/*  input               */     .wr_clk            (wr_clk                       ),
+/*  input               */     .rd_clk            (rd_clk                       ),
+/*  input [DSIZE-1:0]   */     .din               (cb_data                      ),
+/*  input               */     .wr_en             (cb_wr_en || cb_wr_last_en    ),
+/*  input               */     .rd_en             (pull_data_en && axi_wready   ),
+/*  output [DSIZE-1:0]  */     .dout              (axi_wdata                    ),
+/*  output              */     .full              (   ),
+/*  output              */     .almost_full       (fifo_almost_full             ),
+/*  output              */     .empty             (fifo_empty                   ),
+/*  output              */     .almost_empty      (   ),
+/*  output[9:0]         */     .rd_data_count     (rd_data_count                ),
+/*  output[9:0]         */     .wr_data_count     (wr_data_count                )
+);
+end
+endgenerate
+
+generate
+if(DSIZE==24 && SIM == "ON")begin:PROBE_BLOCK
+probe_large_width_data #(
+    .DSIZE      (AXI_DSIZE  )
+)wr_probe_large_width_data_inst(
+/*  input             */  .clock               (wr_clk       ),
+/*  input             */  .rst                 (!wr_rst_n     ),
+/*  input [DSIZE-1:0] */  .data                (cb_data       ),
+/*  input             */  .valid               (cb_wr_en || cb_wr_last_en      ),
+/*  input             */  .sync                (),
+/*  input             */  .sync_negedge        (cb_wr_last_en),
+/*  input             */  .sync_posedge        ()
+);
+
+probe_large_width_data #(
+    .DSIZE      (AXI_DSIZE  )
+)rd_probe_large_width_data_inst(
+/*  input             */  .clock               (rd_clk       ),
+/*  input             */  .rst                 (!wr_rst_n     ),
+/*  input [DSIZE-1:0] */  .data                (axi_wdata       ),
+/*  input             */  .valid               (axi_wvalid      ),
+/*  input             */  .sync                (axi_bvalid && axi_awlen==0),
+/*  input             */  .sync_negedge        (),
+/*  input             */  .sync_posedge        ()
+);
+end
+endgenerate
 
 assign axi_wvalid   = pull_data_en;
 
@@ -215,17 +266,20 @@ wire[BURST_LEN_SIZE-1:0]    req_length;
 
 wire[BURST_LEN_SIZE-1:0]    tail_len;
 wire    burst_done,tail_done;
+wire    tail_leave;
 
 fifo_status_ctrl #(
     .THRESHOLD      (THRESHOLD  ),
     .BURST_LEN      (BURST_LEN  ),
-    .LSIZE          (BURST_LEN_SIZE)
+    .LSIZE          (BURST_LEN_SIZE),
+    .MODE           (MODE       )
 )fifo_status_ctrl_inst(
 /*  input             */    .clock             (rd_clk              ),
 /*  input             */    .rst_n             (rd_rst_n            ),
 /*  input             */    .fifo_empty        (fifo_empty          ),
 /*  input [9:0]       */    .count             (rd_data_count       ),
-/*  input             */    .tail              (in_port_lalign_bc   ),      // not frame tail
+/*  input             */    .line_tail         (in_port_lalign_bc   ),      // not frame tail
+/*  input             */    .frame_tail        (tail_leave && in_port_lalign_bc        ),      //self count ,and tail leave
 /*  input [LSIZE-1:0] */    .tail_len          (tail_len            ),
 /*  output            */    .burst_req         (burst_req           ),
 /*  output            */    .tail_req          (tail_req            ),      //line tail
@@ -251,14 +305,15 @@ write_line_len_sum #(
 /*  input             */  .burst_done           (burst_done          ),
 /*  input             */  .tail_done            (tail_done           ),
 /*  output            */  .tail_status          (                    ),
-/*  output[LSIZE-1:0] */  .tail_len             (tail_len            )
+/*  output[LSIZE-1:0] */  .tail_len             (tail_len            ),
+/*  output            */ .tail_leave            (tail_leave          )
 );
 
 wire[ASIZE-1:0]         curr_address;
 
 a_frame_addr #(
     .ASIZE             (ASIZE          ),
-    .BURST_MAP_ADDR    (BURST_LEN*32      )
+    .BURST_MAP_ADDR    (BURST_LEN*8      )
 )a_frame_addr_inst(
 /*  input             */  .clock                    (rd_clk             ),
 /*  input             */  .rst_n                    (rd_rst_n           ),

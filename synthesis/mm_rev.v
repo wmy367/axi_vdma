@@ -23,7 +23,8 @@ module mm_rev #(
     parameter FRAME_SYNC= "OFF",    //OFF ON
     parameter EX_SYNC   = "OFF",     //OFF ON
     parameter VIDEO_FORMAT= "1080P@60",
-    parameter INC_ADDR_STEP=1024
+    parameter INC_ADDR_STEP=1024,
+    parameter SIM       = "OFF"
 )(
     input               clock                   ,
     input               rst_n                   ,
@@ -87,6 +88,8 @@ wire            out_port_ealign     ;
 wire            out_port_rd_en      ;
 wire[DSIZE-1:0] out_port_idata      ;
 wire            fifo_empty          ;
+wire[15:0]      out_vactive         ;
+wire[15:0]      out_hactive         ;
 
 out_port #(
     .DSIZE        (DSIZE        ),
@@ -126,7 +129,9 @@ out_port #(
 /*  output             */ .lalign        (out_port_lalign      ),
 /*  output             */ .ealign        (out_port_ealign      ),
 /*  input[DSIZE-1:0]   */ .in_data       (out_port_idata       ),
-/*  output             */ .rd_en         (out_port_rd_en       )
+/*  output             */ .rd_en         (out_port_rd_en       ),
+/*  output[15:0]       */ .out_vactive   (out_vactive          ),
+/*  output[15:0]       */ .out_hactive   (out_hactive          )
 );
 
 wire out_port_falign_bc;
@@ -170,7 +175,8 @@ destruct_data #(
 wire[9:0]       rd_data_count;
 wire[9:0]       wr_data_count;
 
-
+generate
+if(AXI_DSIZE == 256)begin
 vdma_stream_fifo stream_fifo_inst (
 /*  input               */     .rst               (out_port_falign_bc || !rst_n    ),
 /*  input               */     .wr_clk            (axi_aclk                     ),
@@ -186,7 +192,52 @@ vdma_stream_fifo stream_fifo_inst (
 /*  output[9:0]         */     .rd_data_count     (rd_data_count                ),
 /*  output[9:0]         */     .wr_data_count     (wr_data_count                )
 );
+end else if(AXI_DSIZE == 512)begin
+vdma_stream_fifo_512 stream_fifo_inst (
+/*  input               */     .rst               (out_port_falign_bc || !rst_n    ),
+/*  input               */     .wr_clk            (axi_aclk                     ),
+/*  input               */     .rd_clk            (clock                        ),
+/*  input [DSIZE-1:0]   */     .din               (axi_rdata                    ),
+/*  input               */     .wr_en             (axi_rvalid                   ),
+/*  input               */     .rd_en             (ds_rd_en                     ),
+/*  output [DSIZE-1:0]  */     .dout              (ds_data                      ),
+/*  output              */     .full              (   ),
+/*  output              */     .almost_full       (fifo_almost_full             ),
+/*  output              */     .empty             (fifo_empty                   ),
+/*  output              */     .almost_empty      (fifo_almost_empty            ),
+/*  output[9:0]         */     .rd_data_count     (rd_data_count                ),
+/*  output[9:0]         */     .wr_data_count     (wr_data_count                )
+);
+end
+endgenerate
 
+generate
+if(DSIZE==24 && SIM == "ON")begin:PROBE_BLOCK
+probe_large_width_data #(
+    .DSIZE      (AXI_DSIZE  )
+)wr_probe_large_width_data_inst(
+/*  input             */  .clock               (axi_aclk       ),
+/*  input             */  .rst                 (out_port_falign_bc     ),
+/*  input [DSIZE-1:0] */  .data                (axi_rdata       ),
+/*  input             */  .valid               (axi_rvalid      ),
+/*  input             */  .sync                (),
+/*  input             */  .sync_negedge        (axi_rlast && axi_arlen==79),
+/*  input             */  .sync_posedge        ()
+);
+
+probe_large_width_data #(
+    .DSIZE      (AXI_DSIZE  )
+)rd_probe_large_width_data_inst(
+/*  input             */  .clock               (clock       ),
+/*  input             */  .rst                 (!rst_n     ),
+/*  input [DSIZE-1:0] */  .data                (ds_data       ),
+/*  input             */  .valid               (ds_rd_en      ),
+/*  input             */  .sync                (),
+/*  input             */  .sync_negedge        (out_de),
+/*  input             */  .sync_posedge        ()
+);
+end
+endgenerate
 
 wire            tail_status;
 wire[LSIZE-1:0] tail_len;
@@ -197,6 +248,7 @@ wire            req_done;
 wire[LSIZE-1:0] req_len;
 wire            burst_done ;
 wire            tail_done  ;
+wire            tail_leave ;
 
 read_fifo_status_ctrl #(
     .THRESHOLD  (THRESHOLD      ),// EMPTY THRESHOLD
@@ -229,20 +281,21 @@ read_line_len_sum #(
 )read_line_len_sum_inst(
 /*  input             */ .clock                 (axi_aclk           ),
 /*  input             */ .rst_n                 (axi_resetn         ),
-/*  input [15:0]      */ .vactive               (vactive            ),//calculate line length
-/*  input [15:0]      */ .hactive               (hactive            ),//calculate line length
+/*  input [15:0]      */ .vactive               (out_vactive            ),//calculate line length
+/*  input [15:0]      */ .hactive               (out_hactive            ),//calculate line length
 /*  input             */ .fsync                 (tail_req || out_port_falign_bc      ),
-/*  input             */ .burst_done            (burst_done         ),
-/*  input             */ .tail_done             (tail_done          ),
+/*  input             */ .burst_done            (/*burst_done*/  burst_req      ),
+/*  input             */ .tail_done             (/*tail_done */  tail_req       ),
 /*  output            */ .tail_status           (tail_status        ),
-/*  output[LSIZE-1:0] */ .tail_len              (tail_len           )
+/*  output[LSIZE-1:0] */ .tail_len              (tail_len           ),
+/*  output            */ .tail_leave            (tail_leave         )
 );
 
 wire[ASIZE-1:0]         curr_address;
 
 a_frame_addr #(
     .ASIZE             (ASIZE          ),
-    .BURST_MAP_ADDR    (BURST_LEN*32      )
+    .BURST_MAP_ADDR    (BURST_LEN*8      )
 )a_frame_addr_inst(
 /*  input             */  .clock                    (axi_aclk           ),
 /*  input             */  .rst_n                    (axi_resetn         ),

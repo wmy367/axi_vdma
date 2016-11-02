@@ -1,0 +1,308 @@
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)video_native_in0(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)axi_stream_in0(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (1'b1   )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)video_native_ex0(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)video_native_out0(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)axi_stream_out0(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (VDMA_PORT0_EN   )
+);
+assign axi_stream_out0.axi_tready    = 1'b1;
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)video_native_in1(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)axi_stream_in1(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (1'b1   )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)video_native_ex1(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)video_native_out1(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)axi_stream_out1(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (VDMA_PORT1_EN   )
+);
+assign axi_stream_out1.axi_tready    = 1'b1;
+
+//---------------------------------------------------
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)video_native_in2(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)axi_stream_in2(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (1'b1   )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)video_native_ex2(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)video_native_out2(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)axi_stream_out2(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (VDMA_PORT0_EN   )
+);
+assign axi_stream_out2.axi_tready    = 1'b1;
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)video_native_in3(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)axi_stream_in3(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (1'b1   )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)video_native_ex3(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)video_native_out3(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)axi_stream_out3(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (VDMA_PORT1_EN   )
+);
+assign axi_stream_out3.axi_tready    = 1'b1;
+//----------------------------
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)video_native_in4(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)axi_stream_in4(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (1'b1   )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)video_native_ex4(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)video_native_out4(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)axi_stream_out4(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (VDMA_PORT0_EN   )
+);
+assign axi_stream_out4.axi_tready    = 1'b1;
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)video_native_in5(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)axi_stream_in5(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (1'b1   )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)video_native_ex5(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)video_native_out5(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)axi_stream_out5(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (VDMA_PORT1_EN   )
+);
+assign axi_stream_out5.axi_tready    = 1'b1;
+
+//---------------------------------------------------
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)video_native_in6(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)axi_stream_in6(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (1'b1   )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)video_native_ex6(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)video_native_out6(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_0)
+)axi_stream_out6(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (VDMA_PORT0_EN   )
+);
+assign axi_stream_out6.axi_tready    = 1'b1;
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)video_native_in7(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)axi_stream_in7(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (1'b1   )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)video_native_ex7(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+video_native_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)video_native_out7(
+    .pclk       (pclk   ),
+    .prst_n     (prst_n )
+);
+
+axi_stream_inf #(
+    .DSIZE  (PIX_DSIZE_1)
+)axi_stream_out7(
+/*  input bit */  .aclk         (pclk   ),
+/*  input bit */  .aresetn      (prst_n ),
+/*  input bit */  .aclken       (VDMA_PORT1_EN   )
+);
+assign axi_stream_out7.axi_tready    = 1'b1;
+//----------------------------

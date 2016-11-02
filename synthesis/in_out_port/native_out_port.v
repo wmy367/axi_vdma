@@ -33,11 +33,21 @@ module native_out_port #(
     output              rd_en
 );
 
-assign out_de   = in_de;
+// assign out_de   = in_de;
 assign odata    = in_data;
-assign out_vsync= in_vsync;
-assign out_hsync= in_hsync;
+// assign out_vsync= in_vsync;
+// assign out_hsync= in_hsync;
 assign rd_en    = in_de;
+
+latency #(
+    .LAT        (1),
+    .DSIZE      (3)
+)lat_sync(
+    clock,
+    rst_n,
+    {in_vsync,in_hsync,in_de},
+    {out_vsync,out_hsync,out_de}
+);
 
 wire	in_vs_raising;
 wire    in_vs_falling;

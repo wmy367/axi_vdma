@@ -57,8 +57,8 @@ edge_generator #(
 );
 
 assign falign   = vs_falling;
-assign lalign   = MODE=="LINE"? de_falling : 1'b0;
-
+// assign lalign   = MODE=="LINE"? de_falling : 1'b0;
+assign lalign   = de_falling;
 reg [15:0]      lcnt;
 
 always@(posedge clock,negedge rst_n)

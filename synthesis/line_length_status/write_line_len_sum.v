@@ -24,7 +24,8 @@ module write_line_len_sum #(
     input               burst_done               ,
     input               tail_done                ,
     output              tail_status             ,
-    output[LSIZE-1:0]   tail_len
+    output[LSIZE-1:0]   tail_len                ,
+    output              tail_leave
 );
 
 read_line_len_sum #(
@@ -42,7 +43,8 @@ read_line_len_sum #(
 /*  input             */ .burst_done            (burst_done    ),
 /*  input             */ .tail_done             (tail_done     ),
 /*  output            */ .tail_status           (tail_status   ),
-/*  output[LSIZE-1:0] */ .tail_len              (tail_len      )
+/*  output[LSIZE-1:0] */ .tail_len              (tail_len      ),
+/*  output            */ .tail_leave            (tail_leave    )
 );
 
 endmodule

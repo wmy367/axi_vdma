@@ -47,12 +47,33 @@ localparam  CNUM =  ISIZE%OSIZE     == 0 ? 1 :
                     ISIZE*23%OSIZE  == 0 ? 23 :
                     ISIZE*25%OSIZE  == 0 ? 25 : 0;
 //--->> MINI COMBIN <<---
+localparam  READ_MMT = EX_EX? (NSIZE-1-2) : (NSIZE-1-1);    // pre read
+localparam  OVER_BITS =  (ISIZE%OSIZE)==0? 0 : OSIZE - (ISIZE%OSIZE);
+localparam  LAST_BITS =  (ISIZE%OSIZE);
+localparam  O_L = OVER_BITS > LAST_BITS ? 1 : 0;
 
 reg [6:0]          point;
 reg [6:0]          loint;
 reg [OSIZE-1:0]    data_reg;
 reg [OSIZE-1:0]    ex_data;
 // reg [OSIZE-1:0]    bk_data;
+
+reg                 speciel_line;
+reg                 last_line;
+
+always@(posedge clock,negedge rst_n)
+    if(~rst_n)  speciel_line    <= 1'b0;
+    else begin
+        if(O_L)begin
+            speciel_line    <= (loint == 7'd1) || loint == (CNUM-1);
+        end else begin
+            speciel_line    <= loint == (CNUM-1);
+        end
+    end
+
+always@(posedge clock,negedge rst_n)
+    if(~rst_n)  last_line    <= 1'b0;
+    else        last_line    <= loint == (CNUM-1);
 
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  point   <= 7'd0;
@@ -69,7 +90,8 @@ always@(posedge clock,negedge rst_n)
                 (
                     point == (NSIZE-1)
                     &&
-                    loint == (CNUM-1)
+                    // loint == (CNUM-1)
+                    speciel_line
                 )
             )begin
                     point   <= 7'd0;
@@ -84,10 +106,20 @@ always@(posedge clock,negedge rst_n)begin
         if(ialign || force_rd)begin
             loint   <= 7'd0;
         end if(ord_en)begin
-            if(point == (MSIZE-1) && loint != (CNUM-1) )
-                    loint <= loint + 1'b1;
-            else if (point == (NSIZE-1) && loint == (CNUM-1))
-                    loint <= 7'd0;
+            // if(point == (MSIZE-1) && loint != (CNUM-1) )
+            //         loint <= loint + 1'b1;
+            // else if (point == (NSIZE-1) && loint == (CNUM-1))
+            //         loint <= 7'd0;
+            if(point == (MSIZE-1) && !speciel_line )
+                if(loint != (CNUM-1))
+                        loint <= loint + 1'b1;
+                else    loint <= 7'd0;
+            // else if (point == (NSIZE-1) && loint == (CNUM-1))
+                    // loint <= 7'd0;
+            else if (point == (NSIZE-1) && speciel_line)
+                if(loint != (CNUM-1))
+                        loint <= loint + 1'b1;
+                else    loint <= 7'd0;
             else    loint <= loint;
         end else
             loint <= loint;
@@ -96,12 +128,13 @@ end
 
 reg         read_en;
 
-localparam  READ_MMT = EX_EX? (NSIZE-1-2) : (NSIZE-1-1);
-
 always@(posedge clock,negedge rst_n)begin
     if(~rst_n)  read_en <= 1'b0;
     else begin
-        if(loint != (CNUM-1))begin
+        // if(loint != (CNUM-1))begin
+        // if((loint != (CNUM-1) && O_L==0) ||
+        //    (loint != (1     ) && O_L==1)   )begin
+        if(!speciel_line || last_line)begin
             if(point == (MSIZE-1-2) && ord_en)
                     read_en  <= 1'b1;
             else    read_en  <= 1'b0;
@@ -140,9 +173,7 @@ always@(posedge clock,negedge rst_n)
         else    ex_shift  <= loint+1'b1;
     end
 
-localparam  OVER_BITS =  (ISIZE%OSIZE)==0? 0 : OSIZE - (ISIZE%OSIZE);
-localparam  LAST_BITS =  (ISIZE%OSIZE);
-localparam  O_L = OVER_BITS > LAST_BITS ? 1 : 0;
+
 generate
 if(EX_EX)begin
 always@(posedge clock,negedge rst_n)begin:DATA_MAP_BLOCK
@@ -159,9 +190,23 @@ reg     moment_ex;
                 data_reg    <= idata[ISIZE-1-(OVER_BITS*loint)-(point*OSIZE)-:OSIZE];
         end else begin
             if(moment_ex)
-                data_reg    <= (ex_data<<(OSIZE-LAST_BITS*ex_shift)) | (idata[ISIZE-1-:OSIZE]>>(LAST_BITS*ex_shift));
+                // data_reg    <= (ex_data<<(OSIZE-LAST_BITS*ex_shift)) | (idata[ISIZE-1-:OSIZE]>>(LAST_BITS*ex_shift));
+                // just for [256 512]->24
+                case(ex_shift)
+                0:  data_reg    <= idata[ISIZE-1-:OSIZE];
+                1:  data_reg    <= {ex_data[LAST_BITS-1:0],idata[ISIZE-1-:(OSIZE-LAST_BITS)]};
+                2:  data_reg    <= {ex_data[OVER_BITS-1:0],idata[ISIZE-1-:(OSIZE-OVER_BITS)]};
+                default:;
+                endcase
             else
-                data_reg    <= idata[ISIZE-1-(OSIZE-LAST_BITS*loint)-(point*OSIZE)-:OSIZE];
+                // data_reg    <= idata[ISIZE-1-(OSIZE-LAST_BITS*loint)-(point*OSIZE)-:OSIZE];
+
+                case(loint)
+                0:  data_reg    <= idata[ISIZE-1-(point*OSIZE)-:OSIZE];
+                1:  data_reg    <= idata[ISIZE-1-(OVER_BITS)-(point*OSIZE)-:OSIZE];
+                2:  data_reg    <= idata[ISIZE-1-(LAST_BITS)-(point*OSIZE)-:OSIZE];
+                default:;
+                endcase
         end
     end
 end

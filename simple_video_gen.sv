@@ -15,10 +15,12 @@ module simple_video_gen #(
 )(
     input       enable,
     video_native_inf.compact_out    inf,
-    axi_stream_inf.master           axis
+    axi_stream_inf.master           axis,
+    output[15:0]                    vactive,
+    output[15:0]                    hactive
 );
 
-video_sync_generator_B2 #(
+video_sync_generator_B3 #(
 	.MODE		(MODE)
 )video_sync_generator_inst(
 /*	input			*/	.pclk 		(inf.pclk  		),
@@ -31,7 +33,9 @@ video_sync_generator_B2 #(
 /*	output			*/	.de         (inf.de		),
 /*	output			*/	.field      (			),
 /*  output          */  .ng_vs      (ng_vsync   ),
-/*  output          */  .ng_hs      (ng_hsync   )
+/*  output          */  .ng_hs      (ng_hsync   ),
+/*  output[15:0]    */  .vactive    (vactive    ),
+/*  output[15:0]    */  .hactive    (hactive    )
 );
 
 bit [7:0]   div8 = 8'b0000_0001;
@@ -42,6 +46,18 @@ always@(posedge inf.pclk)begin
     end else begin
         div8 <= div8;
 end end
+
+wire	de_raising;
+wire    de_falling;
+edge_generator #(
+	.MODE		("NORMAL" 	)  // FAST NORMAL BEST
+)de_gen_edge(
+	.clk		(inf.pclk 	 ),
+	.rst_n      (1'b1        ),
+	.in         (inf.de      ),
+	.raising    (de_raising  ),
+	.falling    (de_falling  )
+);
 
 int test_data;
 
@@ -60,10 +76,16 @@ int tmp_data;
 
     if(inf.vsync)
             test_data   <= 0;
+    else if(de_falling)
+            test_data   <= test_data + (1<<16);
     else if(inf.de)
             test_data   <= test_data + 1'b1;
-    else    test_data   <= 0;
-
+    // else    test_data   <= 0;
+    else begin
+            test_data[15:0]     <= 0;
+            // test_data[31:16]    <= 0;
+            test_data[31:16]    <= test_data[31:16];
+    end
 end
 
 assign inf.data = test_data;

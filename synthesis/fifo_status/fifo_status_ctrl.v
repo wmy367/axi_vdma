@@ -12,12 +12,14 @@ madified:
 module fifo_status_ctrl #(
     parameter   THRESHOLD = 200,
     parameter   BURST_LEN = 100,
-    parameter   LSIZE     = 9
+    parameter   LSIZE     = 9,
+    parameter   MODE      = "LINE"  //LINE ONCE
 )(
     input                   clock,
     input                   rst_n,
     input [9:0]             count,
-    input                   tail,
+    input                   line_tail,
+    input                   frame_tail,
     input [LSIZE-1:0]       tail_len,
     input                   fifo_empty,
 
@@ -66,7 +68,7 @@ always@(*)
     //------------//
     WR_TAIL:
         if(resp)
-                nstate = WAIT_DONE;
+                nstate = TAIL_DONE;
         else    nstate = WR_TAIL;
     TAIL_DONE:
         if(done)
@@ -130,7 +132,9 @@ always@(posedge clock,negedge rst_n)
 always@(*)
     case(tcstate)
     TIDLE:
-        if(tail)
+        if(
+            ((MODE=="LINE")&&line_tail) ||
+            ((MODE=="ONCE")&&frame_tail) ) 
                 tnstate = CATCHT;
         else    tnstate = IDLE;
 
@@ -179,7 +183,8 @@ always@(posedge clock,negedge rst_n)
         NEED_WR:    len_reg <= BURST_LEN;
         WR_TAIL:    len_reg <= tail_len;
         WAIT_DONE:  len_reg <= len_reg;
-        default:    len_reg <= {LSIZE{1'd0}};
+        // default:    len_reg <= {LSIZE{1'd0}};
+        default:    len_reg <= len_reg;
         endcase
 
 assign  req_len = len_reg;
@@ -198,7 +203,8 @@ always@(posedge clock,negedge rst_n)
     if(~rst_n)  tail_done_reg  <= 1'b0;
     else
         case(nstate)
-        FSH:    tail_done_reg  <= 1'b1;
+        TAIL_FSH:
+                tail_done_reg  <= 1'b1;
         default:tail_done_reg  <= 1'b0;
         endcase
 

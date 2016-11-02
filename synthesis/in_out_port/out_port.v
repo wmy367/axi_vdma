@@ -47,7 +47,9 @@ module out_port #(
     output              lalign                  ,
     output              ealign                  ,
     input[DSIZE-1:0]    in_data                 ,
-    output              rd_en
+    output              rd_en                   ,
+    output[15:0]        out_vactive             ,
+    output[15:0]        out_hactive
 );
 
 wire        gen_vsync,gen_hsync,gen_de;
@@ -62,7 +64,7 @@ end
 
 generate
 if(EX_SYNC=="OFF")begin
-video_sync_generator_B2 #(
+video_sync_generator_B3 #(
 	.MODE		(VIDEO_FORMAT)
 )video_sync_generator_inst(
 /*	input			*/	.pclk 		(clock		),
@@ -75,12 +77,16 @@ video_sync_generator_B2 #(
 /*	output			*/	.de         (gen_de		),
 /*	output			*/	.field      (			),
 /*  output          */  .ng_vs      (ng_vsync   ),
-/*  output          */  .ng_hs      (ng_hsync   )
+/*  output          */  .ng_hs      (ng_hsync   ),
+/*  output[15:0]    */  .vactive    (out_vactive    ),
+/*  output[15:0]    */  .hactive    (out_hactive    )
 );
 end else begin
 assign gen_vsync    = in_vsync;
 assign gen_hsync    = in_hsync;
 assign gen_de       = in_de;
+assign out_vactive  = vactive;
+assign out_hactive  = hactive;
 end
 endgenerate
 
