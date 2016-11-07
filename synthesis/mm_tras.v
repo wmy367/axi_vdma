@@ -25,6 +25,7 @@ module mm_tras #(
 )(
     input               clock                   ,
     input               rst_n                   ,
+    input               enable                  ,
     input [ASIZE-1:0]   baseaddr                ,
     input [15:0]        vactive                 ,
     input [15:0]        hactive                 ,
@@ -172,7 +173,8 @@ combin_data #(
     .DATA_TYPE  (DATA_TYPE    ),
     .MODE       (MODE         )
 )combin_data_inst(
-/*    input               */ .clock       (wr_clk    ),
+///*    input               */ .clock       (wr_clk    ),
+/*    input               */ .clock       (clock    ),  //test
 /*    input               */ .rst_n       (wr_rst_n  ),
 /*    input               */ .iwr_en      (in_port_odata_vld  ),
 /*    input [ISIZE-1:0]   */ .idata       (in_port_odata      ),
@@ -187,11 +189,18 @@ combin_data #(
 wire[9:0]       rd_data_count;
 wire[9:0]       wr_data_count;
 
-wire            fifo_rst;
+reg             fifo_rst = 1;
 wire            fifo_empty;
 wire            pull_data_en;
 
-assign  fifo_rst    = FRAME_SYNC=="ON"? in_port_falign : 1'b0;
+// assign  fifo_rst    = FRAME_SYNC=="ON"? in_port_falign : (DATA_TYPE=="AXIS"? 1'b0 : in_port_falign) ;
+// assign  fifo_rst    = 1'b0;
+
+
+always@(posedge wr_clk)begin
+    fifo_rst    <= ~fifo_rst;
+end
+
 generate
 if(AXI_DSIZE == 256)begin
 vdma_stream_fifo stream_fifo_inst (
@@ -209,9 +218,32 @@ vdma_stream_fifo stream_fifo_inst (
 /*  output[9:0]         */     .rd_data_count     (rd_data_count                ),
 /*  output[9:0]         */     .wr_data_count     (wr_data_count                )
 );
+// end else if(AXI_DSIZE == 512)begin
+// vdma_stream_fifo_512 stream_fifo_inst (
+// // /*  input               */     .rst               (!wr_rst_n ||  fifo_rst       ),
+// // /*  input               */     .rst               (fifo_rst      ),
+// /*  input               */     .wr_rst               (fifo_rst     ),
+// /*  input               */     .rd_rst               (1'b0      ),
+// /*  input               */     .wr_clk            (wr_clk                       ),
+// /*  input               */     .rd_clk            (rd_clk                       ),
+// /*  input [DSIZE-1:0]   */     .din               (cb_data/* idata*/                     ),
+// /*  input               */     .wr_en             (cb_wr_en || cb_wr_last_en    ),
+// /*  input               */     .rd_en             (pull_data_en && axi_wready   ),
+// /*  output [DSIZE-1:0]  */     .dout              (axi_wdata                    ),
+// /*  output              */     .full              (   ),
+// /*  output              */     .almost_full       (fifo_almost_full             ),
+// /*  output              */     .empty             (fifo_empty                   ),
+// /*  output              */     .almost_empty      (   ),
+// /*  output[9:0]         */     .rd_data_count     (rd_data_count                ),
+// /*  output[9:0]         */     .wr_data_count     (wr_data_count                )
+// );
+// end
+
 end else if(AXI_DSIZE == 512)begin
 vdma_stream_fifo_512 stream_fifo_inst (
-/*  input               */     .rst               (!wr_rst_n ||  fifo_rst       ),
+// /*  input               */     .rst               (!wr_rst_n ||  fifo_rst       ),
+/*  input               */     .wr_rst            (0                     ),
+/*  input               */     .rd_rst            (fifo_rst                     ),
 /*  input               */     .wr_clk            (wr_clk                       ),
 /*  input               */     .rd_clk            (rd_clk                       ),
 /*  input [DSIZE-1:0]   */     .din               (cb_data                      ),
@@ -226,6 +258,7 @@ vdma_stream_fifo_512 stream_fifo_inst (
 /*  output[9:0]         */     .wr_data_count     (wr_data_count                )
 );
 end
+
 endgenerate
 
 generate
@@ -276,6 +309,8 @@ fifo_status_ctrl #(
 )fifo_status_ctrl_inst(
 /*  input             */    .clock             (rd_clk              ),
 /*  input             */    .rst_n             (rd_rst_n            ),
+/*  input             */    .enable            (enable              ),
+/*  input             */    .f_rst_status      (1'b0                ),
 /*  input             */    .fifo_empty        (fifo_empty          ),
 /*  input [9:0]       */    .count             (rd_data_count       ),
 /*  input             */    .line_tail         (in_port_lalign_bc   ),      // not frame tail

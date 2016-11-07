@@ -295,6 +295,16 @@ module multiports_vdma #(
     input                           init_calib_complete
 );
 
+// cross_clk_sync #(
+// 	.LAT       (2      ),
+// 	.DSIZE	   (1      )
+// )cross_clk_sync_inst(
+// /*	input				*/	.clk         (),
+// /*	input				*/	.rst_n,
+// /*	input [DSIZE-1:0]	*/	.d,
+// /*	output[DSIZE-1:0]	*/	.q
+// );
+
 localparam  WR_THRESHOLD    = 50,
             RD_THRESHOLD    = 50,
             BURST_LEN_SIZE  = 8;
@@ -348,6 +358,7 @@ vdma_compact_port #(
 /*  input [15:0]   */   .hactive                (   ch0_hactive     ),
 /*  input          */   .in_fsync               (   ch0_in_fsync    ),
 /*  input          */   .rev_enable             (   ch0_rev_enable  ),
+/*  input          */   .trs_enable             (init_calib_complete),
     //native input port
 /*  video_native_inf.compact_in */ .vin         (ch0_vin  ),
     //native output ex driver
@@ -365,6 +376,10 @@ vdma_compact_port #(
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba0    (ch0_ctrl_ex_ba0),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba1    (ch0_ctrl_ex_ba1),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba2    (ch0_ctrl_ex_ba2)
+);
+end else begin
+empty_axi4_master empty_axi4_master_inst0(
+/*  axi_inf.master */   .inf    (axi_s00_inf)
 );
 end
 endgenerate
@@ -418,6 +433,7 @@ vdma_compact_port #(
 /*  input [15:0]   */   .hactive                (   ch1_hactive     ),
 /*  input          */   .in_fsync               (   ch1_in_fsync    ),
 /*  input          */   .rev_enable             (   ch1_rev_enable  ),
+/*  input          */   .trs_enable             (init_calib_complete),
     //native input port
 /*  video_native_inf.compact_in */ .vin         (ch1_vin  ),
     //native output ex driver
@@ -435,6 +451,10 @@ vdma_compact_port #(
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba0    (ch1_ctrl_ex_ba0),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba1    (ch1_ctrl_ex_ba1),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba2    (ch1_ctrl_ex_ba2)
+);
+end else begin
+empty_axi4_master empty_axi4_master_inst1(
+/*  axi_inf.master */   .inf    (axi_s01_inf)
 );
 end
 endgenerate
@@ -487,6 +507,7 @@ vdma_compact_port #(
 /*  input [15:0]   */   .hactive                (   ch2_hactive     ),
 /*  input          */   .in_fsync               (   ch2_in_fsync    ),
 /*  input          */   .rev_enable             (   ch2_rev_enable  ),
+/*  input          */   .trs_enable             (init_calib_complete),
     //native input port
 /*  video_native_inf.compact_in */ .vin         (ch2_vin  ),
     //native output ex driver
@@ -504,6 +525,10 @@ vdma_compact_port #(
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba0    (ch2_ctrl_ex_ba0),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba1    (ch2_ctrl_ex_ba1),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba2    (ch2_ctrl_ex_ba2)
+);
+end else begin
+empty_axi4_master empty_axi4_master_inst2(
+/*  axi_inf.master */   .inf    (axi_s02_inf)
 );
 end
 endgenerate
@@ -557,6 +582,7 @@ vdma_compact_port #(
 /*  input [15:0]   */   .hactive                (   ch3_hactive     ),
 /*  input          */   .in_fsync               (   ch3_in_fsync    ),
 /*  input          */   .rev_enable             (   ch3_rev_enable  ),
+/*  input          */   .trs_enable             (init_calib_complete),
     //native input port
 /*  video_native_inf.compact_in */ .vin         (ch3_vin  ),
     //native output ex driver
@@ -574,6 +600,10 @@ vdma_compact_port #(
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba0    (ch3_ctrl_ex_ba0),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba1    (ch3_ctrl_ex_ba1),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba2    (ch3_ctrl_ex_ba2)
+);
+end else begin
+empty_axi4_master empty_axi4_master_inst3(
+/*  axi_inf.master */   .inf    (axi_s03_inf)
 );
 end
 endgenerate
@@ -627,6 +657,7 @@ vdma_compact_port #(
 /*  input [15:0]   */   .hactive                (   ch4_hactive     ),
 /*  input          */   .in_fsync               (   ch4_in_fsync    ),
 /*  input          */   .rev_enable             (   ch4_rev_enable  ),
+/*  input          */   .trs_enable             (init_calib_complete),
     //native input port
 /*  video_native_inf.compact_in */ .vin         (ch4_vin  ),
     //native output ex driver
@@ -644,6 +675,10 @@ vdma_compact_port #(
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba0    (ch4_ctrl_ex_ba0),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba1    (ch4_ctrl_ex_ba1),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba2    (ch4_ctrl_ex_ba2)
+);
+end else begin
+empty_axi4_master empty_axi4_master_inst4(
+/*  axi_inf.master */   .inf    (axi_s04_inf)
 );
 end
 endgenerate
@@ -697,6 +732,7 @@ vdma_compact_port #(
 /*  input [15:0]   */   .hactive                (   ch5_hactive     ),
 /*  input          */   .in_fsync               (   ch5_in_fsync    ),
 /*  input          */   .rev_enable             (   ch5_rev_enable  ),
+/*  input          */   .trs_enable             (init_calib_complete),
     //native input port
 /*  video_native_inf.compact_in */ .vin         (ch5_vin  ),
     //native output ex driver
@@ -714,6 +750,10 @@ vdma_compact_port #(
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba0    (ch5_ctrl_ex_ba0),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba1    (ch5_ctrl_ex_ba1),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba2    (ch5_ctrl_ex_ba2)
+);
+end else begin
+empty_axi4_master empty_axi4_master_inst5(
+/*  axi_inf.master */   .inf    (axi_s05_inf)
 );
 end
 endgenerate
@@ -767,6 +807,7 @@ vdma_compact_port #(
 /*  input [15:0]   */   .hactive                (   ch6_hactive     ),
 /*  input          */   .in_fsync               (   ch6_in_fsync    ),
 /*  input          */   .rev_enable             (   ch6_rev_enable  ),
+/*  input          */   .trs_enable             (init_calib_complete),
     //native input port
 /*  video_native_inf.compact_in */ .vin         (ch6_vin  ),
     //native output ex driver
@@ -784,6 +825,10 @@ vdma_compact_port #(
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba0    (ch6_ctrl_ex_ba0),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba1    (ch6_ctrl_ex_ba1),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba2    (ch6_ctrl_ex_ba2)
+);
+end else begin
+empty_axi4_master empty_axi4_master_inst6(
+/*  axi_inf.master */   .inf    (axi_s06_inf)
 );
 end
 endgenerate
@@ -837,6 +882,7 @@ vdma_compact_port #(
 /*  input [15:0]   */   .hactive                (   ch7_hactive     ),
 /*  input          */   .in_fsync               (   ch7_in_fsync    ),
 /*  input          */   .rev_enable             (   ch7_rev_enable  ),
+/*  input          */   .trs_enable             (init_calib_complete),
     //native input port
 /*  video_native_inf.compact_in */ .vin         (ch7_vin  ),
     //native output ex driver
@@ -855,6 +901,10 @@ vdma_compact_port #(
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba1    (ch7_ctrl_ex_ba1),
 /*  vdma_baseaddr_ctrl_inf.master */.ctrl_ex_ba2    (ch7_ctrl_ex_ba2)
 );
+end else begin
+empty_axi4_master empty_axi4_master_inst7(
+/*  axi_inf.master */   .inf    (axi_s07_inf)
+);
 end
 endgenerate
 //-----<< port 7 >>------------------
@@ -869,8 +919,8 @@ axi4_interconnect_wrap #(
     .AXI_DSIZE      (AXI_DSIZE  )
 )axi4_interconnect_wrap_inst(
 /*    input          */  .INTERCONNECT_ACLK    (axi_aclk            ),
-/*    input          */  .INTERCONNECT_ARESETN (axi_resetn          ),
-
+/*    input          */  .INTERCONNECT_ARESETN (axi_resetn && !axi_m00_inf.axi_wevld && !axi_m00_inf.axi_revld),
+// /*    input          */  .INTERCONNECT_ARESETN (axi_resetn          ),
 /*    axi_inf.slaver */  .s00_inf              (axi_s00_inf         ),
 /*    axi_inf.slaver */  .s01_inf              (axi_s01_inf         ),
 /*    axi_inf.slaver */  .s02_inf              (axi_s02_inf         ),
@@ -882,6 +932,15 @@ axi4_interconnect_wrap #(
 
 /*    axi_inf.master */  .m00_inf              (axi_m00_inf         )
 );
+
+// axi4_error_chk #(
+//     .DELAY      (24'hFFF_000    )
+// )axi4_error_chk_m00(
+//     .inf        (axi_m00_inf)
+// );
+
+assign axi_m00_inf.axi_wevld    = 1'b0;
+assign axi_m00_inf.axi_revld    = 1'b0;
 
 axi4_to_native_for_ddr_ip #(
     .ADDR_WIDTH     (ASIZE         ),

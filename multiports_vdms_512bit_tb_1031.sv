@@ -296,9 +296,9 @@ DDR_NATIVE_512 u_DDR3_native (
     .ui_clk_sync_rst                (app_sync_rst),  // output			ui_clk_sync_rst
     .app_wdf_mask                   (app_wdf_mask),  // input [63:0]		app_wdf_mask
     // System Clock Ports
-    .sys_clk_i                      (clk_50M),
+    .sys_clk_i                      (clk_200M),
     // Reference Clock Ports
-    .clk_ref_i                      (clk_200M),
+    // .clk_ref_i                      (clk_200M),
     .sys_rst                        (sys_rst) // input sys_rst
 );
 //----<< DDR3 IP >>----------

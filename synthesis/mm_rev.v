@@ -194,7 +194,8 @@ vdma_stream_fifo stream_fifo_inst (
 );
 end else if(AXI_DSIZE == 512)begin
 vdma_stream_fifo_512 stream_fifo_inst (
-/*  input               */     .rst               (out_port_falign_bc || !rst_n    ),
+/*  input               */     .wr_rst               (out_port_falign_bc || !rst_n    ),
+/*  input               */     .rd_rst               (out_port_falign_bc || !rst_n    ),
 /*  input               */     .wr_clk            (axi_aclk                     ),
 /*  input               */     .rd_clk            (clock                        ),
 /*  input [DSIZE-1:0]   */     .din               (axi_rdata                    ),

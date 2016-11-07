@@ -17,6 +17,8 @@ module fifo_status_ctrl #(
 )(
     input                   clock,
     input                   rst_n,
+    input                   enable,
+    input                   f_rst_status,
     input [9:0]             count,
     input                   line_tail,
     input                   frame_tail,
@@ -44,14 +46,20 @@ localparam          IDLE        =   4'd0,
 
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  cstate <= IDLE;
-    else        cstate <= nstate;
+    else  begin
+        if(f_rst_status)
+                cstate <= IDLE;
+        else    cstate <= nstate;
+    end
 
 reg     burst_exec,tail_exec;
 
 always@(*)
     case(cstate)
     IDLE:
-        if(tail_exec && !fifo_empty)
+        if(!enable)
+                nstate = IDLE;
+        else if(tail_exec && !fifo_empty)
                 nstate = WR_TAIL;
         else if(burst_exec && !fifo_empty)
                 nstate = NEED_WR;
@@ -134,7 +142,7 @@ always@(*)
     TIDLE:
         if(
             ((MODE=="LINE")&&line_tail) ||
-            ((MODE=="ONCE")&&frame_tail) ) 
+            ((MODE=="ONCE")&&frame_tail) )
                 tnstate = CATCHT;
         else    tnstate = IDLE;
 

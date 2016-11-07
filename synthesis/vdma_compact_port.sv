@@ -44,6 +44,7 @@ module vdma_compact_port #(
     input [15:0]        hactive                 ,
     input               in_fsync                ,
     input               rev_enable              ,
+    input               trs_enable              ,
     //native input port
     video_native_inf.compact_in vin             ,
     //native output ex driver
@@ -62,6 +63,11 @@ module vdma_compact_port #(
     vdma_baseaddr_ctrl_inf.master       ctrl_ex_ba1,
     vdma_baseaddr_ctrl_inf.master       ctrl_ex_ba2
 );
+
+logic   axi4_inf_err_rst;
+
+always@(posedge axi4_m.axi_aclk)
+    axi4_inf_err_rst <= (axi4_m.axi_wevld && axi4_m.axi_weresp!=4'b000) || (axi4_m.axi_revld && axi4_m.axi_reresp!=4'b000);
 
 logic pend_rev_trs;
 logic pend_trs_rev;
@@ -168,14 +174,16 @@ mm_tras #(
     .FRAME_SYNC     (IN_FRAME_SYNC     )//OFF ON
 )mm_tras_inst(
 /*  input             */  .clock                   (vin.pclk            ),
-/*  input             */  .rst_n                   (vin.prst_n          ),
+/*  input             */  .rst_n                   (vin.prst_n  && !axi4_inf_err_rst     ),
+// /*  input             */  .rst_n                   (vin.prst_n          ),
+/*  input             */  .enable                  (trs_enable          ),
 /*  input             */  .baseaddr                (wr_baseaddr         ),
 /*  input [15:0]      */  .vactive                 (vactive         ),
 /*  input [15:0]      */  .hactive                 (hactive         ),
 /*  input             */  .vsync                   (vin.vsync       ),
 /*  input             */  .hsync                   (vin.hsync       ),
 /*  input             */  .de                      (vin.de          ),
-/*  input [DSIZE-1:0] */  .idata                   (vin.data        ),
+/*  input [DSIZE-1:0] */  .idata                   (vin.data /*hactive*/      ),
 /*  output            */  .fifo_almost_full        (                ),
 /*  input             */  .pend_in                 (pend_rev_trs    ),
 /*  output            */  .pend_out                (pend_trs_rev    ),
@@ -277,7 +285,8 @@ mm_rev #(
     .VIDEO_FORMAT   (VIDEO_FORMAT   )
 )mm_rev_inst(
 /*  input              */ .clock                   (rev_pclk            ),
-/*  input              */ .rst_n                   (rev_prst_n          ),
+/*  input              */ .rst_n                   (rev_prst_n && !axi4_inf_err_rst         ),
+// /*  input              */ .rst_n                   (rev_prst_n          ),
 /*  input              */ .enable                  (rev_enable          ),
 /*  input             */  .baseaddr                (rd_baseaddr         ),
 /*  input [15:0]       */ .vactive                 (vactive             ),
@@ -333,6 +342,42 @@ assign pend_rev_trs = 1'b0;
 end
 endgenerate
 
+generate
+if(PORT_MODE=="WRITE")begin
+assign     axi4_m.axi_arid     = 0;
+assign     axi4_m.axi_araddr   = 0;
+assign     axi4_m.axi_arlen    = 0;
+assign     axi4_m.axi_arsize   = 05;
+assign     axi4_m.axi_arburst  = 2'b01;
+assign     axi4_m.axi_arlock   = 0;
+assign     axi4_m.axi_arcache  = 0;
+assign     axi4_m.axi_arprot   = 0;
+assign     axi4_m.axi_arqos    = 0;
+assign     axi4_m.axi_arvalid  = 0;
+assign     axi4_m.axi_rready   = 1;
+// assign     pend_rev_trs        = 1'b0;
+end
+endgenerate
 
+generate
+if(PORT_MODE=="READ")begin
+assign     axi4_m.axi_awid     = 0;
+assign     axi4_m.axi_awaddr   = 0;
+assign     axi4_m.axi_awlen    = 0;
+assign     axi4_m.axi_awsize   = 5;
+assign     axi4_m.axi_awburst  = 2'b01;
+assign     axi4_m.axi_awlock   = 0;
+assign     axi4_m.axi_awcache  = 0;
+assign     axi4_m.axi_awprot   = 0;
+assign     axi4_m.axi_awqos    = 0;
+assign     axi4_m.axi_awvalid  = 0;
+assign     axi4_m.axi_wdata    = 0;
+assign     axi4_m.axi_wstrb    = 0;
+assign     axi4_m.axi_wlast    = 0;
+assign     axi4_m.axi_wvalid   = 0;
+assign     axi4_m.axi_bready   = 1;
+// assign     pend_trs_rev        = 1'b0;
+end
+endgenerate
 
 endmodule

@@ -32,14 +32,16 @@ module axi4_to_native_for_ddr_ip #(
 logic clock,rst;
 
 assign clock = axi_inf.axi_aclk;
-assign rst   = !axi_inf.axi_resetn;
-
+// assign rst   = !axi_inf.axi_resetn;
+assign rst  =   !axi_inf.axi_resetn ||  axi_inf.axi_wevld || axi_inf.axi_revld;
 typedef enum {NOP,IDLE,EXEC_WR,WR_CMD_E,WR_FIFO_E,WR_END,EXEC_RD,RD_FIFO_E,RD_END} MASTER_STATE;
 
 MASTER_STATE mnstate,mcstate;
 
 always@(posedge clock,posedge rst)begin
     if(rst)     mcstate <= NOP;
+    // else if(axi_inf.axi_wevld ||　axi_inf.axi_revld)
+    //             mcstate <= NOP;
     else        mcstate <= mnstate;
 end
 

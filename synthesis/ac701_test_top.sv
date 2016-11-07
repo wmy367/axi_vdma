@@ -32,7 +32,9 @@ module ac701_test_top (
     output              hdmi_hs,
     output              hdmi_de,
     output[23:0]        hdmi_data,
-    output              hdmi_clk
+    output              hdmi_clk,
+    output              LED_0
+//    input [23:0]        test_in
 );
 //----->> CLOCK RST <<---------------
 wire        app_clk;
@@ -65,16 +67,14 @@ assign  sys_rst = mmcm_locked;
 localparam
                 PIX_DSIZE_0    =   24,
                 PIX_DSIZE_1    =   24,
-                VIDEO_FORMAT_0 =   "1080P@60",
-                VIDEO_FORMAT_1 =   "1080P@60",
-                VDMA_PORT0_EN  =   1,
-                VDMA_PORT1_EN  =   0;
+                VIDEO_FORMAT_0 =   "TEST",
+                VIDEO_FORMAT_1 =   "1080P@60";
 
 localparam      ADDR_WIDTH  = 28,
                 DATA_WIDTH  = 512;
 
 //--->> interface define <<-------------------
-`include "/home/young/work/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
+`include "C:/Users/wmy367/Documents/GitHub/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
 //---<< interface define >>-------------------
 //--->> TEST COLOR PARTTEN <<-----------------
 logic[15:0]     vactive0;
@@ -84,8 +84,6 @@ logic[15:0]     vactive1;
 logic[15:0]     hactive1;
 
 logic           video_gen_0_en,video_gen_1_en;
-assign video_gen_0_en   = 1;
-assign video_gen_1_en   = 1;
 
 simple_video_gen #(
     .MODE   (VIDEO_FORMAT_0   ),
@@ -133,10 +131,14 @@ logic                                       app_zq_req;
 logic                                       app_sr_active;
 logic                                       app_ref_ack;
 logic                                       app_zq_ack;
+wire                                        init_calib_complete;
 //---->> axi4 vdma to native for ddr3 <<-------------------
 bit         ch0_rev_enable,ch1_rev_enable;
-assign  ch0_rev_enable  = 1;
-assign  ch1_rev_enable  = 1;
+assign  ch0_rev_enable  = init_calib_complete;
+assign  ch1_rev_enable  = init_calib_complete;
+
+assign video_gen_0_en   = init_calib_complete;
+assign video_gen_1_en   = init_calib_complete;
 
 multiports_vdma_wrap #(
     .ASIZE          (ADDR_WIDTH     ),
@@ -299,5 +301,7 @@ ODDR #(
   .R        (0),   // 1-bit reset
   .S        (0)    // 1-bit set
 );
+
+assign LED_0    = video_native_out0.vsync;
 
 endmodule

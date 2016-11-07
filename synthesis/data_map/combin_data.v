@@ -72,6 +72,7 @@ always@(posedge clock,negedge rst_n)
 always@(posedge clock,negedge rst_n)
     if(~rst_n)  last_line    <= 1'b0;
     else        last_line    <= loint == (CNUM-1);
+    // else           last_line    <= ~last_line;  //test
 
 
 always@(posedge clock,negedge rst_n)
@@ -86,21 +87,14 @@ always@(posedge clock,negedge rst_n)
                     point   <= 7'd0;
             else    point   <= iwr_en? 7'd0 : point;
         else if(iwr_en)begin
-            if(/**/
-                (
-                    point == (MSIZE-1)
-                )
-                ||
-                (
-                    point == (NSIZE-1)
-                    &&
-                    // loint == (CNUM-1)
-                    speciel_line
-                )
+            if(/**/ (point == (MSIZE-1)) ||
+                    (point == (NSIZE-1) && /* loint == (CNUM-1)*/ speciel_line)
             )begin
+            // if(point == (MSIZE-1))begin //test
                     point   <= 7'd0;
-            end else
+            end else begin
                     point   <= point + 1'b1;
+            end
         end else    point   <= point;
     end
 
@@ -268,6 +262,9 @@ integer KK;
             for(KK=0;KK<NSIZE;KK=KK+1)
                 out_reg[OSIZE-1-LAST_BITS-KK*ISIZE-:ISIZE]  = map_data[KK];
         end
+
+        // for(KK=0;KK<NSIZE;KK=KK+1)
+        //      out_reg[OSIZE-1-KK*ISIZE-:ISIZE] = map_data[KK];
     end else begin
         out_reg[OSIZE-1-:ISIZE] = map_data_ex << (ISIZE-(OVER_BITS*loint_lat));
 
@@ -298,6 +295,15 @@ endgenerate
 //---<< OSIZE%ISIZE != 0 >>------------
 
 
-assign odata    = out_reg;
+// assign odata    = out_reg;
+//--->>test <<--------------
+reg [23:0]  tmp_data    = 0;
+
+always@(posedge clock)begin
+    tmp_data    <= tmp_data + 1;
+end
+//---<<test >>--------------
+
+assign odata = {tmp_data,last_line,point,loint,ilast,ialign,iwr_en,idata}; //test
 
 endmodule

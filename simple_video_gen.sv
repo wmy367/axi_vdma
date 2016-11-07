@@ -89,6 +89,7 @@ int tmp_data;
 end
 
 assign inf.data = test_data;
+// assign inf.data = 1023;
 
 
 native_to_axis #(
