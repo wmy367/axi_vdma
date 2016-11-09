@@ -295,15 +295,15 @@ endgenerate
 //---<< OSIZE%ISIZE != 0 >>------------
 
 
-// assign odata    = out_reg;
-//--->>test <<--------------
-reg [23:0]  tmp_data    = 0;
-
-always@(posedge clock)begin
-    tmp_data    <= tmp_data + 1;
-end
-//---<<test >>--------------
-
-assign odata = {tmp_data,last_line,point,loint,ilast,ialign,iwr_en,idata}; //test
+assign odata    = out_reg;
+// //--->>test <<--------------
+// reg [23:0]  tmp_data    = 0;
+//
+// always@(posedge clock)begin
+//     tmp_data    <= tmp_data + 1;
+// end
+// //---<<test >>--------------
+//
+// assign odata = {tmp_data,last_line,point,loint,ilast,ialign,iwr_en,idata}; //test
 
 endmodule

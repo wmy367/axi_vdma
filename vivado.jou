@@ -1,0 +1,30 @@
+#-----------------------------------------------------------
+# Vivado v2016.2 (64-bit)
+# SW Build 1577090 on Thu Jun  2 16:32:35 MDT 2016
+# IP Build 1577682 on Fri Jun  3 12:00:54 MDT 2016
+# Start of session at: Wed Nov  9 09:29:37 2016
+# Process ID: 4064
+# Current directory: /home/young/work/axi_vdma
+# Command line: vivado
+# Log file: /home/young/work/axi_vdma/vivado.log
+# Journal file: /home/young/work/axi_vdma/vivado.jou
+#-----------------------------------------------------------
+start_gui
+open_project /home/young/work/FPGA/vdma_test/vdma_test.xpr
+update_compile_order -fileset sources_1
+reset_run synth_1
+launch_runs synth_1 -jobs 4
+wait_on_run synth_1
+open_run synth_1 -name synth_1
+open_hw
+connect_hw_server
+open_hw_target
+disconnect_hw_server localhost:3121
+connect_hw_server
+open_hw_target
+disconnect_hw_server localhost:3121
+connect_hw_server
+open_hw_target
+disconnect_hw_server localhost:3121
+connect_hw_server
+open_hw_target

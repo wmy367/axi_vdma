@@ -173,8 +173,8 @@ combin_data #(
     .DATA_TYPE  (DATA_TYPE    ),
     .MODE       (MODE         )
 )combin_data_inst(
-///*    input               */ .clock       (wr_clk    ),
-/*    input               */ .clock       (clock    ),  //test
+/*    input               */ .clock       (wr_clk    ),
+// /*    input               */ .clock       (clock    ),  //test
 /*    input               */ .rst_n       (wr_rst_n  ),
 /*    input               */ .iwr_en      (in_port_odata_vld  ),
 /*    input [ISIZE-1:0]   */ .idata       (in_port_odata      ),
@@ -189,17 +189,17 @@ combin_data #(
 wire[9:0]       rd_data_count;
 wire[9:0]       wr_data_count;
 
-reg             fifo_rst = 1;
+wire            fifo_rst;
 wire            fifo_empty;
 wire            pull_data_en;
 
-// assign  fifo_rst    = FRAME_SYNC=="ON"? in_port_falign : (DATA_TYPE=="AXIS"? 1'b0 : in_port_falign) ;
+assign  fifo_rst    = FRAME_SYNC=="ON"? in_port_falign : (DATA_TYPE=="AXIS"? 1'b0 : in_port_falign) ;
 // assign  fifo_rst    = 1'b0;
 
 
-always@(posedge wr_clk)begin
-    fifo_rst    <= ~fifo_rst;
-end
+// always@(posedge wr_clk)begin
+//     fifo_rst    <= ~fifo_rst;
+// end
 
 generate
 if(AXI_DSIZE == 256)begin
@@ -242,8 +242,8 @@ vdma_stream_fifo stream_fifo_inst (
 end else if(AXI_DSIZE == 512)begin
 vdma_stream_fifo_512 stream_fifo_inst (
 // /*  input               */     .rst               (!wr_rst_n ||  fifo_rst       ),
-/*  input               */     .wr_rst            (0                     ),
-/*  input               */     .rd_rst            (fifo_rst                     ),
+/*  input               */     .wr_rst            (!wr_rst_n ||  fifo_rst                     ),
+/*  input               */     .rd_rst            (!wr_rst_n ||  fifo_rst                     ),
 /*  input               */     .wr_clk            (wr_clk                       ),
 /*  input               */     .rd_clk            (rd_clk                       ),
 /*  input [DSIZE-1:0]   */     .din               (cb_data                      ),
