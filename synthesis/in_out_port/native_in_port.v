@@ -61,7 +61,7 @@ assign falign   = vs_falling;
 assign lalign   = de_falling;
 reg [15:0]      lcnt;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  lcnt    <= 16'd0;
     else begin
         if(falign)
@@ -74,7 +74,7 @@ always@(posedge clock,negedge rst_n)
 
 reg frame_blk;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)    frame_blk   <=1'd0;
     else            frame_blk   <= lcnt == vactive;
 

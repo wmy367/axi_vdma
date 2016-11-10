@@ -20,7 +20,7 @@ module bit5_encode (
 
 reg[2:0]		outdata;
 
-always@(posedge clk,negedge rst_n)
+always@(posedge clk/*,negedge rst_n*/)
 	if(~rst_n)	outdata		<= 3'd0;
 	else
 		casex(code)

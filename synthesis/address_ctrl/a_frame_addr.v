@@ -52,7 +52,8 @@ edge_generator #(
 
 reg [ASIZE-1:0]     curr_addr;
 
-always@(posedge clock,negedge rst_n)
+// always@(posedge clock/*,negedge rst_n*/)
+always@(posedge clock)
     if(~rst_n)  curr_addr   <= {ASIZE{1'b0}};
     else begin
         if(new_base)

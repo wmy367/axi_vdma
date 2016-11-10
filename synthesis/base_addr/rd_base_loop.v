@@ -31,7 +31,7 @@ edge_generator #(
 	.falling    (rd_vs_falling)
 );
 
-always@(posedge rclk,negedge rd_rst_n)
+always@(posedge rclk/*,negedge rd_rst_n*/)
 	if(~rd_rst_n)	rd_curr_point		<= 5'b00010;
 	else if(rd_vs_raising)
 					rd_curr_point		<= last_next_point;

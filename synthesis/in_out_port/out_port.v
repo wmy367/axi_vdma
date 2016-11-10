@@ -105,7 +105,7 @@ edge_generator #(
 
 reg     first_vld_byte;
 
-always@(posedge clock,negedge rst_n)begin : FIRST_BYTE_BLOCK
+always@(posedge clock/*,negedge rst_n*/)begin : FIRST_BYTE_BLOCK
 reg     frame_in;
     if(~rst_n)begin
         frame_in        <= 1'b0;

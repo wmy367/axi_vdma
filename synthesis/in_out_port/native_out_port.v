@@ -79,7 +79,7 @@ assign lalign   = MODE=="LINE"? de_falling : 1'b0;
 
 reg [15:0]      lcnt;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  lcnt    <= 16'd0;
     else begin
         if(falign)
@@ -92,7 +92,7 @@ always@(posedge clock,negedge rst_n)
 
 reg frame_blk;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)    frame_blk   <=1'd0;
     else          frame_blk   <= lcnt == vactive;
 

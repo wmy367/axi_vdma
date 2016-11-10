@@ -25,7 +25,7 @@ typedef enum {WR_IDLE,RD_IDLE,EXEC_WR,WR_FSH,EXEC_RD,RD_FSH} Lock_M;
 
 Lock_M nstate,cstate;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  cstate <= WR_IDLE;
     else        cstate <= nstate;
 
@@ -54,7 +54,7 @@ always@(*)
     default:    nstate = WR_IDLE;
     endcase
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  pend_wr <= 1'b0;
     else
         case(nstate)
@@ -62,7 +62,7 @@ always@(posedge clock,negedge rst_n)
         default:pend_wr <= 1'b0;
         endcase
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  pend_rd <= 1'b0;
     else
         case(nstate)

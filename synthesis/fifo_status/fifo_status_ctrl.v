@@ -47,7 +47,7 @@ localparam          IDLE        =   4'd0,
                     RESET_CHAIN =   4'd8;
 
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  cstate <= IDLE;
     else  begin
         if(f_rst_status)
@@ -104,7 +104,7 @@ always@(*)
     endcase
 
 reg     require_reg;
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  require_reg <= 1'b0;
     else
         case(nstate)
@@ -114,7 +114,7 @@ always@(posedge clock,negedge rst_n)
         endcase
 
 reg     tail_require_reg;
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  tail_require_reg <= 1'b0;
     else
         case(nstate)
@@ -127,7 +127,7 @@ assign burst_req    = require_reg;
 assign tail_req     = tail_require_reg;
 
 //--->> EXECUTE? <<-----
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  burst_exec  <= 1'b0;
     else begin
         burst_exec <= count > THRESHOLD;
@@ -135,7 +135,7 @@ always@(posedge clock,negedge rst_n)
 
 reg         burst_idle;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  burst_idle  <= 1'b0;
     else
         case(nstate)
@@ -150,7 +150,7 @@ localparam  TIDLE   = 4'd0,
             EXECT   = 4'd2,
             TFSH    = 4'd3;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  tcstate     <= TIDLE;
     else        tcstate     <= tnstate;
 
@@ -183,7 +183,7 @@ always@(*)
     default:    tnstate = TIDLE;
     endcase
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  tail_exec   <= 1'b0;
     else
         case(tnstate)
@@ -192,7 +192,7 @@ always@(posedge clock,negedge rst_n)
         endcase
 
 
-// always@(posedge clock,negedge rst_n)
+// always@(posedge clock/*,negedge rst_n*/)
 //     if(~rst_n)  tail_exec   <= 1'b0;
 //     else begin
 //         if(count != 9'd0 && !done)begin
@@ -205,7 +205,7 @@ always@(posedge clock,negedge rst_n)
 //--->> length <<------
 reg [LSIZE-1:0]   len_reg;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  len_reg     <= {LSIZE{1'd0}};
     else
         case(nstate)
@@ -220,7 +220,7 @@ assign  req_len = len_reg;
 //---<< length >>------
 //--->> DONE SIGNAL <<-------
 reg     burst_done_reg,tail_done_reg;
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  burst_done_reg  <= 1'b0;
     else
         case(nstate)
@@ -228,7 +228,7 @@ always@(posedge clock,negedge rst_n)
         default:burst_done_reg  <= 1'b0;
         endcase
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  tail_done_reg  <= 1'b0;
     else
         case(nstate)
@@ -242,7 +242,7 @@ assign tail_done    = tail_done_reg;
 //---<< DONE SIGNAL >>-------
 //--->> timeout <<-----------
 reg [23:0]      tcnt;
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  tcnt    <= 24'd0;
     else
         case(nstate)
@@ -250,7 +250,7 @@ always@(posedge clock,negedge rst_n)
         default:tcnt    <= tcnt + 1'b1;
         endcase
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  timeout    <= 1'd0;
     else begin
         case(nstate)
@@ -260,7 +260,7 @@ always@(posedge clock,negedge rst_n)
         endcase
     end
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  rst_chain    <= 1'd0;
     else
         case(nstate)
@@ -268,6 +268,7 @@ always@(posedge clock,negedge rst_n)
                 rst_chain    <= 1'b1;
         default:rst_chain    <= 1'b0;
         endcase
+        // rst_chain   <= 1'b0;
 
 //---<< timeout >>-----------
 endmodule

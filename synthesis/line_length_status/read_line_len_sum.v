@@ -68,7 +68,7 @@ end
 
 reg [31:0]          len_count;
 
-always@(posedge clock,negedge rst_n)begin
+always@(posedge clock/*,negedge rst_n*/)begin
     if(~rst_n)      len_count   <= 32'hFFFF_FFFF;
     else begin
         if(fsync)   len_count   <= num_of_AXID;
@@ -83,7 +83,7 @@ end end
 
 reg         status_reg;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  status_reg  <= 1'b0;
     else begin
         if(len_count < NOR_BURST_LEN)
@@ -96,7 +96,7 @@ assign tail_len     = (mod_len==0)? NOR_BURST_LEN : mod_len;
 
 reg         tail_leave_reg;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  tail_leave_reg  <= 1'b0;
     else begin
         tail_leave_reg = len_count <= NOR_BURST_LEN;

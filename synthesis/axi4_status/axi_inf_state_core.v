@@ -74,7 +74,7 @@ localparam      IDLE        = 4'd0,
                 DONE        = 4'd4,
                 BERR        = 4'd5;
 
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) cstate  <= IDLE;
     else            cstate  <= nstate;
 
@@ -112,7 +112,7 @@ always@(*)
 //--->> addr write valid <<-------
 reg         aw_valid_reg;
 
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) aw_valid_reg    <= 1'b0;
     else
         case(nstate)
@@ -124,7 +124,7 @@ assign axi_awvalid  = aw_valid_reg;
 //--->> Response ready <<---------
 reg         b_ready_reg;
 
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) b_ready_reg <= 1'b0;
     else
         case(nstate)
@@ -137,7 +137,7 @@ assign axi_bready   = b_ready_reg;
 reg [LSIZE-1:0]     length;
 reg [LSIZE-1:0]     len_sub_2,len_sub_1;
 
-always@(posedge axi_aclk,negedge axi_resetn)begin
+always@(posedge axi_aclk/*,negedge axi_resetn*/)begin
     if(~axi_resetn)begin
         length      <= {LSIZE{1'b0}};
         len_sub_1   <= {LSIZE{1'b0}};
@@ -158,7 +158,7 @@ end end
 
 reg [LSIZE-1:0]     lcnt;
 
-always@(posedge axi_aclk,negedge axi_resetn)begin
+always@(posedge axi_aclk/*,negedge axi_resetn*/)begin
     if(~axi_resetn) lcnt    <= {LSIZE{1'b0}};
     else begin
         if(aw_valid_reg)
@@ -172,7 +172,7 @@ always@(posedge axi_aclk,negedge axi_resetn)begin
 end end end
 
 reg             last_reg;
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) last_reg    <= 1'b0;
     else begin
         if(axi_wvalid && axi_wlast && axi_wready)
@@ -185,7 +185,7 @@ assign axi_wlast    = last_reg;
 //---<< LAST DATA >>-------------
 //--->> enable pull data <<------
 reg         pull_en;
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) pull_en <= 1'b0;
     else
         case(nstate)
@@ -197,7 +197,7 @@ assign pull_data_en = pull_en;
 //--->> resp done <<-------------
 reg     resp_reg,done_reg;
 
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) resp_reg    <= 1'b0;
     else
         case(nstate)
@@ -205,7 +205,7 @@ always@(posedge axi_aclk,negedge axi_resetn)
         default:    resp_reg    <= 1'b0;
         endcase
 
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) done_reg    <= 1'b0;
     else
         case(nstate)
@@ -218,7 +218,7 @@ assign req_done = done_reg;
 //---<< resp done >>-------------
 //--->> pending <<---------------
 reg     pend_reg;
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) pend_reg    <= 1'b0;
     else
         case(nstate)
@@ -295,7 +295,7 @@ localparam      IDLE        = 4'd0,
                 WAIT_LAST   = 4'd2,
                 DONE        = 4'd3,
                 PEND        = 4'd4;
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) cstate <= IDLE;
     else            cstate <= nstate;
 
@@ -325,7 +325,7 @@ always@(*)
 
 //--->> address read valid <<------------
 reg     ar_valid_reg;
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) ar_valid_reg    <= 1'b0;
     else
         case(nstate)
@@ -336,7 +336,7 @@ assign axi_arvalid  = ar_valid_reg;
 //---<< address read valid >>------------
 //--->> push data enable <<--------------
 reg     push_en;
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) push_en     <= 1'b0;
     else
         case(nstate)
@@ -349,7 +349,7 @@ assign axi_rready   = push_en;
 //--->> resp done <<-------------
 reg     resp_reg,done_reg;
 
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) resp_reg    <= 1'b0;
     else
         case(nstate)
@@ -357,7 +357,7 @@ always@(posedge axi_aclk,negedge axi_resetn)
         default:    resp_reg    <= 1'b0;
         endcase
 
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) done_reg    <= 1'b0;
     else
         case(nstate)
@@ -370,7 +370,7 @@ assign req_done = done_reg;
 //---<< resp done >>-------------
 //--->> pending <<---------------
 reg     pend_reg;
-always@(posedge axi_aclk,negedge axi_resetn)
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) pend_reg    <= 1'b0;
     else
         case(nstate)

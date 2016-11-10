@@ -74,8 +74,8 @@ localparam      ADDR_WIDTH  = 28,
                 DATA_WIDTH  = 512;
 
 //--->> interface define <<-------------------
-// `include "/home/young/work/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
-`include "C:/Users/wmy367/Documents/GitHub/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
+`include "/home/young/work/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
+// `include "C:/Users/wmy367/Documents/GitHub/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
 //---<< interface define >>-------------------
 //--->> TEST COLOR PARTTEN <<-----------------
 logic[15:0]     vactive0;

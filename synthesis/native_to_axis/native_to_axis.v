@@ -73,7 +73,7 @@ latency #(
 
 reg     first_byte_flag;
 
-always@(posedge clock,negedge rst_n)begin:FIRST_RECORD_BLOCK
+always@(posedge clock/*,negedge rst_n*/)begin:FIRST_RECORD_BLOCK
 reg     rcd;
     if(~rst_n)begin
         first_byte_flag <= 1'b0;

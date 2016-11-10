@@ -43,7 +43,7 @@ localparam          W_A_RST     =   4'd7,       //wait addr reset
                     W_T_DONE    =   4'd6,
                     RD_TAIL     =   4'd4;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  cstate  <= IDLE;
     else        cstate  <= nstate;
 
@@ -51,7 +51,7 @@ always@(posedge clock,negedge rst_n)
 
 reg         trigger_req;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  trigger_req <= 1'b0;
     else begin
         if(WR_RD == "READ")
@@ -99,7 +99,7 @@ always@(*)
     endcase
 
 //--->> WAIT ADDR RESET <<-------
-always@(posedge clock,negedge rst_n)begin:WAIT_ADDR_RST_BLOCK
+always@(posedge clock/*,negedge rst_n*/)begin:WAIT_ADDR_RST_BLOCK
 reg [4:0]       rcnt;
     if(~rst_n)begin
         rcnt        <= 5'd0;
@@ -118,7 +118,7 @@ end end
 //--->> BURST REQUIRE <<--------
 reg         burst_req_reg;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  burst_req_reg   <= 1'b0;
     else
         case(nstate)
@@ -129,7 +129,7 @@ always@(posedge clock,negedge rst_n)
 
 reg         tail_req_reg;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  tail_req_reg    <= 1'b0;
     else
         case(nstate)
@@ -144,7 +144,7 @@ assign tail_req     = tail_req_reg;
 //--->> length <<---------------
 reg [LSIZE-1:0]     length;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  length   <= {LSIZE{1'b0}};
     else
         case(nstate)
@@ -159,7 +159,7 @@ assign req_len  = length;
 reg         burst_done_reg;
 reg         tail_done_reg;
 
-always@(posedge clock,negedge rst_n)begin
+always@(posedge clock/*,negedge rst_n*/)begin
     if(~rst_n)begin
         burst_done_reg  <= 1'b0;
         tail_done_reg   <= 1'b0;

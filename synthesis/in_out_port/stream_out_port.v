@@ -105,7 +105,7 @@ assign axi_tlast= de_falling;
 
 reg [15:0]      lcnt;
 
-always@(posedge aclk,negedge aresetn)
+always@(posedge aclk/*,negedge aresetn*/)
     if(~aresetn)  lcnt    <= 16'd0;
     else begin
         if(falign)
@@ -118,7 +118,7 @@ always@(posedge aclk,negedge aresetn)
 
 reg frame_blk;
 
-always@(posedge aclk,negedge aresetn)
+always@(posedge aclk/*,negedge aresetn*/)
     if(~aresetn)    frame_blk   <=1'd0;
     else            frame_blk   <= lcnt == vactive;
 

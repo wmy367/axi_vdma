@@ -45,13 +45,13 @@ reg [4:0]		wr0_curr_point;
 reg [3:0]		prit [4:0];
 reg	[4:0]		pri_point;
 
-always@(posedge wclk,negedge wrst_n)
+always@(posedge wclk/*,negedge wrst_n*/)
 	if(~wrst_n)	wr_current_point	<= 5'b00001;
 	else if(wr_vs_raising)
 					wr_current_point	<= wr_next_point_Q;
 	else			wr_current_point	<= wr_current_point;
 
-always@(posedge wclk,negedge wrst_n)
+always@(posedge wclk/*,negedge wrst_n*/)
 	if(~wrst_n)	wr_next_point_Q	<= 5'b00000;
 	else
 		casex(wr_next_point)
@@ -64,7 +64,7 @@ always@(posedge wclk,negedge wrst_n)
 		endcase
 
 
-always@(posedge wclk,negedge wrst_n)
+always@(posedge wclk/*,negedge wrst_n*/)
 	if(~wrst_n)	wr_next_point		<= 5'b00001;
 	else 			wr_next_point		<= ~(	wr_current_point 	|
 												rd0_curr_point		|
@@ -72,7 +72,7 @@ always@(posedge wclk,negedge wrst_n)
 												rd2_curr_point		);
 
 
-always@(posedge wclk,negedge wrst_n)begin:prit_BLOCK
+always@(posedge wclk/*,negedge wrst_n*/)begin:prit_BLOCK
 integer II;
 	if(~wrst_n)begin
 		for(II=0;II<5;II=II+1)
@@ -88,7 +88,7 @@ integer II;
 			else		prit[II]	<= prit[II];
 end end end
 
-always@(posedge wclk,negedge wrst_n)begin:PRI_POINT_BLOCK
+always@(posedge wclk/*,negedge wrst_n*/)begin:PRI_POINT_BLOCK
 integer II;
 	if(~wrst_n)	pri_point	<= 5'b00000;
 	else begin
@@ -96,7 +96,7 @@ integer II;
 			pri_point[II] <= prit[II] == 5'd1;
 end end
 
-always@(posedge wclk,negedge wrst_n)begin
+always@(posedge wclk/*,negedge wrst_n*/)begin
 	if(~wrst_n)	last_next_point	<= 5'b00000;
 	else
 		casex(pri_point)

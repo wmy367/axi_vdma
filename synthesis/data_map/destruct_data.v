@@ -61,7 +61,7 @@ reg [OSIZE-1:0]    ex_data;
 reg                 speciel_line;
 reg                 last_line;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  speciel_line    <= 1'b0;
     else begin
         if(O_L)begin
@@ -71,11 +71,11 @@ always@(posedge clock,negedge rst_n)
         end
     end
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  last_line    <= 1'b0;
     else        last_line    <= loint == (CNUM-1);
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  point   <= 7'd0;
     else begin
         if(ialign || force_rd)begin
@@ -100,7 +100,7 @@ always@(posedge clock,negedge rst_n)
         end else    point   <= point;
     end
 
-always@(posedge clock,negedge rst_n)begin
+always@(posedge clock/*,negedge rst_n*/)begin
     if(~rst_n)  loint   <= 7'd0;
     else begin
         if(ialign || force_rd)begin
@@ -128,7 +128,7 @@ end
 
 reg         read_en;
 
-always@(posedge clock,negedge rst_n)begin
+always@(posedge clock/*,negedge rst_n*/)begin
     if(~rst_n)  read_en <= 1'b0;
     else begin
         // if(loint != (CNUM-1))begin
@@ -148,7 +148,7 @@ end
 
 assign ird_en   = read_en;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  ex_data <= {OSIZE{1'b0}};
     else begin
         if(read_en)
@@ -165,7 +165,7 @@ always@(posedge clock,negedge rst_n)
 |___________________________|  <- AXI BITS LENGTH
 */
 reg [6:0]   ex_shift;
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  ex_shift  <= 7'd0;
     else begin
         if(loint == (CNUM-1))
@@ -176,7 +176,7 @@ always@(posedge clock,negedge rst_n)
 
 generate
 if(EX_EX)begin
-always@(posedge clock,negedge rst_n)begin:DATA_MAP_BLOCK
+always@(posedge clock/*,negedge rst_n*/)begin:DATA_MAP_BLOCK
 reg     moment_ex;
     if(~rst_n)begin
         data_reg    <= {OSIZE{1'b0}};
@@ -211,7 +211,7 @@ reg     moment_ex;
     end
 end
 end else begin
-always@(posedge clock,negedge rst_n)begin:DATA_MAP_BLOCK
+always@(posedge clock/*,negedge rst_n*/)begin:DATA_MAP_BLOCK
     if(~rst_n)  data_reg    <= {OSIZE{1'b0}};
     else begin
         data_reg    <= idata[ISIZE-1-OSIZE*point-:OSIZE];

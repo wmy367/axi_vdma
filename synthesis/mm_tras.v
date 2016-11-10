@@ -98,7 +98,7 @@ assign wr_rst_n = DATA_TYPE=="AXIS"? aresetn  : rst_n;
 wire        in_port_rstn;
 
 broaden_and_cross_clk #(
-	.PHASE	    ("POSITIVE"  ),  //POSITIVE NEGATIVE
+	.PHASE	    ("NEGATIVE"  ),  //POSITIVE NEGATIVE
 	.LEN		(4           ),
 	.LAT		(2           )
 )broaden_and_cross_clk_in_port_rst(
@@ -113,7 +113,7 @@ broaden_and_cross_clk #(
 wire    combin_rstn;
 
 broaden_and_cross_clk #(
-	.PHASE	    ("POSITIVE"  ),  //POSITIVE NEGATIVE
+	.PHASE	    ("NEGATIVE"  ),  //POSITIVE NEGATIVE
 	.LEN		(4           ),
 	.LAT		(2           )
 )broaden_and_cross_clk_combin_rst(
@@ -142,15 +142,53 @@ broaden_and_cross_clk #(
 
 wire        line_sum_rstn;
 
-assign      line_sum_rstn   = rd_rst_n && !rst_chain;
+// assign      line_sum_rstn   = rd_rst_n && !rst_chain;
+// assign      line_sum_rstn   = rd_rst_n;
+broaden_and_cross_clk #(
+	.PHASE	    ("NEGATIVE"  ),  //POSITIVE NEGATIVE
+	.LEN		(4           ),
+	.LAT		(2           )
+)broaden_and_cross_clk_line_sum_rst(
+/*	input			*/    .rclk          (axi_aclk           ),
+/*	input			*/    .rd_rst_n      (axi_resetn         ),
+/*	input			*/    .wclk          (axi_aclk           ),
+/*	input			*/    .wr_rst_n      (axi_resetn         ),
+/*	input			*/    .d             (!rst_chain         ),
+/*	output			*/    .q             (line_sum_rstn      )
+);
 
 wire        frame_addr_rstn;
 
-assign      frame_addr_rstn = rd_rst_n && !rst_chain;
-
+// assign      frame_addr_rstn = rd_rst_n && !rst_chain;
+// assign      frame_addr_rstn = rd_rst_n;
+broaden_and_cross_clk #(
+	.PHASE	    ("NEGATIVE"  ),  //POSITIVE NEGATIVE
+	.LEN		(4           ),
+	.LAT		(2           )
+)broaden_and_cross_clk_frame_addr_rst(
+/*	input			*/    .rclk          (axi_aclk           ),
+/*	input			*/    .rd_rst_n      (axi_resetn         ),
+/*	input			*/    .wclk          (axi_aclk           ),
+/*	input			*/    .wr_rst_n      (axi_resetn         ),
+/*	input			*/    .d             (!rst_chain         ),
+/*	output			*/    .q             (frame_addr_rstn    )
+);
 wire        axi_core_rstn;
 
-assign      axi_core_rstn   = rd_rst_n && !rst_chain;
+// assign      axi_core_rstn   = rd_rst_n && !rst_chain;
+// assign      axi_core_rstn   = rd_rst_n;
+broaden_and_cross_clk #(
+	.PHASE	    ("NEGATIVE"  ),  //POSITIVE NEGATIVE
+	.LEN		(4           ),
+	.LAT		(2           )
+)broaden_and_cross_clk_axi_core_rst(
+/*	input			*/    .rclk          (axi_aclk           ),
+/*	input			*/    .rd_rst_n      (axi_resetn         ),
+/*	input			*/    .wclk          (axi_aclk           ),
+/*	input			*/    .wr_rst_n      (axi_resetn         ),
+/*	input			*/    .d             (!rst_chain         ),
+/*	output			*/    .q             (axi_core_rstn      )
+);
 //---<< RESET CONTRL >>---------------
 //--->> IN PORT INTERFACE <<----------
 wire            in_port_falign     ;
@@ -392,7 +430,7 @@ write_line_len_sum #(
     .LSIZE              (BURST_LEN_SIZE)
 )write_line_len_sum_inst(
 /*  input             */  .clock                (rd_clk              ),
-/*  input             */  .rst_n                (rd_rst_n/*line_sum_rstn*/            ),
+/*  input             */  .rst_n                (/*rd_rst_n*//*line_sum_rstn*/ 1            ),
 /*  input [15:0]      */  .vactive              (vactive             ), //calculate line length
 /*  input [15:0]      */  .hactive              (hactive             ), //calculate line length
 /*  input             */  .fsync                (in_port_falign_bc || tail_req ),
@@ -410,7 +448,7 @@ a_frame_addr #(
     .BURST_MAP_ADDR    (BURST_LEN*8      )
 )a_frame_addr_inst(
 /*  input             */  .clock                    (rd_clk             ),
-/*  input             */  .rst_n                    (rd_rst_n/*frame_addr_rstn*/           ),
+/*  input             */  .rst_n                    (/*rd_rst_n*//*frame_addr_rstn*/1           ),
 /*  input             */  .new_base                 (in_port_falign_bc  ),
 /*  input[ASIZE-1:0]  */  .baseaddr                 (baseaddr           ),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
@@ -435,7 +473,7 @@ axi_inf_write_state_core #(
 /*      output            */  .pend_out             (pend_out                   ),
 // -- AXI
 /*      input             */   .axi_aclk            (axi_aclk                   ),
-/*      input             */   .axi_resetn          (/*axi_resetn*/axi_core_rstn                 ),
+/*      input             */   .axi_resetn          (axi_resetn/*axi_core_rstn*/                 ),
         //-- addr write signals
 /*      output[IDSIZE-1:0]*/   .axi_awid            (axi_awid                   ),
 /*      output[ASIZE-1:0] */   .axi_awaddr          (axi_awaddr                 ),

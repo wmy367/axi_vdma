@@ -59,7 +59,7 @@ reg [6:0]           loint;
 reg                 speciel_line;
 reg                 last_line;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  speciel_line    <= 1'b0;
     else begin
         if(O_L)begin
@@ -69,13 +69,13 @@ always@(posedge clock,negedge rst_n)
         end
     end
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  last_line    <= 1'b0;
     else        last_line    <= loint == (CNUM-1);
     // else           last_line    <= ~last_line;  //test
 
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  point   <= 7'd0;
     else begin
         if(ialign)begin
@@ -98,7 +98,7 @@ always@(posedge clock,negedge rst_n)
         end else    point   <= point;
     end
 
-always@(posedge clock,negedge rst_n)begin
+always@(posedge clock/*,negedge rst_n*/)begin
     if(~rst_n)  loint   <= 7'd0;
     else begin
         if(ialign)
@@ -127,7 +127,7 @@ end
 
 
 
-always@(posedge clock,negedge rst_n)begin:MAP_DATA_BLOCK
+always@(posedge clock/*,negedge rst_n*/)begin:MAP_DATA_BLOCK
 integer KK;
     if(~rst_n)begin
         for(KK=0;KK<MSIZE;KK=KK+1)
@@ -141,7 +141,7 @@ end end
 
 reg     owr_reg;
 
-always@(posedge clock,negedge rst_n)begin
+always@(posedge clock/*,negedge rst_n*/)begin
     if(~rst_n)  owr_reg <= 1'b0;
     else begin
         // if(loint != (CNUM-1))begin
@@ -159,7 +159,7 @@ always@(posedge clock,negedge rst_n)begin
     end
 end
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  map_data_ex <= {ISIZE{1'b0}};
     else begin
         if(owr_en )
@@ -171,7 +171,7 @@ always@(posedge clock,negedge rst_n)
 
 reg     owr_last_reg;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  owr_last_reg    <= 1'b0;
     else begin
         if(ilast && iwr_en && MODE=="LINE")
@@ -182,7 +182,7 @@ always@(posedge clock,negedge rst_n)
 
 reg [MSIZE-1:0] mask_reg;
 
-always@(posedge clock,negedge rst_n)
+always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)   mask_reg   <= {(MSIZE){1'b0}};
     else begin
         if(ialign)
@@ -203,7 +203,7 @@ reg [OSIZE-1:0]     out_reg;
 
 //--->> OSIZE%ISIZE != 0 <<------------
 reg     owr_reg_lat,owr_last_reg_lat;
-always@(posedge clock,negedge rst_n)begin
+always@(posedge clock/*,negedge rst_n*/)begin
     if(~rst_n)begin
         owr_reg_lat     <= 1'b0;
         owr_last_reg_lat<= 1'b0;
