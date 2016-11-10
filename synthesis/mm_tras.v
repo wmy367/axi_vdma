@@ -86,6 +86,7 @@ wire        rd_clk;
 wire        rd_rst_n;
 wire        wr_clk;
 wire        wr_rst_n;
+wire        rst_chain;
 
 assign rd_clk   = axi_aclk;
 assign rd_rst_n = axi_resetn;
@@ -93,6 +94,64 @@ assign rd_rst_n = axi_resetn;
 assign wr_clk   = DATA_TYPE=="AXIS"? aclk : clock;
 assign wr_rst_n = DATA_TYPE=="AXIS"? aresetn  : rst_n;
 
+//--->> RESET CONTRL <<---------------
+wire        in_port_rstn;
+
+broaden_and_cross_clk #(
+	.PHASE	    ("POSITIVE"  ),  //POSITIVE NEGATIVE
+	.LEN		(4           ),
+	.LAT		(2           )
+)broaden_and_cross_clk_in_port_rst(
+/*	input			*/    .rclk          (wr_clk             ),
+/*	input			*/    .rd_rst_n      (wr_rst_n           ),
+/*	input			*/    .wclk          (axi_aclk           ),
+/*	input			*/    .wr_rst_n      (axi_resetn         ),
+/*	input			*/    .d             (!rst_chain         ),
+/*	output			*/    .q             (in_port_rstn       )
+);
+
+wire    combin_rstn;
+
+broaden_and_cross_clk #(
+	.PHASE	    ("POSITIVE"  ),  //POSITIVE NEGATIVE
+	.LEN		(4           ),
+	.LAT		(2           )
+)broaden_and_cross_clk_combin_rst(
+/*	input			*/    .rclk          (wr_clk             ),
+/*	input			*/    .rd_rst_n      (wr_rst_n           ),
+/*	input			*/    .wclk          (axi_aclk           ),
+/*	input			*/    .wr_rst_n      (axi_resetn         ),
+/*	input			*/    .d             (!rst_chain         ),
+/*	output			*/    .q             (combin_rstn        )
+);
+
+wire            fifo_rst;
+wire            in_port_fifo_rst;
+broaden_and_cross_clk #(
+	.PHASE	    ("POSITIVE"  ),  //POSITIVE NEGATIVE
+	.LEN		(4           ),
+	.LAT		(2           )
+)broaden_and_cross_clk_fifo_rst(
+/*	input			*/    .rclk          (wr_clk             ),
+/*	input			*/    .rd_rst_n      (wr_rst_n           ),
+/*	input			*/    .wclk          (axi_aclk           ),
+/*	input			*/    .wr_rst_n      (axi_resetn         ),
+/*	input			*/    .d             (rst_chain || in_port_fifo_rst        ),
+/*	output			*/    .q             (fifo_rst        )
+);
+
+wire        line_sum_rstn;
+
+assign      line_sum_rstn   = rd_rst_n && !rst_chain;
+
+wire        frame_addr_rstn;
+
+assign      frame_addr_rstn = rd_rst_n && !rst_chain;
+
+wire        axi_core_rstn;
+
+assign      axi_core_rstn   = rd_rst_n && !rst_chain;
+//---<< RESET CONTRL >>---------------
 //--->> IN PORT INTERFACE <<----------
 wire            in_port_falign     ;
 wire            in_port_lalign     ;
@@ -108,7 +167,7 @@ in_port #(
     .FRAME_SYNC(FRAME_SYNC)    //OFF ON
 )in_port_inst(
 /*  input              */ .clock                   (clock                   ),
-/*  input              */ .rst_n                   (rst_n                   ),
+/*  input              */ .rst_n                   (in_port_rstn            ),
 /*  input [15:0]       */ .vactive                 (vactive                 ),//for blank ealign, now is't unused
 /*  input [15:0]       */ .hactive                 (hactive                 ),//unused
 /*  input              */ .vsync                   (vsync                   ),
@@ -120,7 +179,7 @@ in_port #(
     //-- axi stream ---
 /*  input              */ .aclk                    (aclk                    ),
 /*  input              */ .aclken                  (aclken                  ),
-/*  input              */ .aresetn                 (aresetn                 ),
+/*  input              */ .aresetn                 (in_port_rstn            ),
 /*  input [DSIZE-1:0]  */ .axi_tdata               (axi_tdata               ),
 /*  input              */ .axi_tvalid              (axi_tvalid              ),
 /*  output             */ .axi_tready              (axi_tready              ),
@@ -175,7 +234,7 @@ combin_data #(
 )combin_data_inst(
 /*    input               */ .clock       (wr_clk    ),
 // /*    input               */ .clock       (clock    ),  //test
-/*    input               */ .rst_n       (wr_rst_n  ),
+/*    input               */ .rst_n       (combin_rstn  ),
 /*    input               */ .iwr_en      (in_port_odata_vld  ),
 /*    input [ISIZE-1:0]   */ .idata       (in_port_odata      ),
 /*    input               */ .ialign      (in_port_falign     ),
@@ -189,11 +248,10 @@ combin_data #(
 wire[9:0]       rd_data_count;
 wire[9:0]       wr_data_count;
 
-wire            fifo_rst;
 wire            fifo_empty;
 wire            pull_data_en;
 
-assign  fifo_rst    = FRAME_SYNC=="ON"? in_port_falign : (DATA_TYPE=="AXIS"? 1'b0 : in_port_falign) ;
+assign  in_port_fifo_rst    = FRAME_SYNC=="ON"? in_port_falign : (DATA_TYPE=="AXIS"? 1'b0 : in_port_falign) ;
 // assign  fifo_rst    = 1'b0;
 
 
@@ -204,7 +262,7 @@ assign  fifo_rst    = FRAME_SYNC=="ON"? in_port_falign : (DATA_TYPE=="AXIS"? 1'b
 generate
 if(AXI_DSIZE == 256)begin
 vdma_stream_fifo stream_fifo_inst (
-/*  input               */     .rst               (!wr_rst_n ||  fifo_rst       ),
+/*  input               */     .rst               (fifo_rst                     ),
 /*  input               */     .wr_clk            (wr_clk                       ),
 /*  input               */     .rd_clk            (rd_clk                       ),
 /*  input [DSIZE-1:0]   */     .din               (cb_data                      ),
@@ -241,9 +299,9 @@ vdma_stream_fifo stream_fifo_inst (
 
 end else if(AXI_DSIZE == 512)begin
 vdma_stream_fifo_512 stream_fifo_inst (
-// /*  input               */     .rst               (!wr_rst_n ||  fifo_rst       ),
-/*  input               */     .wr_rst            (!wr_rst_n ||  fifo_rst                     ),
-/*  input               */     .rd_rst            (!wr_rst_n ||  fifo_rst                     ),
+/*  input               */     .rst               (fifo_rst                     ),
+// /*  input               */     .wr_rst            (!wr_rst_n ||  fifo_rst                     ),
+// /*  input               */     .rd_rst            (!wr_rst_n ||  fifo_rst                     ),
 /*  input               */     .wr_clk            (wr_clk                       ),
 /*  input               */     .rd_clk            (rd_clk                       ),
 /*  input [DSIZE-1:0]   */     .din               (cb_data                      ),
@@ -322,7 +380,8 @@ fifo_status_ctrl #(
 /*  output            */    .tail_done         (tail_done           ),
 /*  input             */    .resp              (req_resp            ),
 /*  input             */    .done              (req_done            ),
-/*  output[LSIZE-1:0] */    .req_len           (req_length          )
+/*  output[LSIZE-1:0] */    .req_len           (req_length          ),
+/*  output            */    .rst_chain         (rst_chain           )
 );
 
 write_line_len_sum #(
@@ -333,7 +392,7 @@ write_line_len_sum #(
     .LSIZE              (BURST_LEN_SIZE)
 )write_line_len_sum_inst(
 /*  input             */  .clock                (rd_clk              ),
-/*  input             */  .rst_n                (rd_rst_n            ),
+/*  input             */  .rst_n                (rd_rst_n/*line_sum_rstn*/            ),
 /*  input [15:0]      */  .vactive              (vactive             ), //calculate line length
 /*  input [15:0]      */  .hactive              (hactive             ), //calculate line length
 /*  input             */  .fsync                (in_port_falign_bc || tail_req ),
@@ -351,7 +410,7 @@ a_frame_addr #(
     .BURST_MAP_ADDR    (BURST_LEN*8      )
 )a_frame_addr_inst(
 /*  input             */  .clock                    (rd_clk             ),
-/*  input             */  .rst_n                    (rd_rst_n           ),
+/*  input             */  .rst_n                    (rd_rst_n/*frame_addr_rstn*/           ),
 /*  input             */  .new_base                 (in_port_falign_bc  ),
 /*  input[ASIZE-1:0]  */  .baseaddr                 (baseaddr           ),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
@@ -376,7 +435,7 @@ axi_inf_write_state_core #(
 /*      output            */  .pend_out             (pend_out                   ),
 // -- AXI
 /*      input             */   .axi_aclk            (axi_aclk                   ),
-/*      input             */   .axi_resetn          (axi_resetn                 ),
+/*      input             */   .axi_resetn          (/*axi_resetn*/axi_core_rstn                 ),
         //-- addr write signals
 /*      output[IDSIZE-1:0]*/   .axi_awid            (axi_awid                   ),
 /*      output[ASIZE-1:0] */   .axi_awaddr          (axi_awaddr                 ),

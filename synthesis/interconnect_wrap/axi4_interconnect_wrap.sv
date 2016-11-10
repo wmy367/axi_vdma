@@ -762,10 +762,10 @@ AXI4_INFCNT_512 AXI4_INFCNT_inst(
 end
 endgenerate
 
-assign s00_inf.axi_wevld   = m00_inf.axi_wevld    ;
-assign s00_inf.axi_weresp  = m00_inf.axi_weresp   ;
-assign s00_inf.axi_revld   = m00_inf.axi_revld    ;
-assign s00_inf.axi_reresp  = m00_inf.axi_reresp   ;
+// assign s00_inf.axi_wevld   = m00_inf.axi_wevld    ;
+// assign s00_inf.axi_weresp  = m00_inf.axi_weresp   ;
+// assign s00_inf.axi_revld   = m00_inf.axi_revld    ;
+// assign s00_inf.axi_reresp  = m00_inf.axi_reresp   ;
 
 assign s01_inf.axi_wevld   = m00_inf.axi_wevld    ;
 assign s01_inf.axi_weresp  = m00_inf.axi_weresp   ;

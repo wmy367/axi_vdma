@@ -67,14 +67,15 @@ assign  sys_rst = mmcm_locked;
 localparam
                 PIX_DSIZE_0    =   24,
                 PIX_DSIZE_1    =   24,
-                VIDEO_FORMAT_0 =   "TEST",
+                VIDEO_FORMAT_0 =   "1080P@60",
                 VIDEO_FORMAT_1 =   "1080P@60";
 
 localparam      ADDR_WIDTH  = 28,
                 DATA_WIDTH  = 512;
 
 //--->> interface define <<-------------------
-`include "/home/young/work/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
+// `include "/home/young/work/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
+`include "C:/Users/wmy367/Documents/GitHub/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
 //---<< interface define >>-------------------
 //--->> TEST COLOR PARTTEN <<-----------------
 logic[15:0]     vactive0;
@@ -102,7 +103,7 @@ simple_video_gen #(
     .MODE   (VIDEO_FORMAT_1   ),
     .DSIZE  (PIX_DSIZE_1      )
 )simple_video_gen_inst1(
-/*    input       */    .enable     (video_gen_1_en    ),
+/*    input       */    .enable     (/*video_gen_1_en*/0    ),
 /*    video_native_inf.compact_out */
                         .inf        (video_native_in1),
 /*    axi_stream_inf.master*/

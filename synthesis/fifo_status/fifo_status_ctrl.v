@@ -31,7 +31,8 @@ module fifo_status_ctrl #(
     output                  tail_done,
     input                   resp,
     input                   done,
-    output[LSIZE-1:0]       req_len
+    output[LSIZE-1:0]       req_len,
+    output reg              rst_chain
 );
 
 reg [3:0]           nstate,cstate;
@@ -41,7 +42,9 @@ localparam          IDLE        =   4'd0,
                     FSH         =   4'd3,
                     WR_TAIL     =   4'd4,
                     TAIL_DONE   =   4'd5,
-                    TAIL_FSH    =   4'd6;
+                    TAIL_FSH    =   4'd6,
+                    TIME_ERR    =   4'd7,
+                    RESET_CHAIN =   4'd8;
 
 
 always@(posedge clock,negedge rst_n)
@@ -53,6 +56,7 @@ always@(posedge clock,negedge rst_n)
     end
 
 reg     burst_exec,tail_exec;
+reg     timeout;
 
 always@(*)
     case(cstate)
@@ -65,24 +69,37 @@ always@(*)
                 nstate = NEED_WR;
         else    nstate = IDLE;
     NEED_WR:
-        if(resp)
+        if(timeout)
+                nstate  = TIME_ERR;
+        else if(resp)
                 nstate = WAIT_DONE;
         else    nstate = NEED_WR;
     WAIT_DONE:
-        if(done)
+        if(timeout)
+                nstate  = TIME_ERR;
+        else if(done)
                 nstate = FSH;
         else    nstate = WAIT_DONE;
     FSH:        nstate = IDLE;
     //------------//
     WR_TAIL:
-        if(resp)
+        if(timeout)
+                nstate  = TIME_ERR;
+        else if(resp)
                 nstate = TAIL_DONE;
         else    nstate = WR_TAIL;
     TAIL_DONE:
-        if(done)
+        if(timeout)
+                nstate  = TIME_ERR;
+        else if(done)
                 nstate = TAIL_FSH;
         else    nstate = TAIL_DONE;
     TAIL_FSH:   nstate = IDLE;
+    TIME_ERR:   nstate = RESET_CHAIN;
+    RESET_CHAIN:
+        if(fifo_empty)
+                nstate = IDLE;
+        else    nstate = RESET_CHAIN;
     default:    nstate = IDLE;
     endcase
 
@@ -147,7 +164,9 @@ always@(*)
         else    tnstate = IDLE;
 
     CATCHT:
-        if(burst_idle)begin
+        if(timeout)
+                nstate  = TIDLE;
+        else if(burst_idle)begin
             if(count != 10'd0)
                     tnstate = TAP_1;
             else    tnstate = TIDLE;
@@ -155,7 +174,9 @@ always@(*)
                 tnstate = CATCHT;
     TAP_1:      tnstate = EXECT;
     EXECT:
-        if(done)
+        if(timeout)
+                nstate  = TIDLE;
+        else if(done)
                 tnstate = TFSH;
         else    tnstate = EXECT;
     TFSH:       tnstate = TIDLE;
@@ -219,5 +240,34 @@ always@(posedge clock,negedge rst_n)
 assign burst_done   = burst_done_reg;
 assign tail_done    = tail_done_reg;
 //---<< DONE SIGNAL >>-------
+//--->> timeout <<-----------
+reg [23:0]      tcnt;
+always@(posedge clock,negedge rst_n)
+    if(~rst_n)  tcnt    <= 24'd0;
+    else
+        case(nstate)
+        IDLE:   tcnt    <= 24'd0;
+        default:tcnt    <= tcnt + 1'b1;
+        endcase
 
+always@(posedge clock,negedge rst_n)
+    if(~rst_n)  timeout    <= 1'd0;
+    else begin
+        case(nstate)
+        IDLE,TIME_ERR,RESET_CHAIN:
+                timeout <= 1'b0;
+        default:timeout <= tcnt > 24'hFFF_000;
+        endcase
+    end
+
+always@(posedge clock,negedge rst_n)
+    if(~rst_n)  rst_chain    <= 1'd0;
+    else
+        case(nstate)
+        TIME_ERR:
+                rst_chain    <= 1'b1;
+        default:rst_chain    <= 1'b0;
+        endcase
+
+//---<< timeout >>-----------
 endmodule

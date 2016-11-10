@@ -65,9 +65,12 @@ module vdma_compact_port #(
 );
 
 logic   axi4_inf_err_rst;
+logic   mm_tras_rstn;
+logic   mm_rev_rstn;
 
 always@(posedge axi4_m.axi_aclk)
-    axi4_inf_err_rst <= (axi4_m.axi_wevld && axi4_m.axi_weresp!=4'b000) || (axi4_m.axi_revld && axi4_m.axi_reresp!=4'b000);
+    // axi4_inf_err_rst <= (axi4_m.axi_wevld && axi4_m.axi_weresp!=4'b000) || (axi4_m.axi_revld && axi4_m.axi_reresp!=4'b000);
+    axi4_inf_err_rst <= axi4_m.axi_wevld  || axi4_m.axi_revld ;
 
 logic pend_rev_trs;
 logic pend_trs_rev;
@@ -192,7 +195,7 @@ mm_tras #(
 /*  input             */  .fsync                   (in_fsync           ),
 /*  input             */  .aclk                    (axis_in.aclk       ),
 /*  input             */  .aclken                  (axis_in.aclken     ),
-/*  input             */  .aresetn                 (axis_in.aresetn    ),
+/*  input             */  .aresetn                 (axis_in.aresetn && !axi4_inf_err_rst   ),
 /*  input [DSIZE-1:0] */  .axi_tdata               (axis_in.axi_tdata  ),
 /*  input             */  .axi_tvalid              (axis_in.axi_tvalid ),
 /*  output            */  .axi_tready              (axis_in.axi_tready ),
@@ -309,7 +312,7 @@ mm_rev #(
 /*  output             */ .axi_tlast               (axis_out.axi_tlast  ),
     //--<< axi stream
 /*  input              */ .axi_aclk                (axi4_m.axi_aclk            ),
-/*  input              */ .axi_resetn              (axi4_m.axi_resetn          ),
+/*  input              */ .axi_resetn              (axi4_m.axi_resetn && !axi4_inf_err_rst         ),
     //-- axi read
     //-- addr read
 /*  output[IDSIZE-1:0] */ .axi_arid                (axi4_m.axi_arid         ),
