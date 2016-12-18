@@ -1,10 +1,10 @@
 ## generator 256BIT FIFO
 create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.1 -module_name FIFO_DDR_IP_BRG
-set_property -dict [list CONFIG.Performance_Options {First_Word_Fall_Through} CONFIG.Input_Data_Width {256} CONFIG.Input_Depth {64} CONFIG.Output_Data_Width {256} CONFIG.Output_Depth {64} CONFIG.Use_Extra_Logic {true} CONFIG.Data_Count_Width {7} CONFIG.Write_Data_Count_Width {7} CONFIG.Read_Data_Count_Width {7} CONFIG.Full_Threshold_Assert_Value {63} CONFIG.Full_Threshold_Negate_Value {62} CONFIG.Empty_Threshold_Assert_Value {4} CONFIG.Empty_Threshold_Negate_Value {5}] [get_ips FIFO_DDR_IP_BRG]
+set_property -dict [list CONFIG.Performance_Options {First_Word_Fall_Through} CONFIG.Input_Data_Width {256} CONFIG.Input_Depth {64} CONFIG.Output_Data_Width {256} CONFIG.Output_Depth {64} CONFIG.Use_Extra_Logic {true} CONFIG.Data_Count_Width {7} CONFIG.Write_Data_Count_Width {7} CONFIG.Read_Data_Count_Width {7} CONFIG.Full_Threshold_Assert_Value {63} CONFIG.Full_Threshold_Negate_Value {62} CONFIG.Empty_Threshold_Assert_Value {4} CONFIG.Empty_Threshold_Negate_Value {5} CONFIG.Reset_Type {Asynchronous_Reset}] [get_ips FIFO_DDR_IP_BRG]
 
 ## generator 512BIT FIFO
 create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.1 -module_name FIFO_DDR_IP_BRG_512
-set_property -dict [list CONFIG.Performance_Options {First_Word_Fall_Through} CONFIG.Input_Data_Width {512} CONFIG.Input_Depth {64} CONFIG.Output_Data_Width {512} CONFIG.Output_Depth {64} CONFIG.Use_Extra_Logic {true} CONFIG.Data_Count_Width {7} CONFIG.Write_Data_Count_Width {7} CONFIG.Read_Data_Count_Width {7} CONFIG.Full_Threshold_Assert_Value {63} CONFIG.Full_Threshold_Negate_Value {62} CONFIG.Empty_Threshold_Assert_Value {4} CONFIG.Empty_Threshold_Negate_Value {5}] [get_ips FIFO_DDR_IP_BRG_512]
+set_property -dict [list CONFIG.Performance_Options {First_Word_Fall_Through} CONFIG.Input_Data_Width {512} CONFIG.Input_Depth {64} CONFIG.Output_Data_Width {512} CONFIG.Output_Depth {64} CONFIG.Use_Extra_Logic {true} CONFIG.Data_Count_Width {7} CONFIG.Write_Data_Count_Width {7} CONFIG.Read_Data_Count_Width {7} CONFIG.Full_Threshold_Assert_Value {63} CONFIG.Full_Threshold_Negate_Value {62} CONFIG.Empty_Threshold_Assert_Value {4} CONFIG.Empty_Threshold_Negate_Value {5} CONFIG.Reset_Type {Asynchronous_Reset}] [get_ips FIFO_DDR_IP_BRG_512]
 
 ## generate vmda fifo 512
 create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.1 -module_name vdma_stream_fifo_512

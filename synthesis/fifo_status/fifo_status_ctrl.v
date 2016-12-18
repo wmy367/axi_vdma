@@ -165,7 +165,7 @@ always@(*)
 
     CATCHT:
         if(timeout)
-                nstate  = TIDLE;
+                tnstate  = TIDLE;
         else if(burst_idle)begin
             if(count != 10'd0)
                     tnstate = TAP_1;
@@ -175,7 +175,7 @@ always@(*)
     TAP_1:      tnstate = EXECT;
     EXECT:
         if(timeout)
-                nstate  = TIDLE;
+                tnstate  = TIDLE;
         else if(done)
                 tnstate = TFSH;
         else    tnstate = EXECT;
@@ -247,7 +247,8 @@ always@(posedge clock/*,negedge rst_n*/)
     else
         case(nstate)
         IDLE:   tcnt    <= 24'd0;
-        default:tcnt    <= tcnt + 1'b1;
+        // default:tcnt    <= tcnt + 1'b1;
+        default:tcnt    <= 24'd0;
         endcase
 
 always@(posedge clock/*,negedge rst_n*/)

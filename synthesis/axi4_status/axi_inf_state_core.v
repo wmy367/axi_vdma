@@ -139,9 +139,9 @@ reg [LSIZE-1:0]     len_sub_2,len_sub_1;
 
 always@(posedge axi_aclk/*,negedge axi_resetn*/)begin
     if(~axi_resetn)begin
-        length      <= {LSIZE{1'b0}};
-        len_sub_1   <= {LSIZE{1'b0}};
-        len_sub_2   <= {LSIZE{1'b0}};
+        length      <= {LSIZE{1'b1}};
+        len_sub_1   <= {LSIZE{1'b1}};
+        len_sub_2   <= {LSIZE{1'b1}};
     end else if(write_req)begin
             length      <= req_len;
             if(req_len>0)
@@ -260,7 +260,7 @@ module axi_inf_read_state_core #(
     output[2:0]         axi_arprot    ,
     output[3:0]         axi_arqos     ,
     output              axi_arvalid   ,
-    output              axi_arready   ,
+    input               axi_arready   ,
     //-- data read signals
     output              axi_rready    ,
     input [IDSIZE-1:0]  axi_rid       ,

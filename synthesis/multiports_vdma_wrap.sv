@@ -160,7 +160,7 @@ multiports_vdma #(
     .CH1_OUT_FRAME_SYNC    ("OFF"           ),    //just for axis
     .CH1_EX_SYNC           ("OFF"           ),    //external sync
     .CH1_VIDEO_FORMAT      ("1080P@60"      ),   //just for read of vdma and internal sync
-    .CH1_PORT_MODE         ("WRITE"          ),       //READ WRITE BOTH
+    .CH1_PORT_MODE         ("BOTH"          ),       //READ WRITE BOTH
     //parameter  CH0_BIND_MASTER      = "CH0"         //just effective when MODE=="READ"
     //write read relative address array
     .CH1_BASE_ADDR_0       (0               ),            //1:w---0:R

@@ -111,6 +111,7 @@ broaden_and_cross_clk #(
 );
 
 wire    combin_rstn;
+wire    in_port_fifo_rst;
 
 broaden_and_cross_clk #(
 	.PHASE	    ("NEGATIVE"  ),  //POSITIVE NEGATIVE
@@ -121,12 +122,11 @@ broaden_and_cross_clk #(
 /*	input			*/    .rd_rst_n      (wr_rst_n           ),
 /*	input			*/    .wclk          (axi_aclk           ),
 /*	input			*/    .wr_rst_n      (axi_resetn         ),
-/*	input			*/    .d             (!rst_chain         ),
+/*	input			*/    .d             (!rst_chain  && !in_port_fifo_rst       ),
 /*	output			*/    .q             (combin_rstn        )
 );
 
 wire            fifo_rst;
-wire            in_port_fifo_rst;
 broaden_and_cross_clk #(
 	.PHASE	    ("POSITIVE"  ),  //POSITIVE NEGATIVE
 	.LEN		(4           ),
@@ -153,7 +153,7 @@ broaden_and_cross_clk #(
 /*	input			*/    .rd_rst_n      (axi_resetn         ),
 /*	input			*/    .wclk          (axi_aclk           ),
 /*	input			*/    .wr_rst_n      (axi_resetn         ),
-/*	input			*/    .d             (!rst_chain         ),
+/*	input			*/    .d             (!rst_chain && !in_port_fifo_rst         ),
 /*	output			*/    .q             (line_sum_rstn      )
 );
 
@@ -170,7 +170,7 @@ broaden_and_cross_clk #(
 /*	input			*/    .rd_rst_n      (axi_resetn         ),
 /*	input			*/    .wclk          (axi_aclk           ),
 /*	input			*/    .wr_rst_n      (axi_resetn         ),
-/*	input			*/    .d             (!rst_chain         ),
+/*	input			*/    .d             (!rst_chain && !in_port_fifo_rst        ),
 /*	output			*/    .q             (frame_addr_rstn    )
 );
 wire        axi_core_rstn;
@@ -186,8 +186,22 @@ broaden_and_cross_clk #(
 /*	input			*/    .rd_rst_n      (axi_resetn         ),
 /*	input			*/    .wclk          (axi_aclk           ),
 /*	input			*/    .wr_rst_n      (axi_resetn         ),
-/*	input			*/    .d             (!rst_chain         ),
+/*	input			*/    .d             (!rst_chain && !in_port_fifo_rst        ),
 /*	output			*/    .q             (axi_core_rstn      )
+);
+
+wire        fifo_status_rstn;
+broaden_and_cross_clk #(
+	.PHASE	    ("NEGATIVE"  ),  //POSITIVE NEGATIVE
+	.LEN		(4           ),
+	.LAT		(2           )
+)broaden_and_cross_clk_fifo_status_rst(
+/*	input			*/    .rclk          (axi_aclk           ),
+/*	input			*/    .rd_rst_n      (axi_resetn         ),
+/*	input			*/    .wclk          (wr_clk             ),
+/*	input			*/    .wr_rst_n      (wr_rst_n           ),
+/*	input			*/    .d             (!in_port_fifo_rst    ),
+/*	output			*/    .q             (fifo_status_rstn     )
 );
 //---<< RESET CONTRL >>---------------
 //--->> IN PORT INTERFACE <<----------
@@ -404,9 +418,9 @@ fifo_status_ctrl #(
     .MODE           (MODE       )
 )fifo_status_ctrl_inst(
 /*  input             */    .clock             (rd_clk              ),
-/*  input             */    .rst_n             (rd_rst_n            ),
+/*  input             */    .rst_n             (/*rd_rst_n*/fifo_status_rstn            ),
 /*  input             */    .enable            (enable              ),
-/*  input             */    .f_rst_status      (1'b0                ),
+/*  input             */    .f_rst_status      (/*in_port_fifo_rst*/0    ),
 /*  input             */    .fifo_empty        (fifo_empty          ),
 /*  input [9:0]       */    .count             (rd_data_count       ),
 /*  input             */    .line_tail         (in_port_lalign_bc   ),      // not frame tail
@@ -430,7 +444,7 @@ write_line_len_sum #(
     .LSIZE              (BURST_LEN_SIZE)
 )write_line_len_sum_inst(
 /*  input             */  .clock                (rd_clk              ),
-/*  input             */  .rst_n                (/*rd_rst_n*//*line_sum_rstn*/ 1            ),
+/*  input             */  .rst_n                (/*rd_rst_n*/line_sum_rstn            ),
 /*  input [15:0]      */  .vactive              (vactive             ), //calculate line length
 /*  input [15:0]      */  .hactive              (hactive             ), //calculate line length
 /*  input             */  .fsync                (in_port_falign_bc || tail_req ),
@@ -448,7 +462,7 @@ a_frame_addr #(
     .BURST_MAP_ADDR    (BURST_LEN*8      )
 )a_frame_addr_inst(
 /*  input             */  .clock                    (rd_clk             ),
-/*  input             */  .rst_n                    (/*rd_rst_n*//*frame_addr_rstn*/1           ),
+/*  input             */  .rst_n                    (/*rd_rst_n*/frame_addr_rstn           ),
 /*  input             */  .new_base                 (in_port_falign_bc  ),
 /*  input[ASIZE-1:0]  */  .baseaddr                 (baseaddr           ),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
@@ -473,7 +487,7 @@ axi_inf_write_state_core #(
 /*      output            */  .pend_out             (pend_out                   ),
 // -- AXI
 /*      input             */   .axi_aclk            (axi_aclk                   ),
-/*      input             */   .axi_resetn          (axi_resetn/*axi_core_rstn*/                 ),
+/*      input             */   .axi_resetn          (/*axi_resetn*/axi_core_rstn                 ),
         //-- addr write signals
 /*      output[IDSIZE-1:0]*/   .axi_awid            (axi_awid                   ),
 /*      output[ASIZE-1:0] */   .axi_awaddr          (axi_awaddr                 ),

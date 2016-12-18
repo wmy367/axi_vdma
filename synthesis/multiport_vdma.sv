@@ -933,20 +933,23 @@ axi4_interconnect_wrap #(
 /*    axi_inf.master */  .m00_inf              (axi_m00_inf         )
 );
 
-axi4_error_chk #(
-    .DELAY      (24'hFFF_000    )
-)axi4_error_chk_m00(
-    .inf        (axi_m00_inf)
-);
+// axi4_error_chk #(
+//     .DELAY      (24'hFFF_000    )
+// )axi4_error_chk_m00(
+//     .inf        (axi_m00_inf)
+// );
 
-axi4_error_chk #(
-    .DELAY      (24'hFFF_000    )
-)axi4_error_chk_s00(
-    .inf        (axi_s00_inf)
-);
+// axi4_error_chk #(
+//     .DELAY      (24'hFFF_000    )
+// )axi4_error_chk_s00(
+//     .inf        (axi_s00_inf)
+// );
 
-// assign axi_m00_inf.axi_wevld    = 1'b0;
-// assign axi_m00_inf.axi_revld    = 1'b0;
+assign axi_m00_inf.axi_wevld    = 1'b0;
+assign axi_m00_inf.axi_revld    = 1'b0;
+
+assign axi_s00_inf.axi_wevld    = 1'b0;
+assign axi_s00_inf.axi_revld    = 1'b0;
 
 axi4_to_native_for_ddr_ip #(
     .ADDR_WIDTH     (ASIZE         ),

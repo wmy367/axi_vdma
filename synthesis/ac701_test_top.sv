@@ -12,6 +12,8 @@ madified:
 module ac701_test_top (
     input             sysclk_p,
     input             sysclk_n,
+    input             user_clk_p,
+    input             user_clk_n,
     inout [63:0]      ddr3_dq,
     inout [7:0]       ddr3_dqs_n,
     inout [7:0]       ddr3_dqs_p,
@@ -33,7 +35,8 @@ module ac701_test_top (
     output              hdmi_de,
     output[23:0]        hdmi_data,
     output              hdmi_clk,
-    output              LED_0
+    output              LED_0,
+    input               key         //default low
 //    input [23:0]        test_in
 );
 //----->> CLOCK RST <<---------------
@@ -56,12 +59,23 @@ system_mmcm system_mmcm_inst
 /*   input   */    .clk_in1_n   (sysclk_n   ),
      // Clock out ports
 /*   output  */    .clk_out1    (clk_200M   ),
-/*   output  */    .clk_out2    (pclk       ),
+/*   output  */    .clk_out2    (/*pclk*/       ),
      // Status and control signals
 /*   output  */    .locked      (mmcm_locked)
 );
 
-assign  prst_n  = mmcm_locked;
+user_mmcm user_mmcm_inst
+ (
+ // Clock in ports
+ /* input     */    .clk_in1_p      (user_clk_p      ),
+ /* input     */    .clk_in1_n      (user_clk_n      ),
+  // Clock out ports
+ /* output    */    .clk_out1       (pclk           ),
+  // Status and control signals
+/*  output    */    .locked         (prst_n         )
+ );
+
+// assign  prst_n  = mmcm_locked;
 assign  sys_rst = mmcm_locked;
 //-----<< CLOCK RST >>---------------
 localparam
@@ -74,8 +88,8 @@ localparam      ADDR_WIDTH  = 28,
                 DATA_WIDTH  = 512;
 
 //--->> interface define <<-------------------
-`include "/home/young/work/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
-// `include "C:/Users/wmy367/Documents/GitHub/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
+// `include "/home/young/work/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
+`include "C:/Users/wmy367/Documents/GitHub/axi_vdma/multiports_vdma_tb_1028_inf_def.svi"
 //---<< interface define >>-------------------
 //--->> TEST COLOR PARTTEN <<-----------------
 logic[15:0]     vactive0;
@@ -85,6 +99,15 @@ logic[15:0]     vactive1;
 logic[15:0]     hactive1;
 
 logic           video_gen_0_en,video_gen_1_en;
+
+always@(posedge pclk/*,negedge prst_n*/)begin
+    if(~prst_n) video_gen_0_en  <= 1'b0;
+    else begin
+        if(key)
+                video_gen_0_en  <= 1'b1;
+        else    video_gen_0_en  <= video_gen_0_en;
+end end
+
 
 simple_video_gen #(
     .MODE   (VIDEO_FORMAT_0   ),
@@ -138,7 +161,7 @@ bit         ch0_rev_enable,ch1_rev_enable;
 assign  ch0_rev_enable  = init_calib_complete;
 assign  ch1_rev_enable  = init_calib_complete;
 
-assign video_gen_0_en   = init_calib_complete;
+// assign video_gen_0_en   = init_calib_complete;
 assign video_gen_1_en   = init_calib_complete;
 
 multiports_vdma_wrap #(
