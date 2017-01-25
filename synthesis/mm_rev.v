@@ -76,7 +76,9 @@ module mm_rev #(
     //-- native
     output              out_vsync               ,
     output              out_hsync               ,
+    (* dont_touch = "true" *)
     output              out_de                  ,
+    (* dont_touch = "true" *)
     output[DSIZE-1:0]   odata
 );
 localparam LSIZE        = BURST_LEN_SIZE;
@@ -85,7 +87,9 @@ localparam BURST_LEN    = THRESHOLD;
 wire            out_port_falign     ;
 wire            out_port_lalign     ;
 wire            out_port_ealign     ;
+(* dont_touch = "true" *)
 wire            out_port_rd_en      ;
+(* dont_touch = "true" *)
 wire[DSIZE-1:0] out_port_idata      ;
 wire            fifo_empty          ;
 wire[15:0]      out_vactive         ;
@@ -150,8 +154,9 @@ broaden_and_cross_clk #(
 );
 
 //---<< OUT PORT INTERFACE >>----------
-
+(* dont_touch = "true" *)
 wire[AXI_DSIZE-1:0]     ds_data;
+(* dont_touch = "true" *)
 wire                    ds_rd_en;
 wire                    ds_wr_last_en;
 
@@ -315,6 +320,7 @@ axi_inf_read_state_core #(
     .LSIZE          (LSIZE          ),
     .ASIZE          (ASIZE          )
 )axi_inf_read_state_core_inst(
+/*  input             */.fsync              (out_port_falign_bc         ),
 /*  input             */.read_req           (burst_req || tail_req      ),
 /*  output            */.req_resp           (req_resp                   ),
 /*  output            */.req_done           (req_done                   ),

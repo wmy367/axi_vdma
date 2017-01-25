@@ -282,7 +282,7 @@ DDR3_native u_DDR3_native (
     // System Clock Ports
     .sys_clk_i                      (clk_50M),
     // Reference Clock Ports
-    .clk_ref_i                      (clk_200M),
+    // .clk_ref_i                      (clk_200M),
     .sys_rst                        (sys_rst) // input sys_rst
 );
 //----<< DDR3 IP >>----------

@@ -20,6 +20,10 @@ module simple_video_gen_A1 #(
     output[15:0]                    hactive
 );
 
+wire vsync;
+wire hsync;
+wire de	;
+
 video_sync_generator_B3 #(
 	.MODE		(MODE)
 )video_sync_generator_inst(
@@ -28,25 +32,25 @@ video_sync_generator_B3 #(
 /*	input			*/	.pause		(1'b0		),
 /*	input			*/	.enable     (enable		),
 	//--->> Extend Sync
-/*	output			*/	.vsync  	(inf.vsync  ),
-/*	output			*/	.hsync      (inf.hsync  ),
-/*	output			*/	.de         (inf.de		),
+/*	output			*/	.vsync  	(vsync      ),
+/*	output			*/	.hsync      (hsync      ),
+/*	output			*/	.de         (de		    ),
 /*	output			*/	.field      (			),
 /*  output          */  .ng_vs      (ng_vsync   ),
 /*  output          */  .ng_hs      (ng_hsync   ),
 /*  output[15:0]    */  .vactive    (vactive    ),
 /*  output[15:0]    */  .hactive    (hactive    )
 );
-
-bit [7:0]   div8 = 8'b0000_0001;
-
-always@(posedge inf.pclk)begin
-    if(inf.de)begin
-        div8 <= {div8[6:0],div8[7]};
-    end else begin
-        div8 <= div8;
-end end
-
+//
+// bit [7:0]   div8 = 8'b0000_0001;
+//
+// always@(posedge inf.pclk)begin
+//     if(inf.de)begin
+//         div8 <= {div8[6:0],div8[7]};
+//     end else begin
+//         div8 <= div8;
+// end end
+//
 wire	de_raising;
 wire    de_falling;
 edge_generator #(
@@ -60,19 +64,19 @@ edge_generator #(
 );
 
 int test_data;
-
+//
 always@(posedge inf.pclk)begin:TEST_DATA_BLOCK
 int tmp_data;
-    if(inf.vsync)
-            tmp_data   <= 0;
-    else if(inf.de)
-            tmp_data   <= tmp_data + div8[7];
-            // tmp_data   <= tmp_data + 1'b1;
-    else    tmp_data   <= tmp_data;
-
-    if(div8[6])
-            test_data   <= tmp_data;
-    else    test_data   <= 0;
+    // if(inf.vsync)
+    //         tmp_data   <= 0;
+    // else if(inf.de)
+    //         tmp_data   <= tmp_data + div8[7];
+    //         // tmp_data   <= tmp_data + 1'b1;
+    // else    tmp_data   <= tmp_data;
+    //
+    // if(div8[6])
+    //         test_data   <= tmp_data;
+    // else    test_data   <= 0;
 
     if(inf.vsync)
             test_data   <= 0;
@@ -80,16 +84,35 @@ int tmp_data;
             test_data   <= test_data + (1<<16);
     else if(inf.de)
             test_data   <= test_data + 1'b1;
-    // else    test_data   <= 0;
-    else begin
-            test_data[15:0]     <= 0;
-            // test_data[31:16]    <= 0;
-            test_data[31:16]    <= test_data[31:16];
-    end
+    else    test_data   <= 0;
+    // else begin
+    //         test_data[15:0]     <= 0;
+    //         // test_data[31:16]    <= 0;
+    //         test_data[31:16]    <= test_data[31:16];
+    // end
 end
 
-assign inf.data = test_data;
-// assign inf.data = 1023;
+// assign inf.data = test_data;
+// // assign inf.data = 1023;
+
+gen_test #(
+	.DSIZE     (DSIZE/3    ),
+	.DEPTH     (9          ),
+	.SIM	   ("FALSE"    )
+)gen_test_inst(
+/*	input					*/  .pclk		(inf.pclk            ),
+/*	input 					*/  .prst_n     (inf.prst_n          ),
+/*	input					*/  .invs		(vsync               ),
+/*	input					*/  .inhs		(hsync               ),
+/*	input					*/  .inde		(de                  ),
+/*	output					*/  .vs         (inf.vsync           ),
+/*	output					*/  .hs         (inf.hsync           ),
+/*	output					*/  .de         (inf.de              ),
+/*	output[DSIZE-1:0]		*/  .rdata      (inf.data[23:16]     ),
+/*	output[DSIZE-1:0]		*/  .gdata      (inf.data[15:8]      ),
+/*	output[DSIZE-1:0]		*/  .bdata      (inf.data[7:0]       ),
+/*  output                  */  .select     (                    )
+);
 
 
 endmodule

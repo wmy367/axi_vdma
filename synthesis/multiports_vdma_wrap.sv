@@ -132,7 +132,7 @@ multiports_vdma #(
     .CH7_ENABLE            (0      ),
     //--->> channal 0 <<--------------
     .CH0_PIX_DSIZE         (24              ),
-    .CH0_STORAGE_MODE      ("LINE"          ),
+    .CH0_STORAGE_MODE      ("ONCE"          ),
     .CH0_IN_DATA_TYPE      ("NATIVE"        ),
     .CH0_OUT_DATA_TYPE     ("NATIVE"        ),
     .CH0_IN_FRAME_SYNC     ("OFF"           ),    //just for axis
@@ -153,7 +153,7 @@ multiports_vdma #(
     //---<< channal 0 >>--------------
     //--->> channal 1 <<--------------
     .CH1_PIX_DSIZE         (24              ),
-    .CH1_STORAGE_MODE      ("LINE"          ),
+    .CH1_STORAGE_MODE      ("ONCE"          ),
     .CH1_IN_DATA_TYPE      ("NATIVE"        ),
     .CH1_OUT_DATA_TYPE     ("NATIVE"        ),
     .CH1_IN_FRAME_SYNC     ("OFF"           ),    //just for axis

@@ -34,7 +34,7 @@ logic clock,rst;
 assign clock = axi_inf.axi_aclk;
 // assign rst   = !axi_inf.axi_resetn;
 assign rst  =   !axi_inf.axi_resetn ||  axi_inf.axi_wevld || axi_inf.axi_revld;
-typedef enum {NOP,IDLE,EXEC_WR,WR_CMD_E,WR_FIFO_E,WR_END,EXEC_RD,RD_FIFO_E,RD_END} MASTER_STATE;
+typedef enum {NOP,WIDLE,RIDLE,EXEC_WR,WR_CMD_E,WR_FIFO_E,WR_END,EXEC_RD,RD_FIFO_E,RD_END} MASTER_STATE;
 
 MASTER_STATE mnstate,mcstate;
 
@@ -52,14 +52,16 @@ always@(*)
     case(mcstate)
     NOP:
         if(init_calib_complete)
-                mnstate = IDLE;
+                mnstate = WIDLE;
         else    mnstate = NOP;
-    IDLE:
+    WIDLE:
         if(axi_inf.axi_awvalid && axi_inf.axi_awready)
                 mnstate = EXEC_WR;
-        else if(axi_inf.axi_arvalid && axi_inf.axi_arready)
+        else    mnstate = RIDLE;
+    RIDLE:
+        if(axi_inf.axi_arvalid && axi_inf.axi_arready)
                 mnstate = EXEC_RD;
-        else    mnstate = IDLE;
+        else    mnstate = WIDLE;
     EXEC_WR:
         if(axi_inf.axi_wlast && axi_inf.axi_wvalid && axi_inf.axi_wready)
                 // mnstate = WR_FIFO_E;
@@ -76,11 +78,11 @@ always@(*)
         else    mnstate = WR_FIFO_E;
     WR_END:
         if(axi_inf.axi_bready)
-                mnstate = IDLE;
+                mnstate = RIDLE;
         else    mnstate = WR_END;
     EXEC_RD:
         if(axi_inf.axi_rvalid && axi_inf.axi_rlast && axi_inf.axi_rready)
-                mnstate = IDLE;
+                mnstate = WIDLE;
         else    mnstate = EXEC_RD;
     // EXEC_RD:
     //     // if(axi_inf.axi_rvalid && axi_inf.axi_rlast && axi_inf.axi_rready)
@@ -125,14 +127,18 @@ always@(posedge clock,posedge rst)
 //--->> WR DDR DATA <<-------------------
 logic   rd_fifo_full;
 logic   rd_fifo_empty;
+(* dont_touch = "true" *)
+logic   rd_fifo_en;
+assign  rd_fifo_en  = rd_enable && axi_inf.axi_rready;
 generate
 if(DATA_WIDTH==256)begin
 FIFO_DDR_IP_BRG FIFO_DDR_IP_BRG_rd (
 /*  input          */ .clk          (clock                  ),
 /*  input          */ .rst          (rst                    ),
 /*  input [255:0]  */ .din          (app_rd_data            ),
-/*  input          */ .wr_en        (app_rd_data_valid && !rd_fifo_full   ),
-/*  input          */ .rd_en        (rd_enable && axi_inf.axi_rready      ),
+// /*  input          */ .wr_en        (app_rd_data_valid && !rd_fifo_full   ),
+/*  input          */ .wr_en        (app_rd_data_valid      ),
+/*  input          */ .rd_en        (/*rd_enable && axi_inf.axi_rready*/rd_fifo_en      ),
 /*  output [255:0] */ .dout         (axi_inf.axi_rdata       ),
 /*  output         */ .full         (rd_fifo_full            ),
 /*  output         */ .empty        (rd_fifo_empty           )
@@ -142,7 +148,8 @@ FIFO_DDR_IP_BRG_512 FIFO_DDR_IP_BRG_rd (
 /*  input          */   .clk          (clock                  ),
 /*  input          */   .srst         (rst                    ),
 /*  input [511:0]  */   .din          (app_rd_data            ),
-/*  input          */   .wr_en        (app_rd_data_valid && !rd_fifo_full   ),
+// /*  input          */   .wr_en        (app_rd_data_valid && !rd_fifo_full   ),
+/*  input          */   .wr_en        (app_rd_data_valid      ),
 /*  input          */   .rd_en        (rd_enable && axi_inf.axi_rready      ),
 /*  output [511:0] */   .dout         (axi_inf.axi_rdata       ),
 /*  output         */   .full         (rd_fifo_full            ),
@@ -167,13 +174,13 @@ end
 
 always@(mcstate)
     case(mcstate)
-    IDLE:    rd_cnt   = 0;
+    RIDLE,WIDLE:    rd_cnt   = 0;
     default:;
     endcase
 
 always@(mnstate)
     case(mnstate)
-    IDLE:    wr_cnt   = 0;
+    WIDLE,RIDLE:    wr_cnt   = 0;
     default:;
     endcase
 //---<< TEST >>-------------
@@ -241,7 +248,7 @@ always@(posedge clock,posedge rst)
     if(rst)     axi_inf.axi_awready <= 1'b0;
     else
         case(mnstate)
-        IDLE:   axi_inf.axi_awready <= 1'b1;
+        WIDLE:  axi_inf.axi_awready <= 1'b1;
         default:axi_inf.axi_awready <= 1'b0;
         endcase
 
@@ -249,7 +256,7 @@ always@(posedge clock,posedge rst)
     if(rst)     axi_inf.axi_arready <= 1'b0;
     else
         case(mnstate)
-        IDLE:   axi_inf.axi_arready <= 1'b1;
+        RIDLE:  axi_inf.axi_arready <= 1'b1;
         default:axi_inf.axi_arready <= 1'b0;
         endcase
 //---<< WR AXI CMD >>--------------------
@@ -359,8 +366,10 @@ always@(posedge clock,posedge rst)
     else begin
         if(!rd_enable)
                 axi_inf.axi_rlast   <= 1'b0;
-        else if(axi_inf.axi_rready && axi_inf.axi_rvalid)
-                axi_inf.axi_rlast   <= axi_rd_cnt == (app_len-1);
+        else if(axi_inf.axi_rready && axi_inf.axi_rvalid && axi_inf.axi_rlast && app_len != 0)
+                axi_inf.axi_rlast   <= 1'b0;
+        else if(axi_inf.axi_rready && axi_inf.axi_rvalid && axi_rd_cnt == (app_len-1))
+                axi_inf.axi_rlast   <= 1'b1;
         else    axi_inf.axi_rlast   <= axi_inf.axi_rlast;
     end
 //---<< axi read data last >>-------------

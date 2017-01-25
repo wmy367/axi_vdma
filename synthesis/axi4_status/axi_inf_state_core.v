@@ -239,6 +239,7 @@ module axi_inf_read_state_core #(
     parameter ASIZE     = 32,
     parameter DSIZE     = 256
 )(
+    input               fsync        ,
     input               read_req     ,
     output              req_resp     ,
     output              req_done     ,
@@ -294,10 +295,14 @@ localparam      IDLE        = 4'd0,
                 SET_VLD     = 4'd1,
                 WAIT_LAST   = 4'd2,
                 DONE        = 4'd3,
-                PEND        = 4'd4;
+                PEND        = 4'd4,
+                WAIT_FSYNC  = 4'd5;
 always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) cstate <= IDLE;
     else            cstate <= nstate;
+
+(*  dont_touch = "true" *)
+reg         timeout;
 
 always@(*)
     case(cstate)
@@ -308,18 +313,32 @@ always@(*)
             else    nstate = SET_VLD;
         end else    nstate = IDLE;
     PEND:
-        if(read_req && !pend_in)
+        /*if(fsync)
+            nstate = IDLE;
+        else */if(read_req && !pend_in)
                 nstate = SET_VLD;
         else    nstate = PEND;
     SET_VLD:
-        if(axi_arready)
+        /*if(fsync)
+            nstate = IDLE;
+        else */if(axi_arready && axi_arvalid)
                 nstate = WAIT_LAST;
         else    nstate = SET_VLD;
     WAIT_LAST:
-        if(axi_rready && axi_rlast && axi_rvalid && (axi_rid==ID))
+        /*if(fsync)
+            nstate = IDLE;
+        // else if(axi_rready && axi_rlast && axi_rvalid && (axi_rid==ID))
+        // else if(axi_rready && axi_rlast && axi_rvalid)
+        else*/ if(axi_rready && axi_rlast && axi_rvalid)
                 nstate = DONE;
+        else if(timeout)
+                nstate = WAIT_FSYNC;
         else    nstate = WAIT_LAST;
     DONE:       nstate = IDLE;
+    WAIT_FSYNC:
+        if(fsync)
+                nstate = IDLE;
+        else    nstate = WAIT_FSYNC;
     default:    nstate = IDLE;
     endcase
 
@@ -343,8 +362,12 @@ always@(posedge axi_aclk/*,negedge axi_resetn*/)
         WAIT_LAST:  push_en     <= 1'b1;
         default:    push_en     <= 1'b0;
         endcase
-assign push_data_en = push_en;
-assign axi_rready   = push_en;
+// assign push_data_en = push_en;
+// assign axi_rready   = push_en;
+
+assign push_data_en = 1'b1;
+assign axi_rready   = 1'b1;
+
 //---<< push data enable >>--------------
 //--->> resp done <<-------------
 reg     resp_reg,done_reg;
@@ -381,4 +404,46 @@ always@(posedge axi_aclk/*,negedge axi_resetn*/)
 
 assign  pend_out    = pend_reg;
 //---<< pending >>---------------
+//--->> TIMEOOUT <<--------------
+reg            tenable;
+reg [23:0]      tcnt;
+
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
+    if(~axi_resetn) tcnt    <= 24'd0;
+    else begin
+        if(tenable)
+                tcnt    <= tcnt + 1'b1;
+        else    tcnt    <= 24'd0;
+    end
+
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
+    if(~axi_resetn) tenable <= 1'd0;
+    else begin
+        if(axi_arvalid && axi_arready)
+                tenable     <= 1'b1;
+        else if(axi_rvalid && axi_rready && axi_rlast)
+                tenable     <= 1'b0;
+        else if(timeout)
+                tenable     <= 1'b0;
+        else    tenable     <= tenable;
+    end
+
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
+    if(~axi_resetn) timeout     <= 1'b0;
+    else            timeout     <= tcnt == 24'hFFF_FFF;
+//---<< TIMEOOUT >>--------------
+//-->> READ CNT <<--------------
+(* dont_touch = "true" *)
+reg [8:0]       rcnt;
+
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
+    if(~axi_resetn) rcnt <= 9'd0;
+    else begin
+        if(axi_arvalid && axi_arready)
+                rcnt     <= 9'd0;
+        else if(axi_rvalid && axi_rready)
+                rcnt     <= rcnt + 1'b1;
+        else    rcnt     <= rcnt;
+    end
+
 endmodule

@@ -209,6 +209,7 @@ wire            in_port_falign     ;
 wire            in_port_lalign     ;
 wire            in_port_ealign     ;
 wire            in_port_odata_vld  ;
+(* dont_touch = "true" *)
 wire[DSIZE-1:0] in_port_odata      ;
 // wire            fifo_almost_full   ;
 
@@ -310,6 +311,14 @@ assign  in_port_fifo_rst    = FRAME_SYNC=="ON"? in_port_falign : (DATA_TYPE=="AX
 // always@(posedge wr_clk)begin
 //     fifo_rst    <= ~fifo_rst;
 // end
+(* dont_touch = "true" *)
+wire    wr_fifo_en;
+(* dont_touch = "true" *)
+wire    rd_fifo_en;
+
+assign  wr_fifo_en  = cb_wr_en || cb_wr_last_en ;
+assign  rd_fifo_en  = pull_data_en && axi_wready;
+
 
 generate
 if(AXI_DSIZE == 256)begin
@@ -318,8 +327,8 @@ vdma_stream_fifo stream_fifo_inst (
 /*  input               */     .wr_clk            (wr_clk                       ),
 /*  input               */     .rd_clk            (rd_clk                       ),
 /*  input [DSIZE-1:0]   */     .din               (cb_data                      ),
-/*  input               */     .wr_en             (cb_wr_en || cb_wr_last_en    ),
-/*  input               */     .rd_en             (pull_data_en && axi_wready   ),
+/*  input               */     .wr_en             (/*cb_wr_en || cb_wr_last_en */wr_fifo_en   ),
+/*  input               */     .rd_en             (/*pull_data_en && axi_wready*/rd_fifo_en   ),
 /*  output [DSIZE-1:0]  */     .dout              (axi_wdata                    ),
 /*  output              */     .full              (   ),
 /*  output              */     .almost_full       (fifo_almost_full             ),

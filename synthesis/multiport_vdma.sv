@@ -305,8 +305,8 @@ module multiports_vdma #(
 // /*	output[DSIZE-1:0]	*/	.q
 // );
 
-localparam  WR_THRESHOLD    = 50,
-            RD_THRESHOLD    = 50,
+localparam  WR_THRESHOLD    = 128,
+            RD_THRESHOLD    = 128,
             BURST_LEN_SIZE  = 8;
 
 //----->> port 0 <<------------------
@@ -951,24 +951,36 @@ assign axi_m00_inf.axi_revld    = 1'b0;
 assign axi_s00_inf.axi_wevld    = 1'b0;
 assign axi_s00_inf.axi_revld    = 1'b0;
 
-axi4_to_native_for_ddr_ip #(
-    .ADDR_WIDTH     (ASIZE         ),
-    .DATA_WIDTH     (AXI_DSIZE     )
-)axi4_to_native_for_ddr_ip_inst(
-/*  axi_inf.slaver     */ .axi_inf                   (axi_m00_inf           ),
-/*  output logic[26:0] */ .app_addr                  (app_addr              ),
-/*  output logic[2:0]  */ .app_cmd                   (app_cmd               ),
-/*  output logic       */ .app_en                    (app_en                ),
-/*  output logic[255:0]*/ .app_wdf_data              (app_wdf_data          ),
-/*  output logic       */ .app_wdf_end               (app_wdf_end           ),
-/*  output logic[31:0] */ .app_wdf_mask              (app_wdf_mask          ),
-/*  output logic       */ .app_wdf_wren              (app_wdf_wren          ),
-/*  input  [255:0]     */ .app_rd_data               (app_rd_data           ),
-/*  input              */ .app_rd_data_end           (app_rd_data_end       ),
-/*  input              */ .app_rd_data_valid         (app_rd_data_valid     ),
-/*  input              */ .app_rdy                   (app_rdy               ),
-/*  input              */ .app_wdf_rdy               (app_wdf_rdy           ),
-/*  input              */ .init_calib_complete       (init_calib_complete   )
+// axi4_to_native_for_ddr_ip #(
+//     .ADDR_WIDTH     (ASIZE         ),
+//     .DATA_WIDTH     (AXI_DSIZE     )
+// )axi4_to_native_for_ddr_ip_inst(
+// /*  axi_inf.slaver     */ .axi_inf                   (axi_m00_inf /*axi_s00_inf */         ),
+// /*  output logic[26:0] */ .app_addr                  (app_addr              ),
+// /*  output logic[2:0]  */ .app_cmd                   (app_cmd               ),
+// /*  output logic       */ .app_en                    (app_en                ),
+// /*  output logic[255:0]*/ .app_wdf_data              (app_wdf_data          ),
+// /*  output logic       */ .app_wdf_end               (app_wdf_end           ),
+// /*  output logic[31:0] */ .app_wdf_mask              (app_wdf_mask          ),
+// /*  output logic       */ .app_wdf_wren              (app_wdf_wren          ),
+// /*  input  [255:0]     */ .app_rd_data               (app_rd_data           ),
+// /*  input              */ .app_rd_data_end           (app_rd_data_end       ),
+// /*  input              */ .app_rd_data_valid         (app_rd_data_valid     ),
+// /*  input              */ .app_rdy                   (app_rdy               ),
+// /*  input              */ .app_wdf_rdy               (app_wdf_rdy           ),
+// /*  input              */ .init_calib_complete       (init_calib_complete   )
+// );
+
+axi_slaver #(
+    .ASIZE      (ASIZE      ),
+    .DSIZE      (AXI_DSIZE  ),
+    .LSIZE      (8          ),
+    .ID         (0          ),
+    .LOCK_ID    ("OFF"      ),
+    .ADDR_STEP  (16         ),
+    .MUTEX_WR_RD("OFF"      )
+)axi_slaver_inst(
+/*    axi_inf.slaver */ .inf        (axi_m00_inf    )
 );
 
 endmodule

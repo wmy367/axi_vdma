@@ -38,7 +38,9 @@ module in_port #(
     output              falign                  ,
     output              lalign                  ,
     output              ealign                  ,
+    (* dont_touch = "true" *)
     output              odata_vld               ,
+    (* dont_touch = "true" *)
     output[DSIZE-1:0]   odata
 );
 

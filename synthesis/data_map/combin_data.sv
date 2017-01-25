@@ -20,8 +20,8 @@ module combin_data #(
     input [ISIZE-1:0]   idata       ,
     input               ialign      ,
     input               ilast       ,
-    output              owr_en      ,
-    output              olast_en    ,
+    output logic        owr_en      ,
+    output logic        olast_en    ,
     output[OSIZE-1:0]   odata       ,
     output[OSIZE/8-1:0] omask
 );
@@ -129,14 +129,15 @@ end
 
 always@(posedge clock/*,negedge rst_n*/)begin:MAP_DATA_BLOCK
 integer KK;
-    if(~rst_n)begin
-        for(KK=0;KK<MSIZE;KK=KK+1)
-            map_data[KK]    <= {ISIZE{1'b0}};
-    end else begin
+    // if(~rst_n)begin
+    //     for(KK=0;KK<MSIZE;KK=KK+1)
+    //         map_data[KK]    <= {ISIZE{1'b0}};
+    // end else begin
         if(iwr_en)
                 map_data[point] <= idata;
         else    map_data[point] <= map_data[point];
-end end
+    // end
+end
 
 
 reg     owr_reg;
@@ -274,11 +275,21 @@ integer KK;
             out_reg[OSIZE-1-(OVER_BITS*loint_lat)-KK*ISIZE-:ISIZE]  = map_data[KK];
     end
 end
-assign owr_en = owr_reg;
-assign olast_en = owr_last_reg;
+// assign owr_en = owr_reg;
+// assign olast_en = owr_last_reg;
 
-// assign owr_en = owr_reg_lat;
-// assign olast_en = owr_last_reg_lat;
+assign owr_en = owr_reg_lat;
+assign olast_en = owr_last_reg_lat;
+
+// always@(posedge clock)begin
+//     owr_en   <= owr_reg_lat;
+//     olast_en <= owr_last_reg_lat;
+// end
+
+// always@(*)begin
+//     owr_en   = owr_reg_lat;
+//     olast_en = owr_last_reg_lat;
+// end
 //=============================================================================//
 end else begin
 //=============================================================================//
@@ -287,15 +298,41 @@ integer KK;
     for(KK=0;KK<NSIZE;KK=KK+1)
          out_reg[OSIZE-1-KK*ISIZE-:ISIZE] = map_data[KK];
 end
+
 assign owr_en = owr_reg;
 assign olast_en = owr_last_reg;
+
+// always@(posedge clock)begin
+//     owr_en   <= owr_reg;
+//     olast_en <= owr_last_reg;
+// end
+
+// always@(*)begin
+//     owr_en   = owr_reg;
+//     olast_en = owr_last_reg;
+// end
 //=============================================================================//
 end
 endgenerate
 //---<< OSIZE%ISIZE != 0 >>------------
 
+// assign owr_en = owr_reg;
+// assign olast_en = owr_last_reg;
+// assign odata    = out_reg;
+(* dont_touch = "true" *)
+reg [OSIZE-1:0]     out_Q;
+// reg                 wr_en_Q;
+// reg                 wr_last_Q;
 
-assign odata    = out_reg;
+// assign owr_en   = wr_en_Q;
+// assign olast_en = wr_last_Q;
+assign odata    = out_Q;
+
+always@(posedge clock)begin
+    out_Q       <= out_reg;
+    // wr_en_Q     <= owr_reg;
+    // wr_last_Q   <= owr_last_reg;
+end
 // //--->>test <<--------------
 // reg [23:0]  tmp_data    = 0;
 //

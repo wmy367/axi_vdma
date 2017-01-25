@@ -78,20 +78,28 @@ always@(*)
             else    nstate = RD_TAIL;
         end else    nstate = IDLE;
     NEED_RD:
-        if(resp)
+        if(fsync)
+            nstate = W_A_RST;
+        else if(resp)
                 nstate = WAIT_DONE;
         else    nstate = NEED_RD;
     WAIT_DONE:
-        if(done)
+        if(fsync)
+            nstate = W_A_RST;
+        else if(done)
                 nstate = RD_FSH;
         else    nstate = WAIT_DONE;
     RD_FSH:     nstate = IDLE;
     RD_TAIL:
-        if(resp)
+        if(fsync)
+            nstate = W_A_RST;
+        else if(resp)
                 nstate = W_T_DONE;
         else    nstate = RD_TAIL;
     W_T_DONE:
-        if(done)
+        if(fsync)
+            nstate = W_A_RST;
+        else if(done)
                 nstate = TAIL_FSH;
         else    nstate = W_T_DONE;
     TAIL_FSH:   nstate = IDLE;
