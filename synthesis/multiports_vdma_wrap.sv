@@ -123,7 +123,7 @@ multiports_vdma #(
     .ASIZE                 (ASIZE       ),
     .AXI_DSIZE             (AXI_DSIZE   ),
     .CH0_ENABLE            (1      ),
-    .CH1_ENABLE            (1      ),
+    .CH1_ENABLE            (0      ),
     .CH2_ENABLE            (0      ),
     .CH3_ENABLE            (0      ),
     .CH4_ENABLE            (0      ),
@@ -137,7 +137,7 @@ multiports_vdma #(
     .CH0_OUT_DATA_TYPE     ("NATIVE"        ),
     .CH0_IN_FRAME_SYNC     ("OFF"           ),    //just for axis
     .CH0_OUT_FRAME_SYNC    ("OFF"           ),    //just for axis
-    .CH0_EX_SYNC           ("OFF"           ),    //external sync
+    .CH0_EX_SYNC           ("ON"           ),    //external sync
     .CH0_VIDEO_FORMAT      ("1080P@60"      ),   //just for read of vdma and internal sync
     .CH0_PORT_MODE         ("BOTH"          ),       //READ WRITE BOTH
     //parameter  CH0_BIND_MASTER      = "CH0"         //just effective when MODE=="READ"

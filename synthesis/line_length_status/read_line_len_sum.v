@@ -99,7 +99,8 @@ reg         tail_leave_reg;
 always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  tail_leave_reg  <= 1'b0;
     else begin
-        tail_leave_reg = len_count <= NOR_BURST_LEN;
+        // tail_leave_reg = len_count <= NOR_BURST_LEN;
+        tail_leave_reg = len_count < NOR_BURST_LEN;
     end
 
 assign tail_leave   = tail_leave_reg;

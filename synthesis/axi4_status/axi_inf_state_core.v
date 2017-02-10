@@ -23,6 +23,7 @@ module axi_inf_write_state_core #(
         output             pull_data_en  ,
         input              pend_in       ,
         output             pend_out      ,
+        input              fifo_empty    ,
         input              axi_aclk      ,
         input              axi_resetn    ,
         //-- addr write signals
@@ -248,6 +249,7 @@ module axi_inf_read_state_core #(
     output              push_data_en ,
     input               pend_in       ,
     output              pend_out      ,
+    input               fifo_full     ,
     input               axi_aclk      ,
     input               axi_resetn    ,
     //-- address read signals
@@ -366,8 +368,8 @@ always@(posedge axi_aclk/*,negedge axi_resetn*/)
 // assign axi_rready   = push_en;
 
 assign push_data_en = 1'b1;
-assign axi_rready   = 1'b1;
-
+// assign axi_rready   = 1'b1;
+assign axi_rready   = !fifo_full;
 //---<< push data enable >>--------------
 //--->> resp done <<-------------
 reg     resp_reg,done_reg;

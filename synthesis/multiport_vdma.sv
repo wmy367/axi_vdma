@@ -9,6 +9,7 @@ creaded: 2016/10/27 下午3:46:03
 madified:
 ***********************************************/
 `timescale 1ns/1ps
+import SystemPkg::*;
 module multiports_vdma #(
     parameter   ASIZE           = 27,
     parameter   AXI_DSIZE       = 256,
@@ -951,26 +952,31 @@ assign axi_m00_inf.axi_revld    = 1'b0;
 assign axi_s00_inf.axi_wevld    = 1'b0;
 assign axi_s00_inf.axi_revld    = 1'b0;
 
-// axi4_to_native_for_ddr_ip #(
-//     .ADDR_WIDTH     (ASIZE         ),
-//     .DATA_WIDTH     (AXI_DSIZE     )
-// )axi4_to_native_for_ddr_ip_inst(
-// /*  axi_inf.slaver     */ .axi_inf                   (axi_m00_inf /*axi_s00_inf */         ),
-// /*  output logic[26:0] */ .app_addr                  (app_addr              ),
-// /*  output logic[2:0]  */ .app_cmd                   (app_cmd               ),
-// /*  output logic       */ .app_en                    (app_en                ),
-// /*  output logic[255:0]*/ .app_wdf_data              (app_wdf_data          ),
-// /*  output logic       */ .app_wdf_end               (app_wdf_end           ),
-// /*  output logic[31:0] */ .app_wdf_mask              (app_wdf_mask          ),
-// /*  output logic       */ .app_wdf_wren              (app_wdf_wren          ),
-// /*  input  [255:0]     */ .app_rd_data               (app_rd_data           ),
-// /*  input              */ .app_rd_data_end           (app_rd_data_end       ),
-// /*  input              */ .app_rd_data_valid         (app_rd_data_valid     ),
-// /*  input              */ .app_rdy                   (app_rdy               ),
-// /*  input              */ .app_wdf_rdy               (app_wdf_rdy           ),
-// /*  input              */ .init_calib_complete       (init_calib_complete   )
-// );
-
+generate
+if(SIM == "OFF" || SIM == "FALSE")begin:AXI_SIM_SW
+//------------------------------------------------------------------------------
+axi4_to_native_for_ddr_ip #(
+    .ADDR_WIDTH     (ASIZE         ),
+    .DATA_WIDTH     (AXI_DSIZE     )
+)axi4_to_native_for_ddr_ip_inst(
+/*  axi_inf.slaver     */ .axi_inf                   (axi_m00_inf /*axi_s00_inf */         ),
+/*  output logic[26:0] */ .app_addr                  (app_addr              ),
+/*  output logic[2:0]  */ .app_cmd                   (app_cmd               ),
+/*  output logic       */ .app_en                    (app_en                ),
+/*  output logic[255:0]*/ .app_wdf_data              (app_wdf_data          ),
+/*  output logic       */ .app_wdf_end               (app_wdf_end           ),
+/*  output logic[31:0] */ .app_wdf_mask              (app_wdf_mask          ),
+/*  output logic       */ .app_wdf_wren              (app_wdf_wren          ),
+/*  input  [255:0]     */ .app_rd_data               (app_rd_data           ),
+/*  input              */ .app_rd_data_end           (app_rd_data_end       ),
+/*  input              */ .app_rd_data_valid         (app_rd_data_valid     ),
+/*  input              */ .app_rdy                   (app_rdy               ),
+/*  input              */ .app_wdf_rdy               (app_wdf_rdy           ),
+/*  input              */ .init_calib_complete       (init_calib_complete   )
+);
+//==============================================================================
+end else begin
+//------------------------------------------------------------------------------
 axi_slaver #(
     .ASIZE      (ASIZE      ),
     .DSIZE      (AXI_DSIZE  ),
@@ -982,5 +988,18 @@ axi_slaver #(
 )axi_slaver_inst(
 /*    axi_inf.slaver */ .inf        (axi_m00_inf    )
 );
+
+initial begin
+    repeat(100) @(posedge axi_m00_inf.axi_aclk);
+    fork
+        axi_slaver_inst.slaver_recieve_burst(1000);
+        axi_slaver_inst.slaver_transmit_busrt(1000);
+    join
+end
+//==============================================================================
+end
+endgenerate
+
+
 
 endmodule

@@ -307,7 +307,7 @@ a_frame_addr #(
 /*  input             */  .clock                    (axi_aclk           ),
 /*  input             */  .rst_n                    (axi_resetn         ),
 /*  input             */  .new_base                 (out_port_falign_bc ),
-/*  input[ASIZE-1:0]  */  .baseaddr                 (baseaddr           ),
+/*  input[ASIZE-1:0]  */  .baseaddr                 (/*baseaddr*/0           ),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
 /*  input             */  .burst_done               (burst_done         ),
 /*  input             */  .tail_done                (tail_done          ),

@@ -130,7 +130,7 @@ assign tail_req     = tail_require_reg;
 always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  burst_exec  <= 1'b0;
     else begin
-        burst_exec <= count > THRESHOLD;
+        burst_exec <= count >= THRESHOLD;
     end
 
 reg         burst_idle;
@@ -154,12 +154,36 @@ always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  tcstate     <= TIDLE;
     else        tcstate     <= tnstate;
 
+wire	line_tail_raising;
+wire    line_tail_falling;
+edge_generator #(
+	.MODE		("NORMAL" 	)  // FAST NORMAL BEST
+)gen_line_edge(
+	.clk		(clock				),
+	.rst_n      (rst_n              ),
+	.in         (line_tail          ),
+	.raising    (line_tail_raising  ),
+	.falling    (line_tail_falling  )
+);
+
+wire	frame_tail_raising;
+wire    frame_tail_falling;
+edge_generator #(
+	.MODE		("NORMAL" 	)  // FAST NORMAL BEST
+)gen_frame_edge(
+	.clk		(clock				),
+	.rst_n      (rst_n              ),
+	.in         (frame_tail          ),
+	.raising    (frame_tail_raising  ),
+	.falling    (frame_tail_falling  )
+);
+
 always@(*)
     case(tcstate)
     TIDLE:
         if(
-            ((MODE=="LINE")&&line_tail) ||
-            ((MODE=="ONCE")&&frame_tail) )
+            ((MODE=="LINE")&&line_tail_raising) ||
+            ((MODE=="ONCE")&&frame_tail_raising) )
                 tnstate = CATCHT;
         else    tnstate = IDLE;
 

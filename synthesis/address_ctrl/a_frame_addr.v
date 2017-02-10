@@ -60,8 +60,8 @@ always@(posedge clock)
                 curr_addr   <= baseaddr;
         else if(burst_done_raising)
                 curr_addr   <= curr_addr + BURST_MAP_ADDR;
-        else if(tail_done_raising)
-                curr_addr   <= {curr_addr[ASIZE-1:LASIZE],{LASIZE{1'b0}}} + line_increate_addr;
+        // else if(tail_done_raising)
+        //         curr_addr   <= {curr_addr[ASIZE-1:LASIZE],{LASIZE{1'b0}}} + line_increate_addr;
         else    curr_addr   <= curr_addr;
     end
 

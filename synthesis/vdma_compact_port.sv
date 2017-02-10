@@ -64,13 +64,12 @@ module vdma_compact_port #(
     vdma_baseaddr_ctrl_inf.master       ctrl_ex_ba2
 );
 
-logic   axi4_inf_err_rst;
-logic   mm_tras_rstn;
-logic   mm_rev_rstn;
+logic   axi4_inf_err_rst = '0;
 
-always@(posedge axi4_m.axi_aclk)
-    // axi4_inf_err_rst <= (axi4_m.axi_wevld && axi4_m.axi_weresp!=4'b000) || (axi4_m.axi_revld && axi4_m.axi_reresp!=4'b000);
-    axi4_inf_err_rst <= axi4_m.axi_wevld  || axi4_m.axi_revld ;
+
+// always@(posedge axi4_m.axi_aclk)
+//     // axi4_inf_err_rst <= (axi4_m.axi_wevld && axi4_m.axi_weresp!=4'b000) || (axi4_m.axi_revld && axi4_m.axi_reresp!=4'b000);
+//     axi4_inf_err_rst <= axi4_m.axi_wevld  || axi4_m.axi_revld ;
 
 logic pend_rev_trs;
 logic pend_trs_rev;

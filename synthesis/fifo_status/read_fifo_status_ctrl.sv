@@ -9,6 +9,9 @@ creaded: 2016/8/5 下午3:17:25
 madified:
 ***********************************************/
 `timescale 1ns/1ps
+
+import SystemPkg::*;
+
 module read_fifo_status_ctrl #(
     parameter   THRESHOLD = 200,        // EMPTY THRESHOLD
     parameter   FULL_LEN  = 256,
@@ -118,10 +121,14 @@ reg [4:0]       rcnt;
         default:    rcnt <= 5'd0;
         endcase
 
-        if(!fsync)
-                rcnt_done   <= rcnt > 5'd30;
-        else    rcnt_done   <= 1'b0;
-end end
+        if(SIM == "ON" || SIM == "TRUE")begin
+            #(800us);
+            rcnt_done   <= 1'b1;
+        end else begin
+            if(!fsync)
+                    rcnt_done   <= rcnt > 5'd30;
+            else    rcnt_done   <= 1'b0;
+end end end
 
 //--->> BURST REQUIRE <<--------
 reg         burst_req_reg;

@@ -334,9 +334,12 @@ vdma_stream_fifo stream_fifo_inst (
 /*  output              */     .almost_full       (fifo_almost_full             ),
 /*  output              */     .empty             (fifo_empty                   ),
 /*  output              */     .almost_empty      (   ),
-/*  output[9:0]         */     .rd_data_count     (rd_data_count                ),
-/*  output[9:0]         */     .wr_data_count     (wr_data_count                )
+/*  output[9:0]         */     .rd_data_count     (rd_data_count[9:0]                ),
+/*  output[9:0]         */     .wr_data_count     (wr_data_count[9:0]                )
 );
+
+// assign rd_data_count[9] = 1'b0;
+// assign wr_data_count[9] = 1'b0;
 // end else if(AXI_DSIZE == 512)begin
 // vdma_stream_fifo_512 stream_fifo_inst (
 // // /*  input               */     .rst               (!wr_rst_n ||  fifo_rst       ),
@@ -408,7 +411,8 @@ probe_large_width_data #(
 end
 endgenerate
 
-assign axi_wvalid   = pull_data_en;
+// assign axi_wvalid   = pull_data_en;
+assign axi_wvalid   = pull_data_en && !fifo_empty;
 
 wire    burst_req    ;
 wire    tail_req     ;
@@ -433,7 +437,7 @@ fifo_status_ctrl #(
 /*  input             */    .fifo_empty        (fifo_empty          ),
 /*  input [9:0]       */    .count             (rd_data_count       ),
 /*  input             */    .line_tail         (in_port_lalign_bc   ),      // not frame tail
-/*  input             */    .frame_tail        (tail_leave && in_port_lalign_bc        ),      //self count ,and tail leave
+/*  input             */    .frame_tail        (tail_leave/* && in_port_lalign_bc*/        ),      //self count ,and tail leave
 /*  input [LSIZE-1:0] */    .tail_len          (tail_len            ),
 /*  output            */    .burst_req         (burst_req           ),
 /*  output            */    .tail_req          (tail_req            ),      //line tail
@@ -453,7 +457,7 @@ write_line_len_sum #(
     .LSIZE              (BURST_LEN_SIZE)
 )write_line_len_sum_inst(
 /*  input             */  .clock                (rd_clk              ),
-/*  input             */  .rst_n                (/*rd_rst_n*/line_sum_rstn            ),
+/*  input             */  .rst_n                (rd_rst_n/*line_sum_rstn*/            ),
 /*  input [15:0]      */  .vactive              (vactive             ), //calculate line length
 /*  input [15:0]      */  .hactive              (hactive             ), //calculate line length
 /*  input             */  .fsync                (in_port_falign_bc || tail_req ),
@@ -461,7 +465,7 @@ write_line_len_sum #(
 /*  input             */  .tail_done            (tail_done           ),
 /*  output            */  .tail_status          (                    ),
 /*  output[LSIZE-1:0] */  .tail_len             (tail_len            ),
-/*  output            */ .tail_leave            (tail_leave          )
+/*  output            */  .tail_leave           (tail_leave          )
 );
 
 wire[ASIZE-1:0]         curr_address;
@@ -473,7 +477,7 @@ a_frame_addr #(
 /*  input             */  .clock                    (rd_clk             ),
 /*  input             */  .rst_n                    (/*rd_rst_n*/frame_addr_rstn           ),
 /*  input             */  .new_base                 (in_port_falign_bc  ),
-/*  input[ASIZE-1:0]  */  .baseaddr                 (baseaddr           ),
+/*  input[ASIZE-1:0]  */  .baseaddr                 (/*baseaddr*/0           ),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
 /*  input             */  .burst_done               (burst_done         ),
 /*  input             */  .tail_done                (tail_done          ),
@@ -494,6 +498,7 @@ axi_inf_write_state_core #(
 /*      output            */  .pull_data_en         (pull_data_en               ),
 /*      input             */  .pend_in              (pend_in                    ),
 /*      output            */  .pend_out             (pend_out                   ),
+/*      input             */  .fifo_empty           (fifo_empty                 ),
 // -- AXI
 /*      input             */   .axi_aclk            (axi_aclk                   ),
 /*      input             */   .axi_resetn          (/*axi_resetn*/axi_core_rstn                 ),
