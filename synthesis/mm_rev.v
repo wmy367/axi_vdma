@@ -179,6 +179,7 @@ destruct_data #(
 
 wire[9:0]       rd_data_count;
 wire[9:0]       wr_data_count;
+wire            fifo_full;
 
 generate
 if(AXI_DSIZE == 256)begin
@@ -190,7 +191,7 @@ vdma_stream_fifo stream_fifo_inst (
 /*  input               */     .wr_en             (axi_rvalid                   ),
 /*  input               */     .rd_en             (ds_rd_en                     ),
 /*  output [DSIZE-1:0]  */     .dout              (ds_data                      ),
-/*  output              */     .full              (   ),
+/*  output              */     .full              (fifo_full                    ),
 /*  output              */     .almost_full       (fifo_almost_full             ),
 /*  output              */     .empty             (fifo_empty                   ),
 /*  output              */     .almost_empty      (fifo_almost_empty            ),
@@ -208,7 +209,7 @@ vdma_stream_fifo_512 stream_fifo_inst (
 /*  input               */     .wr_en             (axi_rvalid                   ),
 /*  input               */     .rd_en             (ds_rd_en                     ),
 /*  output [DSIZE-1:0]  */     .dout              (ds_data                      ),
-/*  output              */     .full              (   ),
+/*  output              */     .full              (fifo_full                    ),
 /*  output              */     .almost_full       (fifo_almost_full             ),
 /*  output              */     .empty             (fifo_empty                   ),
 /*  output              */     .almost_empty      (fifo_almost_empty            ),
@@ -261,7 +262,8 @@ read_fifo_status_ctrl #(
     .THRESHOLD  (THRESHOLD      ),// EMPTY THRESHOLD
     .BURST_LEN  (BURST_LEN      ),
     .FULL_LEN   (FULL_LEN       ),
-    .LSIZE      (LSIZE          )
+    .LSIZE      (LSIZE          ),
+    .MODE       (MODE           )
 )read_fifo_status_ctrl_inst(
 /*  input                */   .clock            (axi_aclk               ),
 /*  input                */   .rst_n            (axi_resetn             ),
@@ -329,6 +331,7 @@ axi_inf_read_state_core #(
 /*  output            */.push_data_en       (                           ),
 /*  input             */.pend_in            (pend_in                    ),
 /*  output            */.pend_out           (pend_out                   ),
+/*  input             */.fifo_full          (/*fifo_full */fifo_almost_full                 ),
 /*  input             */.axi_aclk           (axi_aclk                   ),
 /*  input             */.axi_resetn         (axi_resetn                 ),
     //-- address read signals

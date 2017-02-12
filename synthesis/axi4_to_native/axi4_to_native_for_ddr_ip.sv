@@ -34,7 +34,7 @@ logic clock,rst;
 assign clock = axi_inf.axi_aclk;
 // assign rst   = !axi_inf.axi_resetn;
 assign rst  =   !axi_inf.axi_resetn ||  axi_inf.axi_wevld || axi_inf.axi_revld;
-typedef enum {NOP,WIDLE,RIDLE,EXEC_WR,WR_CMD_E,WR_FIFO_E,WR_END,EXEC_RD,RD_FIFO_E,RD_END} MASTER_STATE;
+typedef enum {NOP=0,WIDLE=1,RIDLE=2,EXEC_WR=3,WR_CMD_E=4,WR_FIFO_E=5,WR_END=6,EXEC_RD=7,RD_FIFO_E=8,RD_END=9} MASTER_STATE;
 
 MASTER_STATE mnstate,mcstate;
 
@@ -96,6 +96,28 @@ always@(*)
     default:    mnstate = NOP;
     endcase
 
+//--->> TRACK <<------------------
+logic [9:0] track_cnt;
+(* dont_touch = "true" *)
+logic       track_point;
+
+always@(posedge clock,posedge rst)
+    if(rst)     track_cnt   <= 10'd0;
+    else begin
+        case(mnstate)
+        WR_CMD_E:begin
+            if(track_cnt < 512)
+                    track_cnt   <= track_cnt + 1'b1;
+            else    track_cnt   <= track_cnt;
+        end
+        default:    track_cnt   <= 10'd0;
+        endcase
+    end
+
+always@(posedge clock,posedge rst)
+    if(rst)    track_point  <= 1'b0;
+    else       track_point  <= track_cnt == 10'd300;
+//---<< TRACK >>------------------
 logic   wr_enable,rd_enable;
 logic   rd_app_enable;
 
@@ -187,6 +209,13 @@ always@(mnstate)
 assign axi_inf.axi_rvalid = !rd_fifo_empty && rd_enable;
 //---<< WR DDR DATA >>-------------------
 //--->> RD DDR DATA <<-------------------
+(* dont_touch = "true" *)
+wire        wr_fifo_wen;
+assign      wr_fifo_wen  = wr_enable && axi_inf.axi_wvalid && axi_inf.axi_wready;
+(* dont_touch = "true" *)
+wire        wr_fifo_ren;
+assign      wr_fifo_ren = wr_enable && app_wdf_rdy;
+
 logic wr_fifo_full;
 generate
 if(DATA_WIDTH==256)begin
@@ -194,8 +223,8 @@ FIFO_DDR_IP_BRG FIFO_DDR_IP_BRG_wr (
 /*  input          */ .clk          (clock                  ),
 /*  input          */ .rst          (rst                    ),
 /*  input [255:0]  */ .din          (axi_inf.axi_wdata      ),
-/*  input          */ .wr_en        (wr_enable && axi_inf.axi_wvalid && axi_inf.axi_wready  ),
-/*  input          */ .rd_en        (wr_enable && app_wdf_rdy   ),
+/*  input          */ .wr_en        (/*wr_enable && axi_inf.axi_wvalid && axi_inf.axi_wready*/wr_fifo_wen  ),
+/*  input          */ .rd_en        (/*wr_enable && app_wdf_rdy*/ wr_fifo_ren  ),
 /*  output [255:0] */ .dout         (app_wdf_data               ),
 /*  output         */ .full         (wr_fifo_full               ),
 /*  output         */ .empty        (wr_fifo_empty              )
@@ -205,8 +234,8 @@ FIFO_DDR_IP_BRG_512 FIFO_DDR_IP_BRG_wr (
 /*  input          */   .clk          (clock                  ),
 /*  input          */   .srst         (rst                    ),
 /*  input [511:0]  */   .din          (axi_inf.axi_wdata      ),
-/*  input          */   .wr_en        (wr_enable && axi_inf.axi_wvalid && axi_inf.axi_wready  ),
-/*  input          */   .rd_en        (wr_enable && app_wdf_rdy   ),
+/*  input          */   .wr_en        (/*wr_enable && axi_inf.axi_wvalid && axi_inf.axi_wready*/ wr_fifo_wen ),
+/*  input          */   .rd_en        (/*wr_enable && app_wdf_rdy*/ wr_fifo_ren  ),
 /*  output [511:0] */   .dout         (app_wdf_data               ),
 /*  output         */   .full         (wr_fifo_full               ),
 /*  output         */   .empty        (wr_fifo_empty              )

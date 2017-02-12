@@ -1,0 +1,22 @@
+state track_wr:
+    if((board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/AXI_SIM_SW.axi4_to_native_for_ddr_ip_inst/mcstate==3'h4) && ($counter0 == 16'h0103)) then 
+        reset_counter $counter0;
+        trigger;
+    elseif(board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/AXI_SIM_SW.axi4_to_native_for_ddr_ip_inst/mcstate==3'h4) then
+        increment_counter $counter0;
+        goto track_wr;
+    else 
+         reset_counter $counter0;
+         goto track_wr;
+    endif
+    
+#    state wait_for_4th_rising_edge_of_abc:
+#      if ((abc == 1'bR) && ($counter0 == 16'h0003)) then
+#        reset_counter $counter0;
+#        trigger;
+#      elseif (abc == 1'bR) then
+#        increment_counter $counter0;
+#        goto wait_for_4th_rising_edge_of_abc;
+#      else
+#        goto wait_for_4th_rising_edge_of_abc;
+#      endif

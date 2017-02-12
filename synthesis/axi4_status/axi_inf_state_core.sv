@@ -20,7 +20,7 @@ module axi_inf_write_state_core #(
         output             req_done      ,
         input [LSIZE-1:0]  req_len       ,
         input [ASIZE-1:0]  req_addr      ,
-        output             pull_data_en  ,
+        output logic       pull_data_en  ,
         input              pend_in       ,
         output             pend_out      ,
         input              fifo_empty    ,
@@ -66,14 +66,16 @@ always@(posedge axi_aclk)
     else    awlen_reg   <= {LSIZE{1'b0}};
 // assign  axi_awvalid = 1'b0;
 //---<< RV signals >>-------
-reg [3:0]       nstate,cstate;
-localparam      IDLE        = 4'd0,
-                PEND        = 4'd6,
-                SET_VLD     = 4'd1,
-                WAIT_LAST   = 4'd2,
-                SET_BRDY    = 4'd3,
-                DONE        = 4'd4,
-                BERR        = 4'd5;
+
+typedef enum {  IDLE       ,
+                PEND       ,
+                SET_VLD    ,
+                WAIT_LAST  ,
+                SET_BRDY   ,
+                DONE       ,
+                BERR       } STATUS;
+
+STATUS       nstate,cstate;
 
 always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) cstate  <= IDLE;
@@ -146,7 +148,7 @@ always@(posedge axi_aclk/*,negedge axi_resetn*/)begin
     end else if(write_req)begin
             length      <= req_len;
             if(req_len>0)
-                    len_sub_1   <= req_len-1'b1;
+                    len_sub_1   <= req_len-2'd1;
             else    len_sub_1   <= {LSIZE{1'b0}};
             if(req_len>1)
                     len_sub_2   <= req_len-2'd2;
@@ -180,6 +182,7 @@ always@(posedge axi_aclk/*,negedge axi_resetn*/)
                 last_reg    <= 1'b0;
         else begin
             last_reg    <= ((lcnt == len_sub_2) && (axi_wvalid && axi_wready)) || (lcnt == len_sub_1);
+            // last_reg    <= (lcnt == len_sub_2);
     end end
 
 assign axi_wlast    = last_reg;
@@ -193,7 +196,12 @@ always@(posedge axi_aclk/*,negedge axi_resetn*/)
         WAIT_LAST:  pull_en <= 1'b1;
         default:    pull_en <= 1'b0;
         endcase
-assign pull_data_en = pull_en;
+
+always@(posedge axi_aclk/*,negedge axi_resetn*/)
+    if(~axi_resetn) pull_data_en    <= 1'b0;
+    else     pull_data_en <= pull_en;
+
+// assign pull_data_en = pull_en;
 //---<< enable pull data >>------
 //--->> resp done <<-------------
 reg     resp_reg,done_reg;
@@ -292,13 +300,15 @@ always@(posedge axi_aclk)
 //---<< RV >>-------------
 // assign axi_arvalid
 // assign axi_arready
-reg [3:0]       cstate,nstate;
-localparam      IDLE        = 4'd0,
-                SET_VLD     = 4'd1,
-                WAIT_LAST   = 4'd2,
-                DONE        = 4'd3,
-                PEND        = 4'd4,
-                WAIT_FSYNC  = 4'd5;
+
+typedef enum {  IDLE       ,
+                SET_VLD    ,
+                WAIT_LAST  ,
+                DONE       ,
+                PEND       ,
+                WAIT_FSYNC } STATUS ;
+STATUS      cstate,nstate;
+
 always@(posedge axi_aclk/*,negedge axi_resetn*/)
     if(~axi_resetn) cstate <= IDLE;
     else            cstate <= nstate;
@@ -325,6 +335,8 @@ always@(*)
             nstate = IDLE;
         else */if(axi_arready && axi_arvalid)
                 nstate = WAIT_LAST;
+        // else if(timeout)
+        //         nstate = WAIT_FSYNC;
         else    nstate = SET_VLD;
     WAIT_LAST:
         /*if(fsync)

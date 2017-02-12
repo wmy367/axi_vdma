@@ -17,6 +17,7 @@ module read_fifo_status_ctrl #(
     parameter   FULL_LEN  = 256,
     parameter   BURST_LEN = 100,
     parameter   LSIZE     = 9,
+    parameter   MODE      = "ONCE",     //ONCE LINE
     parameter   WR_RD     = "READ"     // READ WRITE FIFO STATUS
 )(
     input                   clock,
@@ -47,7 +48,7 @@ localparam          W_A_RST     =   4'd7,       //wait addr reset
                     RD_TAIL     =   4'd4;
 
 always@(posedge clock/*,negedge rst_n*/)
-    if(~rst_n)  cstate  <= IDLE;
+    if(~rst_n)  cstate  <= W_A_RST;
     else        cstate  <= nstate;
 
 //--->> TRIGGER <<--------------------
@@ -73,9 +74,10 @@ always@(*)
                 nstate = IDLE;
         else    nstate = W_A_RST;
     IDLE:
-        if(fsync)
-            nstate = W_A_RST;
-        else if(trigger_req)begin
+        // if(fsync)
+        //     nstate = W_A_RST;
+        // else if(trigger_req)begin
+        if(trigger_req)begin
             if(!tail_status)
                     nstate = NEED_RD;
             else    nstate = RD_TAIL;
@@ -105,11 +107,20 @@ always@(*)
         else if(done)
                 nstate = TAIL_FSH;
         else    nstate = W_T_DONE;
-    TAIL_FSH:   nstate = IDLE;
+    TAIL_FSH:begin
+        if(MODE=="LINE")
+                nstate = IDLE;
+        else begin
+            if(fsync)
+                    nstate = IDLE;
+            else    nstate = TAIL_FSH;
+        end
+    end
     default:    nstate = IDLE;
     endcase
 
 //--->> WAIT ADDR RESET <<-------
+// parameter SIM = "ON";
 always@(posedge clock/*,negedge rst_n*/)begin:WAIT_ADDR_RST_BLOCK
 reg [4:0]       rcnt;
     if(~rst_n)begin
@@ -122,7 +133,7 @@ reg [4:0]       rcnt;
         endcase
 
         if(SIM == "ON" || SIM == "TRUE")begin
-            #(800us);
+            #(5ms);
             rcnt_done   <= 1'b1;
         end else begin
             if(!fsync)
