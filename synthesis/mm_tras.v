@@ -321,7 +321,7 @@ assign  rd_fifo_en  = pull_data_en && axi_wready;
 
 
 generate
-if(AXI_DSIZE == 256)begin
+if(AXI_DSIZE != 512)begin
 vdma_stream_fifo stream_fifo_inst (
 /*  input               */     .rst               (fifo_rst                     ),
 /*  input               */     .wr_clk            (wr_clk                       ),
@@ -361,7 +361,7 @@ vdma_stream_fifo stream_fifo_inst (
 // );
 // end
 
-end else if(AXI_DSIZE == 512)begin
+end else begin
 vdma_stream_fifo_512 stream_fifo_inst (
 /*  input               */     .rst               (fifo_rst                     ),
 // /*  input               */     .wr_rst            (!wr_rst_n ||  fifo_rst                     ),
@@ -411,8 +411,8 @@ probe_large_width_data #(
 end
 endgenerate
 
-// assign axi_wvalid   = pull_data_en;
-assign axi_wvalid   = pull_data_en && !fifo_empty;
+assign axi_wvalid   = pull_data_en;
+// assign axi_wvalid   = pull_data_en && !fifo_empty;
 
 wire    burst_req    ;
 wire    tail_req     ;
@@ -433,11 +433,12 @@ fifo_status_ctrl #(
 /*  input             */    .clock             (rd_clk              ),
 /*  input             */    .rst_n             (/*rd_rst_n*/fifo_status_rstn            ),
 /*  input             */    .enable            (enable              ),
-/*  input             */    .f_rst_status      (/*in_port_fifo_rst*/0    ),
+/*  input             */    .f_rst_status      (/*in_port_fifo_rst*/1'b0    ),
 /*  input             */    .fifo_empty        (fifo_empty          ),
 /*  input [9:0]       */    .count             (rd_data_count       ),
 /*  input             */    .line_tail         (in_port_lalign_bc   ),      // not frame tail
-/*  input             */    .frame_tail        (tail_leave/* && in_port_lalign_bc*/        ),      //self count ,and tail leave
+/*  input             */    .frame_tail        (in_port_falign_bc   ),      //self count ,and tail leave
+/*  input             */    .tail_leave        (tail_leave          ),      // not frame tail
 /*  input [LSIZE-1:0] */    .tail_len          (tail_len            ),
 /*  output            */    .burst_req         (burst_req           ),
 /*  output            */    .tail_req          (tail_req            ),      //line tail
@@ -477,7 +478,7 @@ a_frame_addr #(
 /*  input             */  .clock                    (rd_clk             ),
 /*  input             */  .rst_n                    (/*rd_rst_n*/frame_addr_rstn           ),
 /*  input             */  .new_base                 (in_port_falign_bc  ),
-/*  input[ASIZE-1:0]  */  .baseaddr                 (/*baseaddr*/0           ),
+/*  input[ASIZE-1:0]  */  .baseaddr                 (/*baseaddr*/{ASIZE{1'b0}}           ),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
 /*  input             */  .burst_done               (burst_done         ),
 /*  input             */  .tail_done                (tail_done          ),

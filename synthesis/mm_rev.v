@@ -182,7 +182,7 @@ wire[9:0]       wr_data_count;
 wire            fifo_full;
 
 generate
-if(AXI_DSIZE == 256)begin
+if(AXI_DSIZE != 512)begin
 vdma_stream_fifo stream_fifo_inst (
 /*  input               */     .rst               (out_port_falign_bc || !rst_n    ),
 /*  input               */     .wr_clk            (axi_aclk                     ),
@@ -198,7 +198,7 @@ vdma_stream_fifo stream_fifo_inst (
 /*  output[9:0]         */     .rd_data_count     (rd_data_count                ),
 /*  output[9:0]         */     .wr_data_count     (wr_data_count                )
 );
-end else if(AXI_DSIZE == 512)begin
+end else begin
 vdma_stream_fifo_512 stream_fifo_inst (
 /*  input               */     .rst               (out_port_falign_bc || !rst_n    ),
 // /*  input               */     .wr_rst               (out_port_falign_bc || !rst_n    ),
@@ -268,7 +268,7 @@ read_fifo_status_ctrl #(
 /*  input                */   .clock            (axi_aclk               ),
 /*  input                */   .rst_n            (axi_resetn             ),
 /*  input                */   .enable           (enable                 ),
-/*  input                */   .fsync            (out_port_falign_bc     ),
+/*  input                */   .fsync            ((out_port_falign_bc && fifo_empty)     ),
 /*  input [8:0]          */   .count            (wr_data_count          ),
 /*  input                */   .tail_status      (tail_status            ),
 /*  input [LSIZE-1:0]    */   .tail_len         (tail_len               ),
@@ -309,7 +309,7 @@ a_frame_addr #(
 /*  input             */  .clock                    (axi_aclk           ),
 /*  input             */  .rst_n                    (axi_resetn         ),
 /*  input             */  .new_base                 (out_port_falign_bc ),
-/*  input[ASIZE-1:0]  */  .baseaddr                 (/*baseaddr*/0           ),
+/*  input[ASIZE-1:0]  */  .baseaddr                 (/*baseaddr*/{ASIZE{1'b0}}           ),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
 /*  input             */  .burst_done               (burst_done         ),
 /*  input             */  .tail_done                (tail_done          ),
