@@ -185,7 +185,7 @@ always@(*)
             ((MODE=="LINE")&&line_tail_raising) ||
             ((MODE=="ONCE")&&frame_tail_raising) )
                 tnstate = CATCHT;
-        else    tnstate = IDLE;
+        else    tnstate = TIDLE;
 
     CATCHT:
         if(timeout)

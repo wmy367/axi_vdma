@@ -133,7 +133,7 @@ reg [4:0]       rcnt;
         endcase
 
         if(SIM == "ON" || SIM == "TRUE")begin
-            #(5ms);
+            #(120us);
             rcnt_done   <= 1'b1;
         end else begin
             if(!fsync)

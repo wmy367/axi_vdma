@@ -411,8 +411,8 @@ probe_large_width_data #(
 end
 endgenerate
 
-// assign axi_wvalid   = pull_data_en;
-assign axi_wvalid   = pull_data_en && !fifo_empty;
+assign axi_wvalid   = pull_data_en;
+// assign axi_wvalid   = pull_data_en && !fifo_empty;
 
 wire    burst_req    ;
 wire    tail_req     ;
@@ -424,6 +424,23 @@ wire[BURST_LEN_SIZE-1:0]    tail_len;
 wire    burst_done,tail_done;
 wire    tail_leave;
 
+wire frame_tail;
+
+assign frame_tail   = tail_leave && in_port_lalign_bc ;
+
+//--->> TEST VSYNC <<------------------
+wire vsync_cc;
+cross_clk_sync #(
+	.DSIZE    	(1),
+	.LAT		(3)
+)cross_clk_sync_false_path(
+	rd_clk,
+	rd_rst_n,
+	vsync,
+	vsync_cc
+);
+//---<< TEST VSYNC >>------------------
+
 fifo_status_ctrl #(
     .THRESHOLD      (THRESHOLD  ),
     .BURST_LEN      (BURST_LEN  ),
@@ -432,12 +449,12 @@ fifo_status_ctrl #(
 )fifo_status_ctrl_inst(
 /*  input             */    .clock             (rd_clk              ),
 /*  input             */    .rst_n             (/*rd_rst_n*/fifo_status_rstn            ),
-/*  input             */    .enable            (enable              ),
+/*  input             */    .enable            ((enable && !vsync_cc )           ),
 /*  input             */    .f_rst_status      (/*in_port_fifo_rst*/0    ),
 /*  input             */    .fifo_empty        (fifo_empty          ),
 /*  input [9:0]       */    .count             (rd_data_count       ),
 /*  input             */    .line_tail         (in_port_lalign_bc   ),      // not frame tail
-/*  input             */    .frame_tail        (tail_leave/* && in_port_lalign_bc*/        ),      //self count ,and tail leave
+/*  input             */    .frame_tail        (frame_tail          ),      //self count ,and tail leave
 /*  input [LSIZE-1:0] */    .tail_len          (tail_len            ),
 /*  output            */    .burst_req         (burst_req           ),
 /*  output            */    .tail_req          (tail_req            ),      //line tail

@@ -258,6 +258,19 @@ wire            burst_done ;
 wire            tail_done  ;
 wire            tail_leave ;
 
+//--->> TEST VSYNC <<------------------
+wire vsync_cc;
+cross_clk_sync #(
+	.DSIZE    	(1),
+	.LAT		(3)
+)cross_clk_sync_false_path(
+	axi_aclk,
+	axi_resetn,
+	vsync,
+	vsync_cc
+);
+//---<< TEST VSYNC >>------------------
+
 read_fifo_status_ctrl #(
     .THRESHOLD  (THRESHOLD      ),// EMPTY THRESHOLD
     .BURST_LEN  (BURST_LEN      ),
@@ -267,7 +280,7 @@ read_fifo_status_ctrl #(
 )read_fifo_status_ctrl_inst(
 /*  input                */   .clock            (axi_aclk               ),
 /*  input                */   .rst_n            (axi_resetn             ),
-/*  input                */   .enable           (enable                 ),
+/*  input                */   .enable           ((enable && !vsync_cc)                 ),
 /*  input                */   .fsync            (out_port_falign_bc     ),
 /*  input [8:0]          */   .count            (wr_data_count          ),
 /*  input                */   .tail_status      (tail_status            ),

@@ -380,8 +380,8 @@ always@(posedge axi_aclk/*,negedge axi_resetn*/)
 // assign axi_rready   = push_en;
 
 assign push_data_en = 1'b1;
-// assign axi_rready   = 1'b1;
-assign axi_rready   = !fifo_full;
+assign axi_rready   = 1'b1;
+// assign axi_rready   = !fifo_full;
 //---<< push data enable >>--------------
 //--->> resp done <<-------------
 reg     resp_reg,done_reg;
