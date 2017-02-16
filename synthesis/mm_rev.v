@@ -134,9 +134,12 @@ out_port #(
 /*  output             */ .ealign        (out_port_ealign      ),
 /*  input[DSIZE-1:0]   */ .in_data       (out_port_idata       ),
 /*  output             */ .rd_en         (out_port_rd_en       ),
-/*  output[15:0]       */ .out_vactive   (out_vactive          ),
-/*  output[15:0]       */ .out_hactive   (out_hactive          )
+/*  output[15:0]       */ .out_vactive   (/*out_vactive*/          ),
+/*  output[15:0]       */ .out_hactive   (/*out_hactive*/          )
 );
+
+assign out_vactive = vactive;
+assign out_hactive = hactive;
 
 wire out_port_falign_bc;
 
@@ -182,14 +185,14 @@ wire[9:0]       wr_data_count;
 wire            fifo_full;
 
 generate
-if(AXI_DSIZE == 256)begin
+if(AXI_DSIZE != 512)begin
 vdma_stream_fifo stream_fifo_inst (
 /*  input               */     .rst               (out_port_falign_bc || !rst_n    ),
 /*  input               */     .wr_clk            (axi_aclk                     ),
 /*  input               */     .rd_clk            (clock                        ),
 /*  input [DSIZE-1:0]   */     .din               (axi_rdata                    ),
 /*  input               */     .wr_en             (axi_rvalid                   ),
-/*  input               */     .rd_en             (ds_rd_en                     ),
+/*  input               */     .rd_en             ((ds_rd_en  || in_vsync )                  ),
 /*  output [DSIZE-1:0]  */     .dout              (ds_data                      ),
 /*  output              */     .full              (fifo_full                    ),
 /*  output              */     .almost_full       (fifo_almost_full             ),
@@ -198,7 +201,7 @@ vdma_stream_fifo stream_fifo_inst (
 /*  output[9:0]         */     .rd_data_count     (rd_data_count                ),
 /*  output[9:0]         */     .wr_data_count     (wr_data_count                )
 );
-end else if(AXI_DSIZE == 512)begin
+end else begin
 vdma_stream_fifo_512 stream_fifo_inst (
 /*  input               */     .rst               (out_port_falign_bc || !rst_n    ),
 // /*  input               */     .wr_rst               (out_port_falign_bc || !rst_n    ),
@@ -258,18 +261,16 @@ wire            burst_done ;
 wire            tail_done  ;
 wire            tail_leave ;
 
-//--->> TEST VSYNC <<------------------
-wire vsync_cc;
+wire    vsync_cc;
 cross_clk_sync #(
-	.DSIZE    	(1),
-	.LAT		(3)
-)cross_clk_sync_false_path(
-	axi_aclk,
-	axi_resetn,
-	vsync,
-	vsync_cc
+    .LAT    (3  ),
+    .DSIZE  (1  )
+)cross_clk_sync_inst(
+/*  input               */  .clk        (axi_aclk   ),
+/*  input               */  .rst_n      (axi_resetn ),
+/*  input [DSIZE-1:0]   */  .d          (in_vsync   ),
+/*  output[DSIZE-1:0]   */  .q          (vsync_cc   )
 );
-//---<< TEST VSYNC >>------------------
 
 read_fifo_status_ctrl #(
     .THRESHOLD  (THRESHOLD      ),// EMPTY THRESHOLD
@@ -280,7 +281,8 @@ read_fifo_status_ctrl #(
 )read_fifo_status_ctrl_inst(
 /*  input                */   .clock            (axi_aclk               ),
 /*  input                */   .rst_n            (axi_resetn             ),
-/*  input                */   .enable           ((enable && !vsync_cc)                 ),
+/*  input                */   .enable           ((enable&& !vsync_cc)                 ),
+// /*  input                */   .fsync            ((out_port_falign_bc && fifo_empty)     ),
 /*  input                */   .fsync            (out_port_falign_bc     ),
 /*  input [8:0]          */   .count            (wr_data_count          ),
 /*  input                */   .tail_status      (tail_status            ),
@@ -322,7 +324,7 @@ a_frame_addr #(
 /*  input             */  .clock                    (axi_aclk           ),
 /*  input             */  .rst_n                    (axi_resetn         ),
 /*  input             */  .new_base                 (out_port_falign_bc ),
-/*  input[ASIZE-1:0]  */  .baseaddr                 (/*baseaddr*/0           ),
+/*  input[ASIZE-1:0]  */  .baseaddr                 (/*baseaddr*/{ASIZE{1'b0}}           ),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
 /*  input             */  .burst_done               (burst_done         ),
 /*  input             */  .tail_done                (tail_done          ),

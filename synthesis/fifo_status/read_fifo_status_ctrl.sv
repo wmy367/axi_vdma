@@ -53,15 +53,24 @@ always@(posedge clock/*,negedge rst_n*/)
 
 //--->> TRIGGER <<--------------------
 
+wire    invalid_moment;
+
+fifo_rst_lat fifo_rst_lat_inst(
+/*    input        */   .clock              (clock          ),
+/*    input        */   .rst_n              (rst_n          ),
+/*    input        */   .fifo_rst           (fsync          ),
+/*    output logic */   .invalid_moment     (invalid_moment )
+);
+
 reg         trigger_req;
 
 always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  trigger_req <= 1'b0;
     else begin
         if(WR_RD == "READ")
-            trigger_req <= enable && ((FULL_LEN - THRESHOLD) > count);
+            trigger_req <= enable && ((FULL_LEN - THRESHOLD) > count) && !invalid_moment && !fsync;
         else if(WR_RD == "WRITE")
-            trigger_req <= enable && ((THRESHOLD) < count);
+            trigger_req <= enable && ((THRESHOLD) < count) && !invalid_moment && !fsync;
     end
 
 //---<< TRIGGER >>--------------------
@@ -83,9 +92,10 @@ always@(*)
             else    nstate = RD_TAIL;
         end else    nstate = IDLE;
     NEED_RD:
-        if(fsync)
-            nstate = W_A_RST;
-        else if(resp)
+        // if(fsync)
+        //     nstate = W_A_RST;
+        // else
+        if(resp)
                 nstate = WAIT_DONE;
         else    nstate = NEED_RD;
     WAIT_DONE:
@@ -133,7 +143,7 @@ reg [4:0]       rcnt;
         endcase
 
         if(SIM == "ON" || SIM == "TRUE")begin
-            #(120us);
+            #(0.2ms);
             rcnt_done   <= 1'b1;
         end else begin
             if(!fsync)

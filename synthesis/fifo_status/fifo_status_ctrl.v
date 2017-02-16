@@ -22,6 +22,7 @@ module fifo_status_ctrl #(
     input [9:0]             count,
     input                   line_tail,
     input                   frame_tail,
+    input                   tail_leave,
     input [LSIZE-1:0]       tail_len,
     input                   fifo_empty,
 
@@ -50,22 +51,24 @@ localparam          IDLE        =   4'd0,
 always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  cstate <= IDLE;
     else  begin
-        if(f_rst_status)
-                cstate <= IDLE;
-        else    cstate <= nstate;
+        // if(f_rst_status)
+                // cstate <= IDLE;
+        // else    cstate <= nstate;
+        cstate <= nstate;
     end
 
 reg     burst_exec,tail_exec;
 reg     timeout;
+reg     keep_tail_status;
 
 always@(*)
     case(cstate)
     IDLE:
         if(!enable)
                 nstate = IDLE;
-        else if(tail_exec && !fifo_empty)
+        else if(tail_exec)
                 nstate = WR_TAIL;
-        else if(burst_exec && !fifo_empty)
+        else if(burst_exec)
                 nstate = NEED_WR;
         else    nstate = IDLE;
     NEED_WR:
@@ -127,12 +130,21 @@ assign burst_req    = require_reg;
 assign tail_req     = tail_require_reg;
 
 //--->> EXECUTE? <<-----
+wire    invalid_moment;
+
+fifo_rst_lat fifo_rst_lat_inst(
+/*    input        */   .clock              (clock          ),
+/*    input        */   .rst_n              (rst_n          ),
+/*    input        */   .fifo_rst           (f_rst_status   ),
+/*    output logic */   .invalid_moment     (invalid_moment )
+);
+
 always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  burst_exec  <= 1'b0;
     else begin
-        burst_exec <= count >= THRESHOLD;
+        burst_exec <= (count >= THRESHOLD) && !fifo_empty && !tail_leave && !keep_tail_status && !invalid_moment;
     end
-
+//---<< EXECUTE? >>-----
 reg         burst_idle;
 
 always@(posedge clock/*,negedge rst_n*/)
@@ -181,9 +193,13 @@ edge_generator #(
 always@(*)
     case(tcstate)
     TIDLE:
-        if(
-            ((MODE=="LINE")&&line_tail_raising) ||
-            ((MODE=="ONCE")&&frame_tail_raising) )
+        // if(
+        //     ((MODE=="LINE")&&line_tail_raising) ||
+        //     ((MODE=="ONCE")&&frame_tail_raising) )
+        //         tnstate = CATCHT;
+        // else    tnstate = IDLE;
+
+        if(line_tail_raising && tail_leave)
                 tnstate = CATCHT;
         else    tnstate = TIDLE;
 
@@ -203,7 +219,15 @@ always@(*)
         else if(done)
                 tnstate = TFSH;
         else    tnstate = EXECT;
-    TFSH:       tnstate = TIDLE;
+    TFSH: begin
+        if(MODE=="LINE")
+                tnstate = TIDLE;
+        else begin
+            if(frame_tail_raising)
+                    tnstate = TIDLE;
+            else    tnstate = TFSH;
+        end
+    end
     default:    tnstate = TIDLE;
     endcase
 
@@ -212,9 +236,18 @@ always@(posedge clock/*,negedge rst_n*/)
     else
         case(tnstate)
         EXECT:  tail_exec   <= 1'b1;
+        TFSH:   tail_exec   <= 1'b0;
         default:tail_exec   <= 1'b0;
         endcase
 
+
+always@(posedge clock/*,negedge rst_n*/)
+    if(~rst_n)  keep_tail_status   <= 1'b0;
+    else
+        case(tnstate)
+        TFSH:   keep_tail_status   <= 1'b1;
+        default:keep_tail_status   <= 1'b0;
+        endcase
 
 // always@(posedge clock/*,negedge rst_n*/)
 //     if(~rst_n)  tail_exec   <= 1'b0;
@@ -288,12 +321,12 @@ always@(posedge clock/*,negedge rst_n*/)
 always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  rst_chain    <= 1'd0;
     else
-        case(nstate)
-        TIME_ERR:
-                rst_chain    <= 1'b1;
-        default:rst_chain    <= 1'b0;
-        endcase
-        // rst_chain   <= 1'b0;
+        // case(nstate)
+        // TIME_ERR:
+        //         rst_chain    <= 1'b1;
+        // default:rst_chain    <= 1'b0;
+        // endcase
+        rst_chain   <= 1'b0;
 
 //---<< timeout >>-----------
 endmodule
