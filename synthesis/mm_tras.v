@@ -319,16 +319,27 @@ wire    rd_fifo_en;
 assign  wr_fifo_en  = cb_wr_en || cb_wr_last_en ;
 assign  rd_fifo_en  = pull_data_en && axi_wready;
 
+wire    vsync_cc;
+cross_clk_sync #(
+    .LAT    (3  ),
+    .DSIZE  (1  )
+)cross_clk_sync_inst(
+/*  input               */  .clk        (rd_clk     ),
+/*  input               */  .rst_n      (rd_rst_n   ),
+/*  input [DSIZE-1:0]   */  .d          (vsync      ),
+/*  output[DSIZE-1:0]   */  .q          (vsync_cc   )
+);
+
 
 generate
 if(AXI_DSIZE != 512)begin
 vdma_stream_fifo stream_fifo_inst (
-/*  input               */     .rst               (fifo_rst                     ),
+/*  input               */     .rst               (/*fifo_rst*/ 1'b0                    ),
 /*  input               */     .wr_clk            (wr_clk                       ),
 /*  input               */     .rd_clk            (rd_clk                       ),
 /*  input [DSIZE-1:0]   */     .din               (cb_data                      ),
 /*  input               */     .wr_en             (/*cb_wr_en || cb_wr_last_en */wr_fifo_en   ),
-/*  input               */     .rd_en             (/*pull_data_en && axi_wready*/rd_fifo_en   ),
+/*  input               */     .rd_en             (/*pull_data_en && axi_wready*/(rd_fifo_en || vsync_cc)  ),
 /*  output [DSIZE-1:0]  */     .dout              (axi_wdata                    ),
 /*  output              */     .full              (   ),
 /*  output              */     .almost_full       (fifo_almost_full             ),
@@ -433,7 +444,7 @@ fifo_status_ctrl #(
 /*  input             */    .clock             (rd_clk              ),
 /*  input             */    .rst_n             (/*rd_rst_n*/fifo_status_rstn            ),
 /*  input             */    .enable            (enable              ),
-/*  input             */    .f_rst_status      (/*in_port_fifo_rst*/1'b0    ),
+/*  input             */    .f_rst_status      (fifo_rst            ),
 /*  input             */    .fifo_empty        (fifo_empty          ),
 /*  input [9:0]       */    .count             (rd_data_count       ),
 /*  input             */    .line_tail         (in_port_lalign_bc   ),      // not frame tail

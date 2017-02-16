@@ -134,9 +134,12 @@ out_port #(
 /*  output             */ .ealign        (out_port_ealign      ),
 /*  input[DSIZE-1:0]   */ .in_data       (out_port_idata       ),
 /*  output             */ .rd_en         (out_port_rd_en       ),
-/*  output[15:0]       */ .out_vactive   (out_vactive          ),
-/*  output[15:0]       */ .out_hactive   (out_hactive          )
+/*  output[15:0]       */ .out_vactive   (/*out_vactive*/          ),
+/*  output[15:0]       */ .out_hactive   (/*out_hactive*/          )
 );
+
+assign out_vactive = vactive;
+assign out_hactive = hactive;
 
 wire out_port_falign_bc;
 
@@ -189,7 +192,7 @@ vdma_stream_fifo stream_fifo_inst (
 /*  input               */     .rd_clk            (clock                        ),
 /*  input [DSIZE-1:0]   */     .din               (axi_rdata                    ),
 /*  input               */     .wr_en             (axi_rvalid                   ),
-/*  input               */     .rd_en             (ds_rd_en                     ),
+/*  input               */     .rd_en             ((ds_rd_en  || in_vsync )                  ),
 /*  output [DSIZE-1:0]  */     .dout              (ds_data                      ),
 /*  output              */     .full              (fifo_full                    ),
 /*  output              */     .almost_full       (fifo_almost_full             ),
@@ -258,6 +261,17 @@ wire            burst_done ;
 wire            tail_done  ;
 wire            tail_leave ;
 
+wire    vsync_cc;
+cross_clk_sync #(
+    .LAT    (3  ),
+    .DSIZE  (1  )
+)cross_clk_sync_inst(
+/*  input               */  .clk        (axi_aclk   ),
+/*  input               */  .rst_n      (axi_resetn ),
+/*  input [DSIZE-1:0]   */  .d          (in_vsync   ),
+/*  output[DSIZE-1:0]   */  .q          (vsync_cc   )
+);
+
 read_fifo_status_ctrl #(
     .THRESHOLD  (THRESHOLD      ),// EMPTY THRESHOLD
     .BURST_LEN  (BURST_LEN      ),
@@ -267,8 +281,9 @@ read_fifo_status_ctrl #(
 )read_fifo_status_ctrl_inst(
 /*  input                */   .clock            (axi_aclk               ),
 /*  input                */   .rst_n            (axi_resetn             ),
-/*  input                */   .enable           (enable                 ),
-/*  input                */   .fsync            ((out_port_falign_bc && fifo_empty)     ),
+/*  input                */   .enable           ((enable&& !vsync_cc)                 ),
+// /*  input                */   .fsync            ((out_port_falign_bc && fifo_empty)     ),
+/*  input                */   .fsync            (out_port_falign_bc     ),
 /*  input [8:0]          */   .count            (wr_data_count          ),
 /*  input                */   .tail_status      (tail_status            ),
 /*  input [LSIZE-1:0]    */   .tail_len         (tail_len               ),

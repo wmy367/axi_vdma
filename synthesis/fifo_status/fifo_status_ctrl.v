@@ -51,9 +51,10 @@ localparam          IDLE        =   4'd0,
 always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  cstate <= IDLE;
     else  begin
-        if(f_rst_status)
-                cstate <= IDLE;
-        else    cstate <= nstate;
+        // if(f_rst_status)
+                // cstate <= IDLE;
+        // else    cstate <= nstate;
+        cstate <= nstate;
     end
 
 reg     burst_exec,tail_exec;
@@ -129,12 +130,21 @@ assign burst_req    = require_reg;
 assign tail_req     = tail_require_reg;
 
 //--->> EXECUTE? <<-----
+wire    invalid_moment;
+
+fifo_rst_lat fifo_rst_lat_inst(
+/*    input        */   .clock              (clock          ),
+/*    input        */   .rst_n              (rst_n          ),
+/*    input        */   .fifo_rst           (f_rst_status   ),
+/*    output logic */   .invalid_moment     (invalid_moment )
+);
+
 always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  burst_exec  <= 1'b0;
     else begin
-        burst_exec <= (count >= THRESHOLD) && !fifo_empty && !tail_leave && !keep_tail_status;
+        burst_exec <= (count >= THRESHOLD) && !fifo_empty && !tail_leave && !keep_tail_status && !invalid_moment;
     end
-
+//---<< EXECUTE? >>-----
 reg         burst_idle;
 
 always@(posedge clock/*,negedge rst_n*/)
@@ -225,7 +235,8 @@ always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  tail_exec   <= 1'b0;
     else
         case(tnstate)
-        EXECT:  tail_exec   <= !fifo_empty;
+        EXECT:  tail_exec   <= 1'b1;
+        TFSH:   tail_exec   <= 1'b0;
         default:tail_exec   <= 1'b0;
         endcase
 
@@ -310,12 +321,12 @@ always@(posedge clock/*,negedge rst_n*/)
 always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  rst_chain    <= 1'd0;
     else
-        case(nstate)
-        TIME_ERR:
-                rst_chain    <= 1'b1;
-        default:rst_chain    <= 1'b0;
-        endcase
-        // rst_chain   <= 1'b0;
+        // case(nstate)
+        // TIME_ERR:
+        //         rst_chain    <= 1'b1;
+        // default:rst_chain    <= 1'b0;
+        // endcase
+        rst_chain   <= 1'b0;
 
 //---<< timeout >>-----------
 endmodule
