@@ -37,7 +37,7 @@ module axi4_interconnect_wrap #(
 );
 
 generate
-if(AXI_DSIZE ==256)begin
+if(AXI_DSIZE != 512)begin
 AXI4_INFCNT AXI4_INFCNT_inst(
 /*  input          */   .INTERCONNECT_ACLK               (INTERCONNECT_ACLK          ),
 /*  input          */   .INTERCONNECT_ARESETN            (INTERCONNECT_ARESETN       ),
@@ -398,7 +398,7 @@ AXI4_INFCNT AXI4_INFCNT_inst(
 /*  input          */   .M00_AXI_RVALID                  (m00_inf.axi_rvalid             ),
 /*  output         */   .M00_AXI_RREADY                  (m00_inf.axi_rready             )
 );
-end else if(AXI_DSIZE == 512)begin
+end else begin
 AXI4_INFCNT_512 AXI4_INFCNT_inst(
 /*  input          */   .INTERCONNECT_ACLK               (INTERCONNECT_ACLK          ),
 /*  input          */   .INTERCONNECT_ARESETN            (INTERCONNECT_ARESETN       ),
@@ -767,39 +767,39 @@ endgenerate
 // assign s00_inf.axi_revld   = m00_inf.axi_revld    ;
 // assign s00_inf.axi_reresp  = m00_inf.axi_reresp   ;
 
-assign s01_inf.axi_wevld   = m00_inf.axi_wevld    ;
-assign s01_inf.axi_weresp  = m00_inf.axi_weresp   ;
-assign s01_inf.axi_revld   = m00_inf.axi_revld    ;
-assign s01_inf.axi_reresp  = m00_inf.axi_reresp   ;
-
-assign s02_inf.axi_wevld   = m00_inf.axi_wevld    ;
-assign s02_inf.axi_weresp  = m00_inf.axi_weresp   ;
-assign s02_inf.axi_revld   = m00_inf.axi_revld    ;
-assign s02_inf.axi_reresp  = m00_inf.axi_reresp   ;
-
-assign s03_inf.axi_wevld   = m00_inf.axi_wevld    ;
-assign s03_inf.axi_weresp  = m00_inf.axi_weresp   ;
-assign s03_inf.axi_revld   = m00_inf.axi_revld    ;
-assign s03_inf.axi_reresp  = m00_inf.axi_reresp   ;
-
-assign s04_inf.axi_wevld   = m00_inf.axi_wevld    ;
-assign s04_inf.axi_weresp  = m00_inf.axi_weresp   ;
-assign s04_inf.axi_revld   = m00_inf.axi_revld    ;
-assign s04_inf.axi_reresp  = m00_inf.axi_reresp   ;
-
-assign s05_inf.axi_wevld   = m00_inf.axi_wevld    ;
-assign s05_inf.axi_weresp  = m00_inf.axi_weresp   ;
-assign s05_inf.axi_revld   = m00_inf.axi_revld    ;
-assign s05_inf.axi_reresp  = m00_inf.axi_reresp   ;
-
-assign s06_inf.axi_wevld   = m00_inf.axi_wevld    ;
-assign s06_inf.axi_weresp  = m00_inf.axi_weresp   ;
-assign s06_inf.axi_revld   = m00_inf.axi_revld    ;
-assign s06_inf.axi_reresp  = m00_inf.axi_reresp   ;
-
-assign s07_inf.axi_wevld   = m00_inf.axi_wevld    ;
-assign s07_inf.axi_weresp  = m00_inf.axi_weresp   ;
-assign s07_inf.axi_revld   = m00_inf.axi_revld    ;
-assign s07_inf.axi_reresp  = m00_inf.axi_reresp   ;
+// assign s01_inf.axi_wevld   = m00_inf.axi_wevld    ;
+// assign s01_inf.axi_weresp  = m00_inf.axi_weresp   ;
+// assign s01_inf.axi_revld   = m00_inf.axi_revld    ;
+// assign s01_inf.axi_reresp  = m00_inf.axi_reresp   ;
+//
+// assign s02_inf.axi_wevld   = m00_inf.axi_wevld    ;
+// assign s02_inf.axi_weresp  = m00_inf.axi_weresp   ;
+// assign s02_inf.axi_revld   = m00_inf.axi_revld    ;
+// assign s02_inf.axi_reresp  = m00_inf.axi_reresp   ;
+//
+// assign s03_inf.axi_wevld   = m00_inf.axi_wevld    ;
+// assign s03_inf.axi_weresp  = m00_inf.axi_weresp   ;
+// assign s03_inf.axi_revld   = m00_inf.axi_revld    ;
+// assign s03_inf.axi_reresp  = m00_inf.axi_reresp   ;
+//
+// assign s04_inf.axi_wevld   = m00_inf.axi_wevld    ;
+// assign s04_inf.axi_weresp  = m00_inf.axi_weresp   ;
+// assign s04_inf.axi_revld   = m00_inf.axi_revld    ;
+// assign s04_inf.axi_reresp  = m00_inf.axi_reresp   ;
+//
+// assign s05_inf.axi_wevld   = m00_inf.axi_wevld    ;
+// assign s05_inf.axi_weresp  = m00_inf.axi_weresp   ;
+// assign s05_inf.axi_revld   = m00_inf.axi_revld    ;
+// assign s05_inf.axi_reresp  = m00_inf.axi_reresp   ;
+//
+// assign s06_inf.axi_wevld   = m00_inf.axi_wevld    ;
+// assign s06_inf.axi_weresp  = m00_inf.axi_weresp   ;
+// assign s06_inf.axi_revld   = m00_inf.axi_revld    ;
+// assign s06_inf.axi_reresp  = m00_inf.axi_reresp   ;
+//
+// assign s07_inf.axi_wevld   = m00_inf.axi_wevld    ;
+// assign s07_inf.axi_weresp  = m00_inf.axi_weresp   ;
+// assign s07_inf.axi_revld   = m00_inf.axi_revld    ;
+// assign s07_inf.axi_reresp  = m00_inf.axi_reresp   ;
 
 endmodule

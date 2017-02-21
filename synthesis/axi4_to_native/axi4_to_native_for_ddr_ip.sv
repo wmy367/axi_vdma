@@ -32,15 +32,15 @@ module axi4_to_native_for_ddr_ip #(
 logic clock,rst;
 
 assign clock = axi_inf.axi_aclk;
-// assign rst   = !axi_inf.axi_resetn;
-assign rst  =   !axi_inf.axi_resetn ||  axi_inf.axi_wevld || axi_inf.axi_revld;
+assign rst   = !axi_inf.axi_resetn;
+//assign rst  =   !axi_inf.axi_resetn ||  axi_inf.axi_wevld || axi_inf.axi_revld;
 typedef enum {NOP=0,WIDLE=1,RIDLE=2,EXEC_WR=3,WR_CMD_E=4,WR_FIFO_E=5,WR_END=6,EXEC_RD=7,RD_FIFO_E=8,RD_END=9} MASTER_STATE;
 
 MASTER_STATE mnstate,mcstate;
 
 always@(posedge clock,posedge rst)begin
     if(rst)     mcstate <= NOP;
-    // else if(axi_inf.axi_wevld ||　axi_inf.axi_revld)
+    // else if(axi_inf.axi_wevld ||��?axi_inf.axi_revld)
     //             mcstate <= NOP;
     else        mcstate <= mnstate;
 end
@@ -153,7 +153,7 @@ logic   rd_fifo_empty;
 logic   rd_fifo_en;
 assign  rd_fifo_en  = rd_enable && axi_inf.axi_rready;
 generate
-if(DATA_WIDTH==256)begin
+if(DATA_WIDTH!=512)begin
 FIFO_DDR_IP_BRG FIFO_DDR_IP_BRG_rd (
 /*  input          */ .clk          (clock                  ),
 /*  input          */ .rst          (rst                    ),
@@ -165,7 +165,7 @@ FIFO_DDR_IP_BRG FIFO_DDR_IP_BRG_rd (
 /*  output         */ .full         (rd_fifo_full            ),
 /*  output         */ .empty        (rd_fifo_empty           )
 );
-end else if(DATA_WIDTH==512)begin
+end else begin
 FIFO_DDR_IP_BRG_512 FIFO_DDR_IP_BRG_rd (
 /*  input          */   .clk          (clock                  ),
 /*  input          */   .srst         (rst                    ),
@@ -218,7 +218,7 @@ assign      wr_fifo_ren = wr_enable && app_wdf_rdy;
 
 logic wr_fifo_full;
 generate
-if(DATA_WIDTH==256)begin
+if(DATA_WIDTH!=512)begin
 FIFO_DDR_IP_BRG FIFO_DDR_IP_BRG_wr (
 /*  input          */ .clk          (clock                  ),
 /*  input          */ .rst          (rst                    ),
@@ -229,7 +229,7 @@ FIFO_DDR_IP_BRG FIFO_DDR_IP_BRG_wr (
 /*  output         */ .full         (wr_fifo_full               ),
 /*  output         */ .empty        (wr_fifo_empty              )
 );
-end else if(DATA_WIDTH==512)begin
+end else begin
 FIFO_DDR_IP_BRG_512 FIFO_DDR_IP_BRG_wr (
 /*  input          */   .clk          (clock                  ),
 /*  input          */   .srst         (rst                    ),

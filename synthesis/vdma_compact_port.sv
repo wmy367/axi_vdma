@@ -84,7 +84,7 @@ vdma_baseaddr_ctrl_inf inter_base_addr_inf();
 assign base_addr_inf.clk = vin.pclk;
 assign base_addr_inf.rst_n = vin.prst_n;
 assign base_addr_inf.vs =   (IN_DATA_TYPE=="NATIVE")? vin.vsync  :
-                            (IN_DATA_TYPE=="AXIS")? (IN_FRAME_SYNC=="OFF"? axis_in.axi_tuser : in_fsync) : 1'b0;
+                            (IN_DATA_TYPE=="AXIS")? (IN_FRAME_SYNC=="OFF"? axis_in.axis_tuser : in_fsync) : 1'b0;
 
 //--->> INTRE BASE LINK <<----------
 generate
@@ -115,7 +115,7 @@ logic   intf_vs;
 assign intf_clk   = rev_pclk;
 assign intf_rst_n = rev_prst_n;
 assign intf_vs    =  (OUT_DATA_TYPE=="NATIVE")? vout.vsync  :
-                     (OUT_DATA_TYPE=="AXIS")?   axis_out.axi_tuser : 1'b0;
+                     (OUT_DATA_TYPE=="AXIS")?   axis_out.axis_tuser : 1'b0;
 
 generate
 /**/if(PORT_MODE == "BOTH")begin
@@ -195,11 +195,11 @@ mm_tras #(
 /*  input             */  .aclk                    (axis_in.aclk       ),
 /*  input             */  .aclken                  (axis_in.aclken     ),
 /*  input             */  .aresetn                 (axis_in.aresetn && !axi4_inf_err_rst   ),
-/*  input [DSIZE-1:0] */  .axi_tdata               (axis_in.axi_tdata  ),
-/*  input             */  .axi_tvalid              (axis_in.axi_tvalid ),
-/*  output            */  .axi_tready              (axis_in.axi_tready ),
-/*  input             */  .axi_tuser               (axis_in.axi_tuser  ),
-/*  input             */  .axi_tlast               (axis_in.axi_tlast  ),
+/*  input [DSIZE-1:0] */  .axi_tdata               (axis_in.axis_tdata  ),
+/*  input             */  .axi_tvalid              (axis_in.axis_tvalid ),
+/*  output            */  .axi_tready              (axis_in.axis_tready ),
+/*  input             */  .axi_tuser               (axis_in.axis_tuser  ),
+/*  input             */  .axi_tlast               (axis_in.axis_tlast  ),
     //--<< axi stream
 /*  input             */  .axi_aclk                (axi4_m.axi_aclk        ),
 /*  input             */  .axi_resetn              (axi4_m.axi_resetn      ),
@@ -304,11 +304,11 @@ mm_rev #(
 /*  output             */ .aclk                    (                    ),
 /*  output             */ .aclken                  (                    ),
 /*  output             */ .aresetn                 (                    ),
-/*  output[DSIZE-1:0]  */ .axi_tdata               (axis_out.axi_tdata  ),
-/*  output             */ .axi_tvalid              (axis_out.axi_tvalid ),
-/*  input              */ .axi_tready              (axis_out.axi_tready ),
-/*  output             */ .axi_tuser               (axis_out.axi_tuser  ),
-/*  output             */ .axi_tlast               (axis_out.axi_tlast  ),
+/*  output[DSIZE-1:0]  */ .axi_tdata               (axis_out.axis_tdata  ),
+/*  output             */ .axi_tvalid              (axis_out.axis_tvalid ),
+/*  input              */ .axi_tready              (axis_out.axis_tready ),
+/*  output             */ .axi_tuser               (axis_out.axis_tuser  ),
+/*  output             */ .axi_tlast               (axis_out.axis_tlast  ),
     //--<< axi stream
 /*  input              */ .axi_aclk                (axi4_m.axi_aclk            ),
 /*  input              */ .axi_resetn              (axi4_m.axi_resetn && !axi4_inf_err_rst         ),
