@@ -99,7 +99,7 @@ multiports_vdma_verb #(
     .ASIZE                 (ASIZE       ),
     .AXI_DSIZE             (AXI_DSIZE   ),
     //--->> channal 0 <<--------------
-    .CH0_STORAGE_MODE      ("LINE"          ),
+    .CH0_STORAGE_MODE      ("ONCE"          ),
     .CH0_EX_SYNC           ("ON"           ),    //external sync
     .CH0_VIDEO_FORMAT      ("1080P@60"      ),   //just for read of vdma and internal sync
     .CH0_PORT_MODE         ("BOTH"          ),       //READ WRITE BOTH

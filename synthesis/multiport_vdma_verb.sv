@@ -475,8 +475,8 @@ axi4_interconnect_wrap #(
     .AXI_DSIZE      (AXI_DSIZE  )
 )axi4_interconnect_wrap_inst(
 /*    input          */  .INTERCONNECT_ACLK    (axi_aclk            ),
-/*    input          */  .INTERCONNECT_ARESETN (axi_resetn && !axi_m00_inf.axi_wevld && !axi_m00_inf.axi_revld),
-// /*    input          */  .INTERCONNECT_ARESETN (axi_resetn          ),
+// /*    input          */  .INTERCONNECT_ARESETN (axi_resetn && !axi_m00_inf.axi_wevld && !axi_m00_inf.axi_revld),
+/*    input          */  .INTERCONNECT_ARESETN (axi_resetn          ),
 /*    axi_inf.slaver */  .s00_inf              (axi_slaver_inf[0]         ),
 /*    axi_inf.slaver */  .s01_inf              (axi_slaver_inf[1]         ),
 /*    axi_inf.slaver */  .s02_inf              (axi_slaver_inf[2]         ),
@@ -501,11 +501,11 @@ axi4_interconnect_wrap #(
 //     .inf        (axi_s00_inf)
 // );
 
-assign axi_m00_inf.axi_wevld    = 1'b0;
-assign axi_m00_inf.axi_revld    = 1'b0;
-
-assign axi_slaver_inf[0].axi_wevld    = 1'b0;
-assign axi_slaver_inf[0].axi_revld    = 1'b0;
+// assign axi_m00_inf.axi_wevld    = 1'b0;
+// assign axi_m00_inf.axi_revld    = 1'b0;
+//
+// assign axi_slaver_inf[0].axi_wevld    = 1'b0;
+// assign axi_slaver_inf[0].axi_revld    = 1'b0;
 
 generate
 if(SIM == "OFF" || SIM == "FALSE")begin:AXI_SIM_SW

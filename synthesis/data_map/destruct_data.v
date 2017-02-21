@@ -134,7 +134,7 @@ always@(posedge clock/*,negedge rst_n*/)begin
         // if(loint != (CNUM-1))begin
         // if((loint != (CNUM-1) && O_L==0) ||
         //    (loint != (1     ) && O_L==1)   )begin
-        if(!speciel_line || last_line)begin
+        if((!speciel_line || last_line) && EX_EX) begin
             if(point == (MSIZE-1-2) && ord_en)
                     read_en  <= 1'b1;
             else    read_en  <= 1'b0;

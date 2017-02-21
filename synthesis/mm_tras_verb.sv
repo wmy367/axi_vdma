@@ -248,13 +248,15 @@ broaden_and_cross_clk #(
 /*	output			*/    .q             (in_port_lalign_bc  )
 );
 
+parameter CBSIZE    = DSIZE*(AXI_DSIZE/DSIZE);
+
 wire[AXI_DSIZE-1:0]     cb_data;
-wire            cb_wr_en;
-wire            cb_wr_last_en;
+wire                    cb_wr_en;
+wire                    cb_wr_last_en;
 
 combin_data #(
     .ISIZE      (DSIZE        ),
-    .OSIZE      (AXI_DSIZE    ),
+    .OSIZE      (CBSIZE    ),
     .DATA_TYPE  ("NATIVE"    ),
     .MODE       (MODE         )
 )combin_data_inst(
@@ -267,7 +269,7 @@ combin_data #(
 /*    input               */ .ilast       (in_port_lalign     ),
 /*    output              */ .owr_en      (cb_wr_en         ),
 /*    output              */ .olast_en    (cb_wr_last_en    ),
-/*    output[OSIZE-1:0]   */ .odata       (cb_data          ),
+/*    output[OSIZE-1:0]   */ .odata       (cb_data[CBSIZE-1:0]          ),
 /*    output[OSIZE/8-1:0] */ .omask       (  )
 );
 
@@ -415,7 +417,7 @@ fifo_status_ctrl #(
 write_line_len_sum #(
     .NOR_BURST_LEN      (BURST_LEN  ),
     .MODE               (MODE       ),   //ONCE LINE
-    .AXI_DSIZE          (AXI_DSIZE  ),
+    .AXI_DSIZE          (/*AXI_DSIZE*/CBSIZE  ),
     .DSIZE              (DSIZE      ),
     .LSIZE              (BURST_LEN_SIZE)
 )write_line_len_sum_inst(
@@ -433,11 +435,13 @@ write_line_len_sum #(
 
 wire[ASIZE-1:0]         curr_address;
 
-localparam INC_ADDR_STEP_REAL = 2**($clog2(INC_ADDR_STEP*DSIZE/AXI_DSIZE))*8;
+localparam INC_ADDR_STEP_REAL = 2**($clog2(INC_ADDR_STEP*DSIZE/AXI_DSIZE)+0)*8;
+localparam BURST_MOVE = (16-$clog2(AXI_DSIZE));     //axi_dsize=128->13
 
 a_frame_addr #(
     .ASIZE             (ASIZE          ),
-    .BURST_MAP_ADDR    (BURST_LEN*8      ),
+    // .BURST_MAP_ADDR    (BURST_LEN*(2**BURST_MOVE)      ),
+    .BURST_MAP_ADDR    (BURST_LEN*256     ),
     .LASIZE            ($clog2(INC_ADDR_STEP_REAL))
 )a_frame_addr_inst(
 /*  input             */  .clock                    (rd_clk             ),

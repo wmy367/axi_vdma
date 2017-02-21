@@ -70,6 +70,7 @@ edge_generator #(
 	.falling    (de_falling  )
 );
 
+(* dont_touch = "true" *)
 int test_data;
 //
 always@(posedge inf.pclk)begin:TEST_DATA_BLOCK
@@ -87,9 +88,10 @@ int tmp_data;
 
     if(inf.vsync)
             test_data   <= 0;
-    else if(de_falling)
-            test_data   <= test_data + (1<<16);
+    // else if(de_falling)
+    //         test_data   <= test_data + (1<<16);
     else if(inf.de)
+            // test_data[7:0]   <= test_data[7:0] + 1'b1;
             test_data   <= test_data + 1'b1;
     else    test_data   <= 0;
     // else begin
@@ -99,7 +101,7 @@ int tmp_data;
     // end
 end
 
-// assign inf.data = test_data;
+assign inf.data = test_data;
 // // assign inf.data = 1023;
 
 gen_test #(
@@ -115,9 +117,9 @@ gen_test #(
 /*	output					*/  .vs         (inf.vsync           ),
 /*	output					*/  .hs         (inf.hsync           ),
 /*	output					*/  .de         (inf.de              ),
-/*	output[DSIZE-1:0]		*/  .rdata      (inf.data[23:16]     ),
-/*	output[DSIZE-1:0]		*/  .gdata      (inf.data[15:8]      ),
-/*	output[DSIZE-1:0]		*/  .bdata      (inf.data[7:0]       ),
+/*	output[DSIZE-1:0]		*/  .rdata      (/*inf.data[23:16] */    ),
+/*	output[DSIZE-1:0]		*/  .gdata      (/*inf.data[15:8]  */    ),
+/*	output[DSIZE-1:0]		*/  .bdata      (/*inf.data[7:0]   */    ),
 /*  output                  */  .select     (                    )
 );
 

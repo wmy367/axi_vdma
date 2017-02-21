@@ -299,13 +299,13 @@ integer KK;
          out_reg[OSIZE-1-KK*ISIZE-:ISIZE] = map_data[KK];
 end
 
-assign owr_en = owr_reg;
-assign olast_en = owr_last_reg;
+// assign owr_en = owr_reg;
+// assign olast_en = owr_last_reg;
 
-// always@(posedge clock)begin
-//     owr_en   <= owr_reg;
-//     olast_en <= owr_last_reg;
-// end
+always@(posedge clock)begin
+    owr_en   <= owr_reg;
+    olast_en <= owr_last_reg;
+end
 
 // always@(*)begin
 //     owr_en   = owr_reg;
@@ -343,4 +343,43 @@ end
 //
 // assign odata = {tmp_data,last_line,point,loint,ilast,ialign,iwr_en,idata}; //test
 
+//--->> verify <<------------------------------
+// logic [ISIZE-1:0]       right_in_queue [$];
+// logic [OSIZE-1:0]       right_out_queue [$];
+// event                   right_queue_event,queue_event;
+//
+// always@(posedge clock)begin
+//     if(iwr_en)
+//         right_in_queue  = {right_in_queue,idata};
+//     if(ialign || ilast)begin
+//         -> right_queue_event;
+//         @(posedge clock);
+//         // right_in_queue  = {};
+//     end
+// end
+//
+// always@(posedge clock)begin
+//     wait(right_queue_event.triggered());
+//     right_out_queue = {>>{right_in_queue}};
+// end
+//
+// logic [ISIZE-1:0]       in_queue [$];
+// logic [OSIZE-1:0]       out_queue [$];
+//
+// always@(posedge clock)begin
+//     if(owr_en)
+//         out_queue   = {out_queue,odata};
+//
+//     if(owr_reg_lat)begin
+//         -> queue_event;
+//         @(posedge clock);
+//         // out_queue = {};
+//     end
+// end
+//
+// always@(posedge clock)begin
+//     wait(queue_event.triggered());
+//     in_queue    = {>>{out_queue}};
+// end
+//---<< verify >>------------------------------
 endmodule

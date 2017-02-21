@@ -132,6 +132,8 @@ broaden_and_cross_clk #(
 );
 
 //---<< OUT PORT INTERFACE >>----------
+parameter DSSIZE    = DSIZE*(AXI_DSIZE/DSIZE);
+
 (* dont_touch = "true" *)
 wire[AXI_DSIZE-1:0]     ds_data;
 (* dont_touch = "true" *)
@@ -139,7 +141,7 @@ wire                    ds_rd_en;
 wire                    ds_wr_last_en;
 
 destruct_data #(
-    .ISIZE      (AXI_DSIZE  ),
+    .ISIZE      (DSSIZE  ),
     .OSIZE      (DSIZE      )
 )destruct_data_inst(
 /*  input               */  .clock       (clock                     ),
@@ -147,7 +149,7 @@ destruct_data #(
 /*  input               */  .force_rd    (out_port_lalign           ),   //force read out next data
 /*  input               */  .ialign      (out_port_falign           ),
 /*  output              */  .ird_en      (ds_rd_en                  ),
-/*  input [ISIZE-1:0]   */  .idata       (ds_data                   ),
+/*  input [ISIZE-1:0]   */  .idata       (ds_data[DSSIZE-1:0]       ),
 /*  input               */  .ord_en      (out_port_rd_en            ),
 /*  output              */  .olast_en    (                          ),
 /*  output[OSIZE-1:0]   */  .odata       (out_port_idata            ),
@@ -254,7 +256,7 @@ read_fifo_status_ctrl #(
 read_line_len_sum #(
     .NOR_BURST_LEN    (BURST_LEN    ),
     .MODE             (MODE         ),   //ONCE LINE
-    .AXI_DSIZE        (AXI_DSIZE    ),
+    .AXI_DSIZE        (/*AXI_DSIZE*/DSSIZE    ),
     .DSIZE            (DSIZE        ),
     .LSIZE            (LSIZE        )
 )read_line_len_sum_inst(
@@ -272,11 +274,14 @@ read_line_len_sum #(
 
 wire[ASIZE-1:0]         curr_address;
 
-localparam INC_ADDR_STEP_REAL = 2**($clog2(INC_ADDR_STEP*DSIZE/AXI_DSIZE))*8;
+// localparam INC_ADDR_STEP_REAL = 2**($clog2(INC_ADDR_STEP*DSIZE/AXI_DSIZE))*8;
+localparam INC_ADDR_STEP_REAL = 2**($clog2(INC_ADDR_STEP*DSIZE/AXI_DSIZE)+0)*8;
+localparam BURST_MOVE = (16-$clog2(AXI_DSIZE));
 
 a_frame_addr #(
     .ASIZE             (ASIZE          ),
-    .BURST_MAP_ADDR    (BURST_LEN*8      ),
+    // .BURST_MAP_ADDR    (BURST_LEN*(2**BURST_MOVE) ),
+    .BURST_MAP_ADDR    (BURST_LEN*256     ),
     .LASIZE            ($clog2(INC_ADDR_STEP_REAL))
 )a_frame_addr_inst(
 /*  input             */  .clock                    (axi_aclk           ),

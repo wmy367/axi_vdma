@@ -47,6 +47,12 @@ end
 
 logic   wr_fifo_empty;
 logic   app_cmd_last;
+logic   axi_wr_fifo_done;
+// logic   wr_enable,rd_enable;
+logic   rd_enable;
+logic   rd_app_enable;
+logic   wr_enable_axi;
+logic   wr_enable_app;
 
 always@(*)
     case(mcstate)
@@ -55,8 +61,10 @@ always@(*)
                 mnstate = WIDLE;
         else    mnstate = NOP;
     WIDLE:
-        if(axi_inf.axi_awvalid && axi_inf.axi_awready)
-                mnstate = EXEC_WR;
+        // if(axi_inf.axi_awvalid && axi_inf.axi_awready)
+            // mnstate = EXEC_WR;
+        if(axi_wr_fifo_done)
+                mnstate = WR_CMD_E;
         else    mnstate = RIDLE;
     RIDLE:
         if(axi_inf.axi_arvalid && axi_inf.axi_arready)
@@ -71,16 +79,18 @@ always@(*)
         // if(app_cmd_last && app_rdy && app_en)
         if(app_cmd_last)
                 mnstate = WR_FIFO_E;
+                // mnstate = RIDLE;
         else    mnstate = WR_CMD_E;
     WR_FIFO_E:
         if(wr_fifo_empty)
         // if(app_cmd_last && wr_fifo_empty)
-                mnstate = WR_END;
-        else    mnstate = WR_FIFO_E;
-    WR_END:
-        if(axi_inf.axi_bready)
+                // mnstate = WR_END;
                 mnstate = RIDLE;
-        else    mnstate = WR_END;
+        else    mnstate = WR_FIFO_E;
+    // WR_END:
+    //     if(axi_inf.axi_bready)
+    //             mnstate = RIDLE;
+    //     else    mnstate = WR_END;
     EXEC_RD:
         if(axi_inf.axi_rvalid && axi_inf.axi_rlast && axi_inf.axi_rready)
                 mnstate = WIDLE;
@@ -97,6 +107,49 @@ always@(*)
     default:    mnstate = NOP;
     endcase
 
+//--->> AXI WR CTRL <<-------------------------
+typedef enum {AWIDLE,AWBURST,AWBESP,AWREQ,AWFSH} AWSTATUS;
+
+AWSTATUS     anstate,acstate;
+
+always@(posedge clock,posedge rst)
+    if(rst)     acstate <= AWIDLE;
+    else        acstate <= anstate;
+
+always@(*)
+    case(acstate)
+    AWIDLE:
+        if(axi_inf.axi_awvalid && axi_inf.axi_awready)
+                anstate = AWBURST;
+        else    anstate = AWIDLE;
+    AWBURST:
+        if(axi_inf.axi_wlast && axi_inf.axi_wvalid && axi_inf.axi_wready)
+                anstate = AWBESP;
+        else    anstate = AWBURST;
+    AWBESP:
+        if(axi_inf.axi_bready)
+                anstate = AWREQ;
+        else    anstate = AWBESP;
+    AWREQ:
+        if(wr_enable_app)
+                anstate = AWFSH;
+        else    anstate = AWREQ;
+    AWFSH:
+        if(app_cmd_last && wr_enable_app)
+                anstate = AWIDLE;
+        else    anstate = AWFSH;
+    default:    anstate = AWIDLE;
+    endcase
+
+always@(posedge clock,posedge rst)
+    if(rst) axi_wr_fifo_done    <= 1'b0;
+    else begin
+        case(anstate)
+        AWREQ:  axi_wr_fifo_done    <= 1'b1;
+        default:axi_wr_fifo_done    <= 1'b0;
+        endcase
+    end
+//---<< AXI WR CTRL >>-------------------------
 //--->> TRACK <<------------------
 logic [9:0] track_cnt;
 (* dont_touch = "true" *)
@@ -119,16 +172,39 @@ always@(posedge clock,posedge rst)
     if(rst)    track_point  <= 1'b0;
     else       track_point  <= track_cnt == 10'd300;
 //---<< TRACK >>------------------
-logic   wr_enable,rd_enable;
-logic   rd_app_enable;
+// always@(posedge clock,posedge rst)
+//     if(rst) wr_enable   <= 1'b0;
+//     else
+//         case(mnstate)
+//         EXEC_WR,WR_CMD_E,WR_FIFO_E:
+//         // WR_CMD_E,WR_FIFO_E:
+//                     wr_enable   <= 1'b1;
+//         default:    wr_enable   <= 1'b0;
+//         endcase
+
+// always@(posedge clock,posedge rst)
+//     if(rst) wr_enable_axi   <= 1'b0;
+//     else
+//         case(mnstate)
+//         EXEC_WR:    wr_enable_axi   <= 1'b1;
+//         default:    wr_enable_axi   <= 1'b0;
+//         endcase
 
 always@(posedge clock,posedge rst)
-    if(rst) wr_enable   <= 1'b0;
+    if(rst) wr_enable_axi   <= 1'b0;
+    else
+        case(anstate)
+        AWBURST:    wr_enable_axi   <= 1'b1;
+        default:    wr_enable_axi   <= 1'b0;
+        endcase
+
+always@(posedge clock,posedge rst)
+    if(rst) wr_enable_app   <= 1'b0;
     else
         case(mnstate)
-        EXEC_WR,WR_CMD_E,WR_FIFO_E:
-                    wr_enable   <= 1'b1;
-        default:    wr_enable   <= 1'b0;
+        WR_CMD_E,WR_FIFO_E:
+                    wr_enable_app   <= 1'b1;
+        default:    wr_enable_app   <= 1'b0;
         endcase
 
 always@(posedge clock,posedge rst)
@@ -152,7 +228,8 @@ logic   rd_fifo_full;
 logic   rd_fifo_empty;
 (* dont_touch = "true" *)
 logic   rd_fifo_en;
-assign  rd_fifo_en  = (rd_enable && axi_inf.axi_rready) || wr_enable;
+// assign  rd_fifo_en  = (rd_enable && axi_inf.axi_rready) || wr_enable;
+assign  rd_fifo_en  = (rd_enable && axi_inf.axi_rready);
 generate
 if(DATA_WIDTH!=512)begin
 FIFO_DDR_IP_BRG FIFO_DDR_IP_BRG_rd (
@@ -212,10 +289,14 @@ assign axi_inf.axi_rvalid = !rd_fifo_empty && rd_enable;
 //--->> RD DDR DATA <<-------------------
 (* dont_touch = "true" *)
 wire        wr_fifo_wen;
-assign      wr_fifo_wen  = wr_enable && axi_inf.axi_wvalid && axi_inf.axi_wready;
+// assign      wr_fifo_wen  = wr_enable && axi_inf.axi_wvalid && axi_inf.axi_wready;
+assign      wr_fifo_wen  = wr_enable_axi && axi_inf.axi_wvalid && axi_inf.axi_wready;
+
 (* dont_touch = "true" *)
 wire        wr_fifo_ren;
-assign      wr_fifo_ren = (wr_enable && app_wdf_rdy) || rd_enable;
+// assign      wr_fifo_ren = (wr_enable && app_wdf_rdy) || rd_enable;
+assign      wr_fifo_ren = (wr_enable_app && app_wdf_rdy) || rd_enable;
+
 
 logic wr_fifo_full;
 generate
@@ -245,8 +326,16 @@ end
 endgenerate
 
 // assign axi_inf.axi_wready = !wr_fifo_full && wr_enable;
-assign axi_inf.axi_wready =  wr_enable;
-assign app_wdf_wren       = !wr_fifo_empty;
+// assign axi_inf.axi_wready =  wr_enable;
+always@(posedge clock,posedge rst)
+    if(rst) axi_inf.axi_wready  <= 1'b0;
+    else
+        case(anstate)
+        AWBURST:    axi_inf.axi_wready  <= 1'b1;
+        default:    axi_inf.axi_wready  <= 1'b0;
+        endcase
+
+assign app_wdf_wren       = !wr_fifo_empty && wr_enable_app;
 assign app_wdf_mask       = {(DATA_WIDTH/8){1'b0}};
 assign app_wdf_end        = 1'b1;
 //--->> RD DDR DATA <<-------------------
@@ -275,11 +364,20 @@ assign app_wdf_end        = 1'b1;
 //     default:    awnstate    = AWIDLE;
 //     endcase
 
+// always@(posedge clock,posedge rst)
+//     if(rst)     axi_inf.axi_awready <= 1'b0;
+//     else
+//         case(mnstate)
+//         WIDLE:  axi_inf.axi_awready <= 1'b1;
+//         default:axi_inf.axi_awready <= 1'b0;
+//         endcase
+
+//--->> 2017/2/21 下午6:23:18
 always@(posedge clock,posedge rst)
     if(rst)     axi_inf.axi_awready <= 1'b0;
     else
-        case(mnstate)
-        WIDLE:  axi_inf.axi_awready <= 1'b1;
+        case(anstate)
+        AWIDLE: axi_inf.axi_awready <= 1'b1;
         default:axi_inf.axi_awready <= 1'b0;
         endcase
 
@@ -297,7 +395,8 @@ logic [8:0] app_len;
 always@(posedge clock,posedge rst)
     if(rst) app_len    <= 9'd0;
     else begin
-        if(axi_inf.axi_awvalid && axi_inf.axi_awready)
+        // if(axi_inf.axi_awvalid && axi_inf.axi_awready)
+        if(axi_wr_fifo_done)
                 app_len    <= axi_inf.axi_awlen;
         else if(axi_inf.axi_arvalid && axi_inf.axi_arready)
                 app_len    <= axi_inf.axi_arlen;
@@ -308,7 +407,7 @@ logic [8:0] len_cnt;
 always@(posedge clock,posedge rst)
     if(rst) len_cnt  <=  9'd0;
     else begin
-        if(wr_enable || rd_enable)begin
+        if(wr_enable_app || rd_enable)begin
             if(app_rdy && app_en)
                     len_cnt  <= len_cnt + 1'b1;
             else    len_cnt  <= len_cnt;
@@ -320,7 +419,7 @@ logic       app_en_last;
 always@(posedge clock,posedge rst)
     if(rst) app_en_last   <= 1'b0;
     else begin
-        if(wr_enable || rd_enable)
+        if(wr_enable_app || rd_enable)
                 app_en_last   <= (len_cnt==(app_len-1 ) && app_en && app_rdy) || app_en_last;
         // else if(app_en_last && app_rdy && app_en)
         //         app_en_last   <= 1'b0;
@@ -328,11 +427,19 @@ always@(posedge clock,posedge rst)
         else    app_en_last   <= 1'b0;
     end
 
+// always@(posedge clock,posedge rst)
+//     if(rst) axi_inf.axi_bvalid   <= 1'b0;
+//     else
+//         case(mnstate)
+//         WR_END:     axi_inf.axi_bvalid   <= 1'b1;
+//         default:    axi_inf.axi_bvalid   <= 1'b0;
+//         endcase
+
 always@(posedge clock,posedge rst)
     if(rst) axi_inf.axi_bvalid   <= 1'b0;
     else
-        case(mnstate)
-        WR_END:     axi_inf.axi_bvalid   <= 1'b1;
+        case(anstate)
+        AWBESP:     axi_inf.axi_bvalid   <= 1'b1;
         default:    axi_inf.axi_bvalid   <= 1'b0;
         endcase
 
@@ -356,8 +463,10 @@ always@(posedge clock,posedge rst)begin
     else begin
         if(app_rdy && app_en)
                 app_addr    <= app_addr + 8;
-        else if(axi_inf.axi_awvalid && axi_inf.axi_awready)
-                app_addr    <= axi_inf.axi_awaddr;
+        // else if(axi_inf.axi_awvalid && axi_inf.axi_awready)
+        //         app_addr    <= axi_inf.axi_awaddr;
+        else if(axi_wr_fifo_done)
+                app_addr    <= base_wr_addr;
         else if(axi_inf.axi_arvalid && axi_inf.axi_arready)
                 app_addr    <= axi_inf.axi_araddr;
         else    app_addr    <= app_addr;
@@ -369,7 +478,8 @@ always@(posedge clock,posedge rst)
     else begin
         // if(wr_enable || rd_enable)begin
         // app_en  <= 1'b1;
-        if(wr_enable || rd_enable)begin
+        // if(wr_enable || rd_enable)begin
+        if(wr_enable_app || rd_enable)begin
             if(app_en_last)begin
                 // app_en  <= 1'b0;
                 // app_en  <= !app_rdy;
@@ -393,7 +503,7 @@ reg [2:0]   app_cmd_reg;
 always@(posedge clock,posedge rst)
     if(rst) app_cmd_reg <= 3'b111;
     else begin
-        if(wr_enable)
+        if(wr_enable_app)
                 app_cmd_reg <= 3'b000;
         else if(rd_enable)
                 app_cmd_reg <= 3'b001;
