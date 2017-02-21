@@ -4,12 +4,12 @@ ______________ \  /\  /|\  /| ______________
 ______________  \/  \/ | \/ | ______________
 descript:
 author : Young
-Version: VERA.0.0
+Version: VERB.0.0 2017/2/17 下午8:35:08
 creaded: 2016/7/25 下午4:59:23
 madified:
 ***********************************************/
 `timescale 1ns/1ps
-module mm_tras #(
+module mm_tras_verb #(
     parameter THRESHOLD  = 200,
     parameter ASIZE      = 29,
     parameter BURST_LEN_SIZE = 9,
@@ -18,10 +18,7 @@ module mm_tras #(
     parameter IDSIZE    = 4,
     parameter ID        = 0,
     parameter MODE      = "ONCE",   //ONCE LINE
-    parameter DATA_TYPE = "AXIS",    //AXIS NATIVE
-    parameter FRAME_SYNC= "OFF",    //OFF ON
-    parameter INC_ADDR_STEP = 1024,
-    parameter SIM       = "OFF"
+    parameter INC_ADDR_STEP = 1920
 )(
     input               clock                   ,
     input               rst_n                   ,
@@ -33,21 +30,10 @@ module mm_tras #(
     input               hsync                   ,
     input               de                      ,
     input [DSIZE-1:0]   idata                   ,
-    input               fsync                   ,
     output              fifo_almost_full        ,
     input               pend_in                 ,
     output              pend_out                ,
     //-- AXI
-    //-- axi stream ---
-    input               aclk                    ,
-    input               aclken                  ,
-    input               aresetn                 ,
-    input [DSIZE-1:0]   axi_tdata               ,
-    input               axi_tvalid              ,
-    output              axi_tready              ,
-    input               axi_tuser               ,
-    input               axi_tlast               ,
-    //-- axi stream
     input             axi_aclk      ,
     input             axi_resetn    ,
     //--->> addr write <<-------
@@ -91,8 +77,8 @@ wire        rst_chain;
 assign rd_clk   = axi_aclk;
 assign rd_rst_n = axi_resetn;
 
-assign wr_clk   = DATA_TYPE=="AXIS"? aclk : clock;
-assign wr_rst_n = DATA_TYPE=="AXIS"? aresetn  : rst_n;
+assign wr_clk   = clock;
+assign wr_rst_n = rst_n;
 
 //--->> RESET CONTRL <<---------------
 wire        in_port_rstn;
@@ -213,11 +199,9 @@ wire            in_port_odata_vld  ;
 wire[DSIZE-1:0] in_port_odata      ;
 // wire            fifo_almost_full   ;
 
-in_port #(
+in_port_verb #(
     .DSIZE     (DSIZE     ),
-    .MODE      (MODE      ),   //ONCE LINE
-    .DATA_TYPE (DATA_TYPE ),    //AXIS NATIVE
-    .FRAME_SYNC(FRAME_SYNC)    //OFF ON
+    .MODE      (MODE      )   //ONCE LINE
 )in_port_inst(
 /*  input              */ .clock                   (clock                   ),
 /*  input              */ .rst_n                   (in_port_rstn            ),
@@ -227,18 +211,7 @@ in_port #(
 /*  input              */ .hsync                   (hsync                   ),
 /*  input              */ .de                      (de                      ),
 /*  input [DSIZE-1:0]  */ .idata                   (idata                   ),
-/*  input              */ .fsync                   (fsync                   ),
 /*  input              */ .fifo_almost_full        (fifo_almost_full        ),
-    //-- axi stream ---
-/*  input              */ .aclk                    (aclk                    ),
-/*  input              */ .aclken                  (aclken                  ),
-/*  input              */ .aresetn                 (in_port_rstn            ),
-/*  input [DSIZE-1:0]  */ .axi_tdata               (axi_tdata               ),
-/*  input              */ .axi_tvalid              (axi_tvalid              ),
-/*  output             */ .axi_tready              (axi_tready              ),
-/*  input              */ .axi_tuser               (axi_tuser               ),
-/*  input              */ .axi_tlast               (axi_tlast               ),
-    //-- axi stream
 /*  output             */ .falign                  (in_port_falign          ),
 /*  output             */ .lalign                  (in_port_lalign          ),
 /*  output             */ .ealign                  (in_port_ealign          ),
@@ -282,7 +255,7 @@ wire            cb_wr_last_en;
 combin_data #(
     .ISIZE      (DSIZE        ),
     .OSIZE      (AXI_DSIZE    ),
-    .DATA_TYPE  (DATA_TYPE    ),
+    .DATA_TYPE  ("NATIVE"    ),
     .MODE       (MODE         )
 )combin_data_inst(
 /*    input               */ .clock       (wr_clk    ),
@@ -304,7 +277,7 @@ wire[9:0]       wr_data_count;
 wire            fifo_empty;
 wire            pull_data_en;
 
-assign  in_port_fifo_rst    = FRAME_SYNC=="ON"? in_port_falign : (DATA_TYPE=="AXIS"? 1'b0 : in_port_falign) ;
+assign  in_port_fifo_rst    = in_port_falign;
 // assign  fifo_rst    = 1'b0;
 
 
@@ -395,34 +368,6 @@ end
 
 endgenerate
 
-generate
-if(DSIZE==24 && SIM == "ON")begin:PROBE_BLOCK
-probe_large_width_data #(
-    .DSIZE      (AXI_DSIZE  )
-)wr_probe_large_width_data_inst(
-/*  input             */  .clock               (wr_clk       ),
-/*  input             */  .rst                 (!wr_rst_n     ),
-/*  input [DSIZE-1:0] */  .data                (cb_data       ),
-/*  input             */  .valid               (cb_wr_en || cb_wr_last_en      ),
-/*  input             */  .sync                (),
-/*  input             */  .sync_negedge        (cb_wr_last_en),
-/*  input             */  .sync_posedge        ()
-);
-
-probe_large_width_data #(
-    .DSIZE      (AXI_DSIZE  )
-)rd_probe_large_width_data_inst(
-/*  input             */  .clock               (rd_clk       ),
-/*  input             */  .rst                 (!wr_rst_n     ),
-/*  input [DSIZE-1:0] */  .data                (axi_wdata       ),
-/*  input             */  .valid               (axi_wvalid      ),
-/*  input             */  .sync                (axi_bvalid && axi_awlen==0),
-/*  input             */  .sync_negedge        (),
-/*  input             */  .sync_posedge        ()
-);
-end
-endgenerate
-
 assign axi_wvalid   = pull_data_en;
 // assign axi_wvalid   = pull_data_en && !fifo_empty;
 
@@ -488,15 +433,18 @@ write_line_len_sum #(
 
 wire[ASIZE-1:0]         curr_address;
 
+localparam INC_ADDR_STEP_REAL = 2**($clog2(INC_ADDR_STEP*DSIZE/AXI_DSIZE))*8;
+
 a_frame_addr #(
     .ASIZE             (ASIZE          ),
-    .BURST_MAP_ADDR    (BURST_LEN*8      )
+    .BURST_MAP_ADDR    (BURST_LEN*8      ),
+    .LASIZE            ($clog2(INC_ADDR_STEP_REAL))
 )a_frame_addr_inst(
 /*  input             */  .clock                    (rd_clk             ),
 /*  input             */  .rst_n                    (/*rd_rst_n*/frame_addr_rstn           ),
 /*  input             */  .new_base                 (in_port_falign_bc  ),
-/*  input[ASIZE-1:0]  */  .baseaddr                 (/*baseaddr*/{ASIZE{1'b0}}           ),
-/*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
+/*  input[ASIZE-1:0]  */  .baseaddr                 (baseaddr           ),
+/*  input[ASIZE_1:0]  */  .line_increate_addr       ( /*INC_ADDR_STEP*8*8*/ INC_ADDR_STEP_REAL),      //[180->256]*8 @ 1920@1080p
 /*  input             */  .burst_done               (burst_done         ),
 /*  input             */  .tail_done                (tail_done          ),
 /*  output[ASIZE-1:0] */  .out_addr                 (curr_address       )

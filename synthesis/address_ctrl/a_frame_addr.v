@@ -12,7 +12,7 @@ madified:
 module a_frame_addr #(
     parameter ASIZE             = 29,
     parameter BURST_MAP_ADDR    = 200*8*8,
-    parameter LASIZE            = 16
+    parameter LASIZE            = 12
 )(
     input               clock,
     input               rst_n,
@@ -60,8 +60,8 @@ always@(posedge clock)
                 curr_addr   <= baseaddr;
         else if(burst_done_raising)
                 curr_addr   <= curr_addr + BURST_MAP_ADDR;
-        // else if(tail_done_raising)
-        //         curr_addr   <= {curr_addr[ASIZE-1:LASIZE],{LASIZE{1'b0}}} + line_increate_addr;
+        else if(tail_done_raising)
+                curr_addr   <= {curr_addr[ASIZE-1:LASIZE],baseaddr[LASIZE-1:0]} + line_increate_addr;
         else    curr_addr   <= curr_addr;
     end
 

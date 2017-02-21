@@ -201,7 +201,7 @@ always@(*)
 
         if(line_tail_raising && tail_leave)
                 tnstate = CATCHT;
-        else    tnstate = IDLE;
+        else    tnstate = TIDLE;
 
     CATCHT:
         if(timeout)

@@ -56,7 +56,7 @@ edge_generator #(
 	.falling    (de_falling         )
 );
 
-assign falign   = vs_falling;
+assign falign   = vs_raising;
 // assign lalign   = MODE=="LINE"? de_falling : 1'b0;
 assign lalign   = de_falling;
 reg [15:0]      lcnt;

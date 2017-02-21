@@ -1,5 +1,5 @@
 state track_wr:
-    if((board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/AXI_SIM_SW.axi4_to_native_for_ddr_ip_inst/mcstate==3'h4) && ($counter0 == 16'h0103)) then 
+    if((board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/AXI_SIM_SW.axi4_to_native_for_ddr_ip_inst/mcstate==3'h4) && ($counter0 == 16'h0203)) then 
         reset_counter $counter0;
         trigger;
     elseif(board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/AXI_SIM_SW.axi4_to_native_for_ddr_ip_inst/mcstate==3'h4) then
