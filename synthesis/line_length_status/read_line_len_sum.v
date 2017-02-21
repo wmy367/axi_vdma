@@ -53,9 +53,9 @@ edge_generator #(
 );
 
 
-reg [15:0]            int_len;
-reg [15:0]            mod_len;
-reg [15:0]            num_of_AXID;
+reg [23:0]            int_len;
+reg [23:0]            mod_len;
+reg [23:0]            num_of_AXID;
 reg                   last_or_no;
 wire[31:0]            all_bits;
 assign  all_bits    = MODE=="LINE"? hactive : (MODE=="ONCE"? vactive*hactive : 0);

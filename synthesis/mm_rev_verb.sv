@@ -4,12 +4,13 @@ ______________ \  /\  /|\  /| ______________
 ______________  \/  \/ | \/ | ______________
 descript:
 author : Young
-Version: VERA.0.0
+Version: VERB.0.0
+    cut axis
 creaded: 2016/8/10 上午11:24:16
 madified:
 ***********************************************/
 `timescale 1ns/1ps
-module mm_rev #(
+module mm_rev_verb #(
     parameter THRESHOLD  = 200,
     parameter FULL_LEN   = 512,
     parameter ASIZE      = 29,
@@ -19,12 +20,9 @@ module mm_rev #(
     parameter DSIZE      = 24,
     parameter AXI_DSIZE  = 256,
     parameter MODE      = "ONCE",   //ONCE LINE
-    parameter DATA_TYPE = "AXIS",    //AXIS NATIVE
-    parameter FRAME_SYNC= "OFF",    //OFF ON
     parameter EX_SYNC   = "OFF",     //OFF ON
     parameter VIDEO_FORMAT= "1080P@60",
-    parameter INC_ADDR_STEP=1024,
-    parameter SIM       = "OFF"
+    parameter INC_ADDR_STEP=1920
 )(
     input               clock                   ,
     input               rst_n                   ,
@@ -39,16 +37,6 @@ module mm_rev #(
     input               pend_in                 ,
     output              pend_out                ,
     //-- AXI
-    //-- axi stream ---
-    output              aclk                    ,
-    output              aclken                  ,
-    output              aresetn                 ,
-    output[DSIZE-1:0]   axi_tdata               ,
-    output              axi_tvalid              ,
-    input               axi_tready              ,
-    output              axi_tuser               ,
-    output              axi_tlast               ,
-    //-- axi stream
     input               axi_aclk                ,
     input               axi_resetn              ,
     //-- axi read
@@ -95,11 +83,9 @@ wire            fifo_empty          ;
 wire[15:0]      out_vactive         ;
 wire[15:0]      out_hactive         ;
 
-out_port #(
+out_port_verb #(
     .DSIZE        (DSIZE        ),
     .MODE         (MODE         ),        //ONCE LINE
-    .DATA_TYPE    (DATA_TYPE    ),         //AXIS NATIVE
-    .FRAME_SYNC   (FRAME_SYNC   ),        //OFF ON
     .EX_SYNC      (EX_SYNC      ),         //OFF ON
     .VIDEO_FORMAT (VIDEO_FORMAT )
 )out_port_inst(
@@ -112,17 +98,6 @@ out_port #(
 /*  input              */ .in_de         (in_de                ),
 /*  input              */ .fifo_empty    (fifo_empty           ),
 /*  input              */ .enable_inner_sync    (enable        ),
-    //-- axi_stream
-/*  output             */ .aclk          (aclk                 ),
-/*  output             */ .aclken        (aclken               ),
-/*  output             */ .aresetn       (aresetn              ),
-/*  output[DSIZE-1:0]  */ .axi_tdata     (axi_tdata            ),
-/*  output             */ .axi_tvalid    (axi_tvalid           ),
-/*  input              */ .axi_tready    (axi_tready           ),
-/*  output             */ .axi_tuser     (axi_tuser            ),
-/*  output             */ .axi_tlast     (axi_tlast            ),
-/*  output             */ .axi_fsync     (axi_fsync            ),
-    //-- axi stream
     //-- native
 /*  output             */ .out_vsync     (out_vsync            ),
 /*  output             */ .out_hsync     (out_hsync            ),
@@ -230,34 +205,6 @@ vdma_stream_fifo_512 stream_fifo_inst (
 end
 endgenerate
 
-generate
-if(DSIZE==24 && SIM == "ON")begin:PROBE_BLOCK
-probe_large_width_data #(
-    .DSIZE      (AXI_DSIZE  )
-)wr_probe_large_width_data_inst(
-/*  input             */  .clock               (axi_aclk       ),
-/*  input             */  .rst                 (out_port_falign_bc     ),
-/*  input [DSIZE-1:0] */  .data                (axi_rdata       ),
-/*  input             */  .valid               (axi_rvalid      ),
-/*  input             */  .sync                (),
-/*  input             */  .sync_negedge        (axi_rlast && axi_arlen==79),
-/*  input             */  .sync_posedge        ()
-);
-
-probe_large_width_data #(
-    .DSIZE      (AXI_DSIZE  )
-)rd_probe_large_width_data_inst(
-/*  input             */  .clock               (clock       ),
-/*  input             */  .rst                 (!rst_n     ),
-/*  input [DSIZE-1:0] */  .data                (ds_data       ),
-/*  input             */  .valid               (ds_rd_en      ),
-/*  input             */  .sync                (),
-/*  input             */  .sync_negedge        (out_de),
-/*  input             */  .sync_posedge        ()
-);
-end
-endgenerate
-
 wire            tail_status;
 wire[LSIZE-1:0] tail_len;
 wire            burst_req;
@@ -325,15 +272,18 @@ read_line_len_sum #(
 
 wire[ASIZE-1:0]         curr_address;
 
+localparam INC_ADDR_STEP_REAL = 2**($clog2(INC_ADDR_STEP*DSIZE/AXI_DSIZE))*8;
+
 a_frame_addr #(
     .ASIZE             (ASIZE          ),
-    .BURST_MAP_ADDR    (BURST_LEN*8      )
+    .BURST_MAP_ADDR    (BURST_LEN*8      ),
+    .LASIZE            ($clog2(INC_ADDR_STEP_REAL))
 )a_frame_addr_inst(
 /*  input             */  .clock                    (axi_aclk           ),
 /*  input             */  .rst_n                    (axi_resetn         ),
 /*  input             */  .new_base                 (out_port_falign_bc ),
-/*  input[ASIZE-1:0]  */  .baseaddr                 (/*baseaddr*/{ASIZE{1'b0}}           ),
-/*  input[ASIZE_1:0]  */  .line_increate_addr       ( INC_ADDR_STEP*8*8 ),
+/*  input[ASIZE-1:0]  */  .baseaddr                 (baseaddr           ),
+/*  input[ASIZE_1:0]  */  .line_increate_addr       ( /*INC_ADDR_STEP*8*8*/INC_ADDR_STEP_REAL ),
 /*  input             */  .burst_done               (burst_done         ),
 /*  input             */  .tail_done                (tail_done          ),
 /*  output[ASIZE-1:0] */  .out_addr                 (curr_address       )

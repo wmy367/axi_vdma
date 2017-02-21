@@ -21,6 +21,8 @@ logic de;
 logic blank;
 logic field;
 logic[DSIZE-1:0]    data;
+logic[15:0]        vactive;
+logic[15:0]        hactive;
 
 modport compact_in (
     input       pclk,
@@ -28,7 +30,9 @@ modport compact_in (
     input       vsync,
     input       hsync,
     input       de,
-    input       data
+    input       data,
+    input       vactive,
+    input       hactive
 );
 
 modport compact_out (
@@ -37,7 +41,9 @@ modport compact_out (
     output      vsync,
     output      hsync,
     output      de,
-    output      data
+    output      data,
+    output      vactive,
+    output      hactive
 );
 
 endinterface
