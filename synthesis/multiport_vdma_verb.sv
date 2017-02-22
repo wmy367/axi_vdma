@@ -508,8 +508,8 @@ axi4_interconnect_wrap #(
 // assign axi_slaver_inf[0].axi_revld    = 1'b0;
 
 generate
-if(SIM == "OFF" || SIM == "FALSE")begin:AXI_SIM_SW
-// if(1)begin:AXI_SIM_SW
+// if(SIM == "OFF" || SIM == "FALSE")begin:AXI_SIM_SW
+if(1)begin:AXI_SIM_SW
 //------------------------------------------------------------------------------
 axi4_to_native_for_ddr_ip #(
     .ADDR_WIDTH     (ASIZE         ),

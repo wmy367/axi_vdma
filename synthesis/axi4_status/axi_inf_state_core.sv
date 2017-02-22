@@ -314,7 +314,7 @@ always@(posedge axi_aclk/*,negedge axi_resetn*/)
     else            cstate <= nstate;
 
 (*  dont_touch = "true" *)
-reg         timeout;
+logic         timeout;
 
 always@(*)
     case(cstate)
@@ -442,9 +442,11 @@ always@(posedge axi_aclk/*,negedge axi_resetn*/)
         else    tenable     <= tenable;
     end
 
-always@(posedge axi_aclk/*,negedge axi_resetn*/)
-    if(~axi_resetn) timeout     <= 1'b0;
-    else            timeout     <= tcnt == 24'hFFF_FFF;
+// always@(posedge axi_aclk/*,negedge axi_resetn*/)
+//     if(~axi_resetn) timeout     <= 1'b0;
+//     else            timeout     <= tcnt == 24'hFFF_FFF;
+
+assign timeout = 1'b0;
 //---<< TIMEOOUT >>--------------
 //-->> READ CNT <<--------------
 (* dont_touch = "true" *)

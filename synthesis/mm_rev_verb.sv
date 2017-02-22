@@ -149,7 +149,7 @@ destruct_data #(
 /*  input               */  .force_rd    (out_port_lalign           ),   //force read out next data
 /*  input               */  .ialign      (out_port_falign           ),
 /*  output              */  .ird_en      (ds_rd_en                  ),
-/*  input [ISIZE-1:0]   */  .idata       (ds_data[DSSIZE-1:0]       ),
+/*  input [ISIZE-1:0]   */  .idata       (ds_data[AXI_DSIZE-1-:DSSIZE]       ),
 /*  input               */  .ord_en      (out_port_rd_en            ),
 /*  output              */  .olast_en    (                          ),
 /*  output[OSIZE-1:0]   */  .odata       (out_port_idata            ),

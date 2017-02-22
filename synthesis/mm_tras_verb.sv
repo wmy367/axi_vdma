@@ -269,7 +269,7 @@ combin_data #(
 /*    input               */ .ilast       (in_port_lalign     ),
 /*    output              */ .owr_en      (cb_wr_en         ),
 /*    output              */ .olast_en    (cb_wr_last_en    ),
-/*    output[OSIZE-1:0]   */ .odata       (cb_data[CBSIZE-1:0]          ),
+/*    output[OSIZE-1:0]   */ .odata       (cb_data[AXI_DSIZE-1-:CBSIZE]          ),
 /*    output[OSIZE/8-1:0] */ .omask       (  )
 );
 
