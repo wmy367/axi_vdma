@@ -22,7 +22,7 @@ module multiports_vdma_verb #(
     parameter  CH0_PORT_MODE        = "BOTH",       //READ WRITE BOTH
     //---<< channal 0 >>--------------
     //--->> channal 1 <<--------------
-    parameter  CH1_ENABLE           = 1,
+    parameter  CH1_ENABLE           = 0,
     parameter  CH1_STORAGE_MODE     = "ONCE",
     parameter  CH1_EX_SYNC          = "OFF",    //external sync
     parameter  CH1_VIDEO_FORMAT     = "1080P@60",   //just for read of vdma and internal sync

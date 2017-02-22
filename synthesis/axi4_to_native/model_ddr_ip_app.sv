@@ -89,20 +89,25 @@ endtask:sync_wait
 initial begin
     cmd();
     write();
-    // read_cmd();
+    read_cmd();
     read_resp_simple();
 end
 
 task automatic read_cmd();
     mbx = {};
-    forever begin
-        wait((app_en && app_rdy && app_cmd == 2'b01));
-        @(posedge clock);
-        mbx.push_back(app_addr);
-        // fork
-        //     read_resp(50,mbx);
-        // join_none
-    end
+    fork
+        forever begin
+            forever begin
+                @(negedge clock);
+                if(app_en && app_rdy && app_cmd == 2'b01)
+                    break;
+            end
+            mbx.push_back(app_addr);
+            // fork
+            //     read_resp(50,mbx);
+            // join_none
+        end
+    join_none
 endtask:read_cmd
 
 
@@ -126,12 +131,22 @@ int     rt;
 endtask:read_resp
 
 task automatic read_resp_simple();
+int len;
     fork
          forever begin
-            wait(app_en && app_rdy && app_cmd == 2'b01)
+            forever begin
+                @(posedge clock);
+                if(app_en && app_rdy && app_cmd == 2'b01)
+                    break;
+            end
             repeat(15)
                 @(posedge   clock);
-            ramdon_signal_time(16,50,app_rd_data_valid);
+            len = mbx.size();
+            if(len > 0)begin
+                ramdon_signal_time(len,50,app_rd_data_valid);
+                for(int i=0;i<len;i++)
+                    $display("APP DDR [%h]",mbx.pop_front);
+            end
             app_rd_data_valid = 0;
         end
     join_none
