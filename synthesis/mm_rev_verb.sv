@@ -217,6 +217,7 @@ wire[LSIZE-1:0] req_len;
 wire            burst_done ;
 wire            tail_done  ;
 wire            tail_leave ;
+logic           frame_tail_leave;
 
 wire    vsync_cc;
 cross_clk_sync #(
@@ -250,7 +251,8 @@ read_fifo_status_ctrl #(
 /*  output               */   .tail_done        (tail_done              ),
 /*  input                */   .resp             (req_resp               ),
 /*  input                */   .done             (req_done               ),
-/*  output[LSIZE-1:0]    */   .req_len          (req_len                )
+/*  output[LSIZE-1:0]    */   .req_len          (req_len                ),
+/*  output               */   .frame_tail_leave (frame_tail_leave   )
 );
 
 read_line_len_sum #(
@@ -269,19 +271,20 @@ read_line_len_sum #(
 /*  input             */ .tail_done             (/*tail_done */  tail_req       ),
 /*  output            */ .tail_status           (tail_status        ),
 /*  output[LSIZE-1:0] */ .tail_len              (tail_len           ),
-/*  output            */ .tail_leave            (tail_leave         )
+/*  output            */ .tail_leave            (tail_leave         ),
+/*  output            */ .frame_tail_leave      (frame_tail_leave   )
 );
 
 wire[ASIZE-1:0]         curr_address;
 
 // localparam INC_ADDR_STEP_REAL = 2**($clog2(INC_ADDR_STEP*DSIZE/AXI_DSIZE))*8;
 localparam INC_ADDR_STEP_REAL = 2**($clog2(INC_ADDR_STEP*DSIZE/AXI_DSIZE)+0)*8;
-localparam BURST_MOVE = (16-$clog2(AXI_DSIZE));
+localparam BURST_MOVE = (11-$clog2(AXI_DSIZE));
 
 a_frame_addr #(
     .ASIZE             (ASIZE          ),
     // .BURST_MAP_ADDR    (BURST_LEN*(2**BURST_MOVE) ),
-    .BURST_MAP_ADDR    (BURST_LEN*256     ),
+    .BURST_MAP_ADDR    (BURST_LEN*(2**BURST_MOVE)     ),
     .LASIZE            ($clog2(INC_ADDR_STEP_REAL))
 )a_frame_addr_inst(
 /*  input             */  .clock                    (axi_aclk           ),

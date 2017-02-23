@@ -27,6 +27,7 @@ module read_fifo_status_ctrl #(
     input                   fsync,
     input                   tail_status,
     input [LSIZE-1:0]       tail_len,
+    input                   frame_tail_leave,
 
     output                  burst_req,
     output                  tail_req,
@@ -37,15 +38,21 @@ module read_fifo_status_ctrl #(
     output[LSIZE-1:0]       req_len
 );
 
-reg [3:0]           nstate,cstate;
-localparam          W_A_RST     =   4'd7,       //wait addr reset
-                    IDLE        =   4'd0,
-                    NEED_RD     =   4'd1,
-                    WAIT_DONE   =   4'd2,
-                    RD_FSH      =   4'd3,
-                    TAIL_FSH    =   4'd5,
-                    W_T_DONE    =   4'd6,
-                    RD_TAIL     =   4'd4;
+
+typedef enum {      W_A_RST  ,       //wait addr reset
+                    IDLE     ,
+                    NEED_RD  ,
+                    WAIT_DONE,
+                    RD_FSH   ,
+                    TAIL_FSH ,
+                    W_T_DONE ,
+                    RD_TAIL  ,
+                    LAST_IDLE,
+                    LAST_RD  ,
+                    LAST_WT  ,
+                    LAST_FSH } STATUS;
+
+STATUS           nstate,cstate;
 
 always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  cstate  <= W_A_RST;
@@ -118,14 +125,36 @@ always@(*)
                 nstate = TAIL_FSH;
         else    nstate = W_T_DONE;
     TAIL_FSH:begin
-        if(MODE=="LINE")
-                nstate = IDLE;
-        else begin
+        if(MODE=="LINE")begin
+            if(frame_tail_leave)
+                    nstate = LAST_IDLE;
+            else    nstate = IDLE;
+        end else begin
             if(fsync)
                     nstate = IDLE;
             else    nstate = TAIL_FSH;
         end
     end
+    LAST_IDLE:
+        if(trigger_req)
+                nstate  = LAST_RD;
+        else    nstate  = LAST_IDLE;
+    LAST_RD:
+        if(fsync)
+            nstate = W_A_RST;
+        else if(resp)
+                nstate = LAST_WT;
+        else    nstate = LAST_RD;
+    LAST_WT:
+        if(fsync)
+            nstate = W_A_RST;
+        else if(done)
+                nstate = LAST_FSH;
+        else    nstate = LAST_WT;
+    LAST_FSH:
+        if(fsync)
+                nstate = IDLE;
+        else    nstate = LAST_FSH;
     default:    nstate = IDLE;
     endcase
 
@@ -169,7 +198,7 @@ always@(posedge clock/*,negedge rst_n*/)
     if(~rst_n)  tail_req_reg    <= 1'b0;
     else
         case(nstate)
-        RD_TAIL:
+        RD_TAIL,LAST_RD:
                 tail_req_reg    <= 1'b1;
         default:tail_req_reg    <= 1'b0;
         endcase
@@ -185,7 +214,8 @@ always@(posedge clock/*,negedge rst_n*/)
     else
         case(nstate)
         NEED_RD:length   <= BURST_LEN;
-        RD_TAIL:length   <= tail_len;
+        RD_TAIL,LAST_RD:
+                length   <= tail_len;
         default:length   <= length;
         endcase
 
@@ -206,7 +236,7 @@ always@(posedge clock/*,negedge rst_n*/)begin
         endcase
 
         case(nstate)
-        TAIL_FSH:
+        TAIL_FSH,LAST_FSH:
                 tail_done_reg   <= 1'b1;
         default:tail_done_reg   <= 1'b0;
         endcase

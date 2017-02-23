@@ -138,6 +138,8 @@ int len;
                 @(posedge clock);
                 if(app_en && app_rdy && app_cmd == 2'b01)
                     break;
+                if(mbx.size()>0)
+                    break;
             end
             repeat(15)
                 @(posedge   clock);

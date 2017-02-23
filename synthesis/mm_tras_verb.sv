@@ -436,12 +436,12 @@ write_line_len_sum #(
 wire[ASIZE-1:0]         curr_address;
 
 localparam INC_ADDR_STEP_REAL = 2**($clog2(INC_ADDR_STEP*DSIZE/AXI_DSIZE)+0)*8;
-localparam BURST_MOVE = (16-$clog2(AXI_DSIZE));     //axi_dsize=128->13
+localparam BURST_MOVE = (11-$clog2(AXI_DSIZE));     //axi_dsize=128->13
 
 a_frame_addr #(
     .ASIZE             (ASIZE          ),
     // .BURST_MAP_ADDR    (BURST_LEN*(2**BURST_MOVE)      ),
-    .BURST_MAP_ADDR    (BURST_LEN*256     ),
+    .BURST_MAP_ADDR    (BURST_LEN*(2**BURST_MOVE)     ),
     .LASIZE            ($clog2(INC_ADDR_STEP_REAL))
 )a_frame_addr_inst(
 /*  input             */  .clock                    (rd_clk             ),

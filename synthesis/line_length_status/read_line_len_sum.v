@@ -25,7 +25,8 @@ module read_line_len_sum #(
     input               tail_done                ,
     output              tail_status             ,
     output[LSIZE-1:0]   tail_len                ,
-    output              tail_leave
+    output              tail_leave              ,
+    output              frame_tail_leave
 );
 
 wire	burst_done_raising;
@@ -56,14 +57,20 @@ edge_generator #(
 reg [23:0]            int_len;
 reg [23:0]            mod_len;
 reg [23:0]            num_of_AXID;
+reg [23:0]            num_of_AXID_frame;
 reg                   last_or_no;
 wire[31:0]            all_bits;
-assign  all_bits    = MODE=="LINE"? hactive : (MODE=="ONCE"? vactive*hactive : 0);
+wire[31:0]            frame_all_bits;
+
+assign  all_bits        = MODE=="LINE"? hactive : (MODE=="ONCE"? vactive*hactive : 0);
+assign  frame_all_bits  = vactive*hactive;
 always@(posedge clock)begin:FALSE_PATH
     int_len     <= all_bits*DSIZE/(AXI_DSIZE*NOR_BURST_LEN);
     num_of_AXID <= all_bits*DSIZE/AXI_DSIZE + last_or_no;
     mod_len     <= num_of_AXID - int_len*NOR_BURST_LEN;
     last_or_no  <= (all_bits*DSIZE & (AXI_DSIZE-1)) != 0;
+
+    num_of_AXID_frame   <= frame_all_bits*DSIZE/AXI_DSIZE + last_or_no;
 end
 
 reg [31:0]          len_count;
@@ -81,6 +88,36 @@ always@(posedge clock/*,negedge rst_n*/)begin
         else        len_count   <= len_count;
 end end
 
+//--->> frame count <<----------------------
+(* dont_touch = "true" *)
+reg [31:0]          frame_len_count;
+
+always@(posedge clock/*,negedge rst_n*/)begin
+    if(~rst_n)      frame_len_count   <= 32'hFFFF_FFFF;
+    else begin
+        if(fsync)   frame_len_count   <= num_of_AXID_frame;
+        // else if(burst_done_raising)
+        else if(burst_done_falling)
+                    frame_len_count   <= frame_len_count - NOR_BURST_LEN;
+        // else if(tail_done_raising)
+        else if(tail_done_falling)
+                    frame_len_count   <= frame_len_count - tail_len;
+        else        frame_len_count   <= frame_len_count;
+end end
+(* dont_touch = "true" *)
+reg     frame_tail_leave_reg;
+
+always@(posedge clock/*,negedge rst_n*/)begin
+    if(~rst_n)  frame_tail_leave_reg    <= 1'b0;
+    else begin
+        // if(tail_done_falling)
+                frame_tail_leave_reg    <= frame_len_count <= tail_len;
+        // else    frame_tail_leave_reg    <= frame_tail_leave_reg;
+    end
+end
+
+assign frame_tail_leave = frame_tail_leave_reg;
+//---<< frame count >>----------------------
 reg         status_reg;
 
 always@(posedge clock/*,negedge rst_n*/)

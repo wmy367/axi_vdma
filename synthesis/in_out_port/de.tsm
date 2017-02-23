@@ -1,0 +1,26 @@
+##################################################
+#
+# For info on creating trigger state machines:
+#   1) In the main Vivado menu bar, select
+#      Window > Language Templates
+#   2) In the Templates window, select
+#      Debug > Trigger State Machine
+#   3) Refer to the entry 'Info' for an overview
+#      of the trigger state machine language.
+#
+# More information can be found in this document:
+#
+#   Vivado Design Suite User Guide: Programming
+#   and Debugging (UG908)
+#
+##################################################
+state my_state0:
+    if((multiports_vdma_wrap_inst/multiports_vdma_inst/vdma_compact_port_inst0/mm_tras_inst/de==1'bR)&&($counter0 != 16'u1)) then
+        increment_counter $counter0;
+        goto my_state0;
+    elseif(multiports_vdma_wrap_inst/multiports_vdma_inst/vdma_compact_port_inst0/mm_tras_inst/de==1'bR) then 
+        reset_counter $counter0;
+        trigger;
+    else 
+        goto my_state0;
+    endif
