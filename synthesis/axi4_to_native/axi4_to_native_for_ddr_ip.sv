@@ -208,7 +208,7 @@ assign      wr_fifo_wen  = wr_enable && axi_inf.axi_wvalid && axi_inf.axi_wready
 wire        wr_fifo_ren;
 // assign      wr_fifo_ren = (wr_enable && app_wdf_rdy) || rd_enable;
 assign      wr_fifo_ren = (app_wdf_wren && app_wdf_rdy) || rd_enable;
-
+// assign      wr_fifo_ren = (app_wdf_wren && app_wdf_rdy);
 logic wr_fifo_full;
 generate
 if(DATA_WIDTH!=512)begin
