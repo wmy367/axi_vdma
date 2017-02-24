@@ -78,8 +78,8 @@ mm_tras_verb #(
 /*  input             */  .de                      (vin.de          ),
 /*  input [DSIZE-1:0] */  .idata                   (vin.data /*hactive*/      ),
 /*  output            */  .fifo_almost_full        (                ),
-/*  input             */  .pend_in                 (pend_rev_trs    ),
-/*  output            */  .pend_out                (pend_trs_rev    ),
+/*  input             */  .pend_in                 (/*pend_rev_trs*/1'b0    ),
+/*  output            */  .pend_out                (/*pend_trs_rev*/    ),
     //-- AXI
 /*  input             */  .axi_aclk                (axi4_m.axi_aclk        ),
 /*  input             */  .axi_resetn              (axi4_m.axi_resetn      ),
@@ -144,8 +144,8 @@ mm_rev_verb #(
 /*  input              */ .in_hsync                (vex.hsync           ),
 /*  input              */ .in_de                   (vex.de              ),
 /*  output             */ .fifo_almost_empty       (                    ),
-/*  input              */ .pend_in                 (pend_trs_rev        ),
-/*  output             */ .pend_out                (pend_rev_trs        ),
+/*  input              */ .pend_in                 (/*pend_trs_rev*/ 1'b0        ),
+/*  output             */ .pend_out                (/*pend_rev_trs*/         ),
     //-- AXI
 /*  input              */ .axi_aclk                (axi4_m.axi_aclk            ),
 /*  input              */ .axi_resetn              (axi4_m.axi_resetn && !axi4_inf_err_rst         ),

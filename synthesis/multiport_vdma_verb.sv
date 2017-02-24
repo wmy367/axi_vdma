@@ -471,22 +471,29 @@ axi_inf #(
     .DSIZE     (AXI_DSIZE       )
 )axi_m00_inf(axi_aclk,axi_resetn);
 
-axi4_interconnect_wrap #(
-    .AXI_DSIZE      (AXI_DSIZE  )
-)axi4_interconnect_wrap_inst(
-/*    input          */  .INTERCONNECT_ACLK    (axi_aclk            ),
-// /*    input          */  .INTERCONNECT_ARESETN (axi_resetn && !axi_m00_inf.axi_wevld && !axi_m00_inf.axi_revld),
-/*    input          */  .INTERCONNECT_ARESETN (axi_resetn          ),
-/*    axi_inf.slaver */  .s00_inf              (axi_slaver_inf[0]         ),
-/*    axi_inf.slaver */  .s01_inf              (axi_slaver_inf[1]         ),
-/*    axi_inf.slaver */  .s02_inf              (axi_slaver_inf[2]         ),
-/*    axi_inf.slaver */  .s03_inf              (axi_slaver_inf[3]         ),
-/*    axi_inf.slaver */  .s04_inf              (axi_slaver_inf[4]         ),
-/*    axi_inf.slaver */  .s05_inf              (axi_slaver_inf[5]         ),
-/*    axi_inf.slaver */  .s06_inf              (axi_slaver_inf[6]         ),
-/*    axi_inf.slaver */  .s07_inf              (axi_slaver_inf[7]         ),
+// axi4_interconnect_wrap #(
+//     .AXI_DSIZE      (AXI_DSIZE  )
+// )axi4_interconnect_wrap_inst(
+// /*    input          */  .INTERCONNECT_ACLK    (axi_aclk            ),
+// // /*    input          */  .INTERCONNECT_ARESETN (axi_resetn && !axi_m00_inf.axi_wevld && !axi_m00_inf.axi_revld),
+// /*    input          */  .INTERCONNECT_ARESETN (axi_resetn          ),
+// /*    axi_inf.slaver */  .s00_inf              (axi_slaver_inf[0]         ),
+// /*    axi_inf.slaver */  .s01_inf              (axi_slaver_inf[1]         ),
+// /*    axi_inf.slaver */  .s02_inf              (axi_slaver_inf[2]         ),
+// /*    axi_inf.slaver */  .s03_inf              (axi_slaver_inf[3]         ),
+// /*    axi_inf.slaver */  .s04_inf              (axi_slaver_inf[4]         ),
+// /*    axi_inf.slaver */  .s05_inf              (axi_slaver_inf[5]         ),
+// /*    axi_inf.slaver */  .s06_inf              (axi_slaver_inf[6]         ),
+// /*    axi_inf.slaver */  .s07_inf              (axi_slaver_inf[7]         ),
+//
+// /*    axi_inf.master */  .m00_inf              (axi_m00_inf         )
+// );
 
-/*    axi_inf.master */  .m00_inf              (axi_m00_inf         )
+AXI4_interconnect_M2S #(
+    .NUM        (8  )
+)AXI4_interconnect_M2S_inst(
+/*    axi_inf.slaver   */  .s00     (axi_slaver_inf ),
+/*    axi_inf.master   */  .m00     (axi_m00_inf    )
 );
 
 // axi4_error_chk #(

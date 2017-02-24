@@ -90,7 +90,7 @@ always@(*)
             else    nstate  = SET_VLD;
         end else    nstate  = IDLE;
     PEND:
-        if(write_req && !pend_in)
+        if(write_req && !pend_in && axi_awready)
                 nstate  = SET_VLD;
         else    nstate  = PEND;
     SET_VLD:
@@ -102,11 +102,14 @@ always@(*)
                 nstate  = SET_BRDY;
         else    nstate  = WAIT_LAST;
     SET_BRDY:
-        if(axi_bvalid && (axi_bid==ID))begin
-            if(axi_bresp == 2'b00)
-                    nstate  = DONE;
-            else    nstate  = BERR;
-        end else    nstate  = SET_BRDY;
+        // if(axi_bvalid && (axi_bid==ID))begin
+        //     if(axi_bresp == 2'b00)
+        //             nstate  = DONE;
+        //     else    nstate  = BERR;
+        // end else    nstate  = SET_BRDY;
+        if(axi_bvalid)
+                nstate  = DONE;
+        else    nstate  = SET_BRDY;
     DONE:   nstate = IDLE;
     BERR:   nstate = IDLE;
     default:nstate = IDLE;
@@ -327,7 +330,7 @@ always@(*)
     PEND:
         /*if(fsync)
             nstate = IDLE;
-        else */if(read_req && !pend_in)
+        else */if(read_req && !pend_in && axi_arready)
                 nstate = SET_VLD;
         else    nstate = PEND;
     SET_VLD:

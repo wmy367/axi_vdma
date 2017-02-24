@@ -84,7 +84,8 @@ always@(*)
         else    mnstate = WIDLE;
     EXEC_WR:
         // if(axi_inf.axi_wlast && axi_inf.axi_wvalid && axi_inf.axi_wready)
-        if(!wr_fifo_empty && axi_inf.axi_wvalid && axi_inf.axi_wready)
+        // if(!wr_fifo_empty && axi_inf.axi_wvalid && axi_inf.axi_wready)
+        if(!wr_fifo_empty)
                 // mnstate = WR_FIFO_E;
                 mnstate = WR_CMD_E;
         else    mnstate = EXEC_WR;
@@ -207,8 +208,8 @@ assign      wr_fifo_wen  = wr_enable && axi_inf.axi_wvalid && axi_inf.axi_wready
 (* dont_touch = "true" *)
 wire        wr_fifo_ren;
 // assign      wr_fifo_ren = (wr_enable && app_wdf_rdy) || rd_enable;
-assign      wr_fifo_ren = (app_wdf_wren && app_wdf_rdy) || rd_enable;
-// assign      wr_fifo_ren = (app_wdf_wren && app_wdf_rdy);
+// assign      wr_fifo_ren = (app_wdf_wren && app_wdf_rdy) || rd_enable;
+assign      wr_fifo_ren = (app_wdf_wren && app_wdf_rdy);
 logic wr_fifo_full;
 generate
 if(DATA_WIDTH!=512)begin
@@ -236,9 +237,9 @@ FIFO_DDR_IP_BRG_512 FIFO_DDR_IP_BRG_wr (
 end
 endgenerate
 
-// assign axi_inf.axi_wready = !wr_fifo_full && wr_enable;
+assign axi_inf.axi_wready = !wr_fifo_full && wr_enable;
 // assign axi_inf.axi_wready =  wr_enable;
-assign axi_inf.axi_wready =  !wr_fifo_full;
+// assign axi_inf.axi_wready =  !wr_fifo_full;
 // assign app_wdf_wren       = !wr_fifo_empty;
 assign app_wdf_mask       = {(DATA_WIDTH/8){1'b0}};
 assign app_wdf_end        = 1'b1;

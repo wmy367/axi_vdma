@@ -395,9 +395,9 @@ fifo_status_ctrl #(
     .MODE           (MODE       )
 )fifo_status_ctrl_inst(
 /*  input             */    .clock             (rd_clk              ),
-/*  input             */    .rst_n             (/*rd_rst_n*/fifo_status_rstn            ),
+/*  input             */    .rst_n             (rd_rst_n /*fifo_status_rstn*/            ),
 /*  input             */    .enable            (enable              ),
-/*  input             */    .f_rst_status      (fifo_rst            ),
+/*  input             */    .f_rst_status      (fifo_rst            ),//fifo_status_rstn
 /*  input             */    .fifo_empty        (fifo_empty          ),
 /*  input [9:0]       */    .count             (rd_data_count       ),
 /*  input             */    .line_tail         (in_port_lalign_bc   ),      // not frame tail
@@ -445,7 +445,7 @@ a_frame_addr #(
     .LASIZE            ($clog2(INC_ADDR_STEP_REAL))
 )a_frame_addr_inst(
 /*  input             */  .clock                    (rd_clk             ),
-/*  input             */  .rst_n                    (/*rd_rst_n*/frame_addr_rstn           ),
+/*  input             */  .rst_n                    (rd_rst_n/*frame_addr_rstn*/           ),
 /*  input             */  .new_base                 (in_port_falign_bc  ),
 /*  input[ASIZE-1:0]  */  .baseaddr                 (baseaddr           ),
 /*  input[ASIZE_1:0]  */  .line_increate_addr       ( /*INC_ADDR_STEP*8*8*/ INC_ADDR_STEP_REAL),      //[180->256]*8 @ 1920@1080p
@@ -471,7 +471,7 @@ axi_inf_write_state_core #(
 /*      input             */  .fifo_empty           (fifo_empty                 ),
 // -- AXI
 /*      input             */   .axi_aclk            (axi_aclk                   ),
-/*      input             */   .axi_resetn          (/*axi_resetn*/axi_core_rstn                 ),
+/*      input             */   .axi_resetn          (axi_resetn/*axi_core_rstn*/                 ),
         //-- addr write signals
 /*      output[IDSIZE-1:0]*/   .axi_awid            (axi_awid                   ),
 /*      output[ASIZE-1:0] */   .axi_awaddr          (axi_awaddr                 ),

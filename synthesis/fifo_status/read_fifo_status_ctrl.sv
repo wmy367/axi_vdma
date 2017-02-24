@@ -106,22 +106,25 @@ always@(*)
                 nstate = WAIT_DONE;
         else    nstate = NEED_RD;
     WAIT_DONE:
-        if(fsync)
-            nstate = W_A_RST;
-        else if(done)
+        // if(fsync)
+        //     nstate = W_A_RST;
+        // else
+        if(done)
                 nstate = RD_FSH;
         else    nstate = WAIT_DONE;
     RD_FSH:     nstate = IDLE;
     RD_TAIL:
-        if(fsync)
-            nstate = W_A_RST;
-        else if(resp)
+        // if(fsync)
+        //     nstate = W_A_RST;
+        // else
+        if(resp)
                 nstate = W_T_DONE;
         else    nstate = RD_TAIL;
     W_T_DONE:
-        if(fsync)
-            nstate = W_A_RST;
-        else if(done)
+        // if(fsync)
+        //     nstate = W_A_RST;
+        // else
+        if(done)
                 nstate = TAIL_FSH;
         else    nstate = W_T_DONE;
     TAIL_FSH:begin
@@ -140,15 +143,17 @@ always@(*)
                 nstate  = LAST_RD;
         else    nstate  = LAST_IDLE;
     LAST_RD:
-        if(fsync)
-            nstate = W_A_RST;
-        else if(resp)
+        // if(fsync)
+        //     nstate = W_A_RST;
+        // else
+        if(resp)
                 nstate = LAST_WT;
         else    nstate = LAST_RD;
     LAST_WT:
-        if(fsync)
-            nstate = W_A_RST;
-        else if(done)
+        // if(fsync)
+        //     nstate = W_A_RST;
+        // else
+        if(done)
                 nstate = LAST_FSH;
         else    nstate = LAST_WT;
     LAST_FSH:

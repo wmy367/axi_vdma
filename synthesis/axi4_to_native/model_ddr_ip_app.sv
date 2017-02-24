@@ -90,7 +90,8 @@ initial begin
     cmd();
     write();
     read_cmd();
-    read_resp_simple();
+    // read_resp_simple();
+    // read_resp_direct();
 end
 
 task automatic read_cmd();
@@ -119,7 +120,7 @@ int     rt;
         while(data_s.size()!=0)begin
             rt = $urandom_range(99,0);
             if(rt < rate)begin
-                $display("APP ADDR [%h]",data_s.pop_front);
+                // $display("APP ADDR [%h]",data_s.pop_front);
                 app_rd_data_valid = 1;
             end else begin
                 app_rd_data_valid = 0;
@@ -146,13 +147,37 @@ int len;
             len = mbx.size();
             if(len > 0)begin
                 ramdon_signal_time(len,50,app_rd_data_valid);
-                for(int i=0;i<len;i++)
-                    $display("APP DDR [%h]",mbx.pop_front);
+                // for(int i=0;i<len;i++)
+                    // $display("APP DDR [%h]",mbx.pop_front);
             end
             app_rd_data_valid = 0;
         end
     join_none
 endtask:read_resp_simple
+
+task automatic read_resp_direct();
+int len;
+    fork
+        forever begin
+            @(posedge clock);
+            if(app_en && app_rdy && app_cmd == 2'b01)begin
+                    app_rd_data_valid   = 1;
+            end else begin
+                    app_rd_data_valid   = 0;
+            end
+        end
+    join_none
+endtask:read_resp_direct
+
+
+always@(posedge clock)begin
+    if(app_en && app_rdy && app_cmd == 2'b01)begin
+            app_rd_data_valid   = 1;
+    end else begin
+            app_rd_data_valid   = 0;
+    end
+end
+
 
 
 endmodule
