@@ -90,7 +90,8 @@ always@(*)
             else    nstate  = SET_VLD;
         end else    nstate  = IDLE;
     PEND:
-        if(write_req && !pend_in && axi_awready)
+        // if(write_req && !pend_in && axi_awready)
+        if(write_req && !pend_in)
                 nstate  = SET_VLD;
         else    nstate  = PEND;
     SET_VLD:
@@ -184,9 +185,18 @@ always@(posedge axi_aclk/*,negedge axi_resetn*/)
         if(axi_wvalid && axi_wlast && axi_wready)
                 last_reg    <= 1'b0;
         else begin
-            last_reg    <= ((lcnt == len_sub_2) && (axi_wvalid && axi_wready)) || (lcnt == len_sub_1);
+            if(write_req && req_len==1)
+                    last_reg    <= 1'b1;
+            else begin
+                if((lcnt == len_sub_2) && (axi_wvalid && axi_wready))
+                        last_reg    <= 1'b1;
+                else    last_reg    <= last_reg;
+            end
+        end
+    end
+            // last_reg    <= ((lcnt == len_sub_2) && (axi_wvalid && axi_wready)) || (lcnt == len_sub_1);
             // last_reg    <= (lcnt == len_sub_2);
-    end end
+    // end end
 
 assign axi_wlast    = last_reg;
 //---<< LAST DATA >>-------------
@@ -200,11 +210,11 @@ always@(posedge axi_aclk/*,negedge axi_resetn*/)
         default:    pull_en <= 1'b0;
         endcase
 
-always@(posedge axi_aclk/*,negedge axi_resetn*/)
-    if(~axi_resetn) pull_data_en    <= 1'b0;
-    else     pull_data_en <= pull_en;
+// always@(posedge axi_aclk/*,negedge axi_resetn*/)
+//     if(~axi_resetn) pull_data_en    <= 1'b0;
+//     else     pull_data_en <= pull_en;
 
-// assign pull_data_en = pull_en;
+assign pull_data_en = pull_en;
 //---<< enable pull data >>------
 //--->> resp done <<-------------
 reg     resp_reg,done_reg;
@@ -330,7 +340,9 @@ always@(*)
     PEND:
         /*if(fsync)
             nstate = IDLE;
-        else */if(read_req && !pend_in && axi_arready)
+        else */
+        // if(read_req && !pend_in && axi_arready)
+        if(read_req && !pend_in)
                 nstate = SET_VLD;
         else    nstate = PEND;
     SET_VLD:

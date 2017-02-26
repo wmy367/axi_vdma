@@ -46,7 +46,8 @@ typedef enum {
         RD_FIFO_E=8,
         RD_END=9,
         RD_AXI_E=10,
-        APP_CMD_E=11
+        APP_CMD_E=11,
+        CLEAR_WR_FIFO=12
         } MASTER_STATE;
 
 MASTER_STATE mnstate,mcstate;
@@ -59,8 +60,12 @@ always@(posedge clock,posedge rst)begin
 end
 
 logic   wr_fifo_empty;
+// (* dont_touch = "true" *)
+// logic           app_en_last;
 (* dont_touch = "true" *)
-logic           app_en_last;
+logic           app_en_wr_last;
+(* dont_touch = "true" *)
+logic           app_en_rd_last;
 logic [8:0]     app_len;
 logic [8:0]     app_wr_len;
 logic [8:0]     app_rd_len;
@@ -90,30 +95,32 @@ always@(*)
                 mnstate = WR_CMD_E;
         else    mnstate = EXEC_WR;
     WR_CMD_E:
-        if(app_en_last && app_rdy && app_en && wdf_last)
+        if(app_en_wr_last && app_rdy && app_en && wdf_last && app_wdf_wren && app_wdf_rdy)
                 mnstate = WR_END;
-        else if(app_en_last && app_rdy && app_en)
+        else if(app_en_wr_last && app_rdy && app_en)
         // if(app_en_last)
                 mnstate = WR_FIFO_E;
-        else if(wdf_last)           //data burst first
+        else if(wdf_last && app_wdf_wren && app_wdf_rdy)           //data burst first
                 mnstate = APP_CMD_E;
         else    mnstate = WR_CMD_E;
     APP_CMD_E:
-        if(app_en_last && app_rdy && app_en)
+        if(app_en_wr_last && app_rdy && app_en)
                 mnstate = WR_END;
         else    mnstate = APP_CMD_E;
     WR_FIFO_E:
         // if(wr_fifo_empty)
-        if(wdf_last)
+        if(wdf_last && app_wdf_wren && app_wdf_rdy)
         // if(app_en_last && wr_fifo_empty)
                 mnstate = WR_END;
         else    mnstate = WR_FIFO_E;
     WR_END:
-        if(axi_inf.axi_bready)
-                mnstate = RIDLE;
-        else    mnstate = WR_END;
+        if(axi_inf.axi_bready)begin
+            if(wr_fifo_empty)
+                    mnstate = RIDLE;
+            else    mnstate = CLEAR_WR_FIFO;
+        end else    mnstate = WR_END;
     EXEC_RD:
-        if(app_en_last && app_rdy && app_en)
+        if(app_en_rd_last && app_rdy && app_en)
                 mnstate = RD_AXI_E;
         else    mnstate = EXEC_RD;
     RD_AXI_E:
@@ -129,11 +136,26 @@ always@(*)
     //     if(axi_inf.axi_rvalid && axi_inf.axi_rlast && axi_inf.axi_rready)
     //             mnstate = IDLE;
     //     else    mnstate = RD_FIFO_E;
+    CLEAR_WR_FIFO:
+        if(wr_fifo_empty)
+                mnstate = RIDLE;
+        else    mnstate = CLEAR_WR_FIFO;
     default:    mnstate = NOP;
     endcase
 
-//--->> TRACK <<------------------
-//---<< TRACK >>------------------
+//--->> FORCE CLEAR FIFO <<------------------
+logic   clear_wr_fifo_en;
+always@(posedge clock,posedge rst)
+    if(rst) clear_wr_fifo_en    <= 1'b0;
+    else begin
+        case(mnstate)
+        CLEAR_WR_FIFO:
+            clear_wr_fifo_en    <= 1'b1;
+        default:
+            clear_wr_fifo_en    <= 1'b0;
+        endcase
+    end
+//---<< FORCE CLEAR FIFO >>------------------
 logic   wr_enable,rd_enable;
 logic   rd_app_enable;
 
@@ -142,7 +164,7 @@ always@(posedge clock,posedge rst)
     else
         case(mnstate)
         // EXEC_WR,WR_CMD_E,WR_FIFO_E:
-        EXEC_WR,WR_CMD_E,APP_CMD_E:
+        WR_CMD_E,APP_CMD_E:
                     wr_enable   <= 1'b1;
         default:    wr_enable   <= 1'b0;
         endcase
@@ -171,6 +193,7 @@ logic   rd_fifo_empty;
 logic   rd_fifo_en;
 // assign  rd_fifo_en  = (rd_enable && axi_inf.axi_rready) || wr_enable;
 assign  rd_fifo_en  = (rd_app_enable && axi_inf.axi_rready && !rd_fifo_empty) ;
+// assign  rd_fifo_en  = (rd_app_enable && axi_inf.axi_rready && !rd_fifo_empty) || wr_enable;
 generate
 if(DATA_WIDTH!=512)begin
 FIFO_DDR_IP_BRG FIFO_DDR_IP_BRG_rd (
@@ -204,12 +227,13 @@ assign axi_inf.axi_rvalid = !rd_fifo_empty && rd_app_enable;
 //--->> RD DDR DATA <<-------------------
 (* dont_touch = "true" *)
 wire        wr_fifo_wen;
-assign      wr_fifo_wen  = wr_enable && axi_inf.axi_wvalid && axi_inf.axi_wready;
+// assign      wr_fifo_wen  = wr_enable && axi_inf.axi_wvalid && axi_inf.axi_wready;
+assign      wr_fifo_wen  = axi_inf.axi_wvalid && axi_inf.axi_wready;
 (* dont_touch = "true" *)
 wire        wr_fifo_ren;
 // assign      wr_fifo_ren = (wr_enable && app_wdf_rdy) || rd_enable;
-// assign      wr_fifo_ren = (app_wdf_wren && app_wdf_rdy) || rd_enable;
-assign      wr_fifo_ren = (app_wdf_wren && app_wdf_rdy);
+assign      wr_fifo_ren = (app_wdf_wren && app_wdf_rdy) || clear_wr_fifo_en;
+// assign      wr_fifo_ren = (app_wdf_wren && app_wdf_rdy);
 logic wr_fifo_full;
 generate
 if(DATA_WIDTH!=512)begin
@@ -237,9 +261,9 @@ FIFO_DDR_IP_BRG_512 FIFO_DDR_IP_BRG_wr (
 end
 endgenerate
 
-assign axi_inf.axi_wready = !wr_fifo_full && wr_enable;
+// assign axi_inf.axi_wready = !wr_fifo_full && wr_enable;
 // assign axi_inf.axi_wready =  wr_enable;
-// assign axi_inf.axi_wready =  !wr_fifo_full;
+assign axi_inf.axi_wready =  !wr_fifo_full;
 // assign app_wdf_wren       = !wr_fifo_empty;
 assign app_wdf_mask       = {(DATA_WIDTH/8){1'b0}};
 assign app_wdf_end        = 1'b1;
@@ -260,7 +284,9 @@ always@(posedge clock,posedge rst)
 always@(posedge clock,posedge rst)
     if(rst) wdf_last    <= 1'b0;
     else begin
-        if(wdf_last && app_wdf_wren && app_wdf_rdy)
+        if(axi_inf.axi_awvalid && axi_inf.axi_awready && axi_inf.axi_awlen==0)
+                wdf_last    <= 1'b1;
+        else if(wdf_last && app_wdf_wren && app_wdf_rdy)
                 wdf_last    <= 1'b0;
         else if(app_wdf_wren && app_wdf_rdy && (wdf_cnt == app_wr_len-2))
                 wdf_last    <= 1'b1;
@@ -360,21 +386,44 @@ always@(posedge clock,posedge rst)
 //---<< AXI BURST >>------------------
 // (* dont_touch = "true" *)
 // logic       app_en_last;
+// always@(posedge clock,posedge rst)
+//     if(rst) app_en_last   <= 1'b0;
+//     else begin
+//         // if(wr_enable || rd_enable)
+//         //         // app_en_last   <= (len_cnt==(app_len-1 ) && app_en && app_rdy) || app_en_last;
+//         //         app_en_last   <= len_cnt==(app_len-1 ) || (len_cnt==(app_len-2 ) && app_en && app_rdy);
+//         // // else if(app_en_last && app_rdy && app_en)
+//         // //         app_en_last   <= 1'b0;
+//         // // else    app_en_last   <= app_en_last;
+//         // else    app_en_last   <= 1'b0;
+//         if(wr_enable)
+//                 app_en_last   <= len_cnt==(app_wr_len-1 ) || (len_cnt==(app_wr_len-2 ) && app_en && app_rdy);
+//         else if(rd_enable)
+//                 app_en_last   <= len_cnt==(app_rd_len-1 ) || (len_cnt==(app_rd_len-2 ) && app_en && app_rdy);
+//         else    app_en_last   <= 1'b0;
+//     end
+
+//
 always@(posedge clock,posedge rst)
-    if(rst) app_en_last   <= 1'b0;
+    if(rst) app_en_wr_last   <= 1'b0;
     else begin
-        // if(wr_enable || rd_enable)
-        //         // app_en_last   <= (len_cnt==(app_len-1 ) && app_en && app_rdy) || app_en_last;
-        //         app_en_last   <= len_cnt==(app_len-1 ) || (len_cnt==(app_len-2 ) && app_en && app_rdy);
-        // // else if(app_en_last && app_rdy && app_en)
-        // //         app_en_last   <= 1'b0;
-        // // else    app_en_last   <= app_en_last;
-        // else    app_en_last   <= 1'b0;
-        if(wr_enable)
-                app_en_last   <= len_cnt==(app_wr_len-1 ) || (len_cnt==(app_wr_len-2 ) && app_en && app_rdy);
+        if(axi_inf.axi_awvalid && axi_inf.axi_awready && axi_inf.axi_awlen==0)
+                app_en_wr_last   <= 1'b1;
+        else if(app_en && app_rdy && app_en_wr_last)
+                app_en_wr_last   <= 1'b0;
+        else if(len_cnt==(app_wr_len-2 ) && app_en && app_rdy)
+                app_en_wr_last   <= 1'b1;
+        else    app_en_wr_last   <= app_en_wr_last;
+    end
+
+always@(posedge clock,posedge rst)
+    if(rst) app_en_rd_last   <= 1'b0;
+    else begin
+        if(axi_inf.axi_arvalid && axi_inf.axi_arready && axi_inf.axi_arlen==0)
+                app_en_rd_last  <= 1'b1;
         else if(rd_enable)
-                app_en_last   <= len_cnt==(app_rd_len-1 ) || (len_cnt==(app_rd_len-2 ) && app_en && app_rdy);
-        else    app_en_last   <= 1'b0;
+                app_en_rd_last   <= len_cnt==(app_rd_len-1 ) || (len_cnt==(app_rd_len-2 ) && app_en && app_rdy);
+        else    app_en_rd_last   <= 1'b0;
     end
 
 always@(posedge clock,posedge rst)
@@ -472,7 +521,9 @@ always@(posedge clock,posedge rst)
         // if(!rd_enable)
         if(!rd_app_enable)
                 axi_inf.axi_rlast   <= 1'b0;
-        else if(axi_inf.axi_rready && axi_inf.axi_rvalid && axi_inf.axi_rlast && app_rd_len != 0)
+        else if(app_rd_len==1)
+                axi_inf.axi_rlast   <= 1'b1;
+        else if(axi_inf.axi_rready && axi_inf.axi_rvalid && axi_inf.axi_rlast)
                 axi_inf.axi_rlast   <= 1'b0;
         else if(axi_inf.axi_rready && axi_inf.axi_rvalid && axi_rd_cnt == (app_rd_len-2))
                 axi_inf.axi_rlast   <= 1'b1;

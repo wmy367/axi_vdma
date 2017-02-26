@@ -77,11 +77,11 @@ localparam  A_FRAME_ADDR_STEP_LINE = 256*8*1080;
 
 // assign wr_baseaddr[0]   = 0;
 // assign rd_baseaddr[0]   = 0 + A_FRAME_ADDR_STEP_LINE/2;
-assign wr_baseaddr[0] = test_wr_addr;
-assign rd_baseaddr[0] = test_rd_addr;
+assign wr_baseaddr[0] = test_wr_addr<<11;
+assign rd_baseaddr[0] = test_rd_addr<<11;
 assign wr_baseaddr[1]   = A_FRAME_ADDR_STEP_LINE;
 assign rd_baseaddr[1]   = A_FRAME_ADDR_STEP_LINE;
-assign wr_baseaddr[2]   = 0;
+assign wr_baseaddr[2]   = A_FRAME_ADDR_STEP_LINE*2;
 assign rd_baseaddr[2]   = 0;
 assign wr_baseaddr[3]   = 0;
 assign rd_baseaddr[3]   = 0;
@@ -98,6 +98,14 @@ assign rd_baseaddr[7]   = 0;
 multiports_vdma_verb #(
     .ASIZE                 (ASIZE       ),
     .AXI_DSIZE             (AXI_DSIZE   ),
+    .CH0_ENABLE            (1      ),
+    .CH1_ENABLE            (1      ),
+    .CH2_ENABLE            (1      ),
+    .CH3_ENABLE            (0      ),
+    .CH4_ENABLE            (0      ),
+    .CH5_ENABLE            (0      ),
+    .CH6_ENABLE            (0      ),
+    .CH7_ENABLE            (0      ),
     //--->> channal 0 <<--------------
     .CH0_STORAGE_MODE      ("LINE"          ),
     .CH0_EX_SYNC           ("ON"           ),    //external sync
@@ -108,13 +116,13 @@ multiports_vdma_verb #(
     .CH1_STORAGE_MODE      ("LINE"          ),
     .CH1_EX_SYNC           ("OFF"           ),    //external sync
     .CH1_VIDEO_FORMAT      ("1080P@60"      ),   //just for read of vdma and internal sync
-    .CH1_PORT_MODE         ("BOTH"          ),       //READ WRITE BOTH
+    .CH1_PORT_MODE         ("WRITE"          ),       //READ WRITE BOTH
     //---<< channal 1 >>--------------
     //--->> channal 2 <<--------------
-    .CH2_STORAGE_MODE      ("ONCE"          ),
+    .CH2_STORAGE_MODE      ("LINE"          ),
     .CH2_EX_SYNC           ("OFF"           ),    //external sync
     .CH2_VIDEO_FORMAT      ("1080P@60"      ),   //just for read of vdma and internal sync
-    .CH2_PORT_MODE         ("BOTH"          ),       //READ WRITE BOTH
+    .CH2_PORT_MODE         ("WRITE"          ),       //READ WRITE BOTH
     //---<< channal 2 >>--------------
     //--->> channal 3 <<--------------
     .CH3_STORAGE_MODE      ("ONCE"          ),

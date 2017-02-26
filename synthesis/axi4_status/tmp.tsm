@@ -1,14 +1,38 @@
 state track_wr:
-    if((board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/AXI_SIM_SW.axi4_to_native_for_ddr_ip_inst/mcstate==3'h4) && ($counter0 == 16'h0203)) then 
+    if((board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/AXI_SIM_SW.axi4_to_native_for_ddr_ip_inst/mcstate==5'h05) && ($counter0 == 16'h0203)) then 
         reset_counter $counter0;
         trigger;
-    elseif(board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/AXI_SIM_SW.axi4_to_native_for_ddr_ip_inst/mcstate==3'h4) then
+    elseif(board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/AXI_SIM_SW.axi4_to_native_for_ddr_ip_inst/mcstate==5'h05) then
         increment_counter $counter0;
         goto track_wr;
     else 
          reset_counter $counter0;
          goto track_wr;
     endif
+    
+# state track_wr:
+#        if((board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/vdma_compact_port_inst0/mm_tras_inst/axi_inf_write_state_core_inst/cstate==3'h3) && ($counter0 == 16'h0203)) then 
+#            reset_counter $counter0;
+#            trigger;
+#        elseif(board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/vdma_compact_port_inst0/mm_tras_inst/axi_inf_write_state_core_inst/cstate==3'h3) then
+#            increment_counter $counter0;
+#            goto track_wr;
+#        else 
+#             reset_counter $counter0;
+#             goto track_wr;
+#        endif
+        
+#  state track_wr:
+#               if((board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/vdma_compact_port_inst0/mm_tras_inst/axi_inf_write_state_core_inst/cstate==3'h3) && ($counter0 == 16'h0203)) then 
+#                   reset_counter $counter0;
+#                   trigger;
+#               elseif(board_top_inst/multiports_vdma_wrap_inst/multiports_vdma_inst/vdma_compact_port_inst0/mm_tras_inst/axi_inf_write_state_core_inst/cstate==3'h3) then
+#                   increment_counter $counter0;
+#                   goto track_wr;
+#               else 
+#                    reset_counter $counter0;
+#                    goto track_wr;
+#               endif
     
 #    state wait_for_4th_rising_edge_of_abc:
 #      if ((abc == 1'bR) && ($counter0 == 16'h0003)) then

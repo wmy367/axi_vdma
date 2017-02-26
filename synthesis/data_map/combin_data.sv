@@ -139,16 +139,46 @@ integer KK;
     // end
 end
 
-
+//---->> REDMAIN <<----------------------:: Monkey Patch
+logic   redm;
 reg     owr_reg;
 
+wire	iwen_raising;
+wire    iwen_falling;
+edge_generator #(
+	.MODE		("FAST" 	)  // FAST NORMAL BEST
+)gen_vs_edge(
+	.clk		(clock				),
+	.rst_n      (rst_n              ),
+	.in         (iwr_en             ),
+	.raising    (iwen_raising       ),
+	.falling    (iwen_falling       )
+);
+
+always@(posedge clock/*,negedge rst_n*/)begin
+    if(~rst_n) redm <= 1'b0;
+    else begin
+        if(iwen_falling)begin
+            if(point != 0)
+                    redm    <= 1'b1;
+            else    redm    <= 1'b0;
+        end else if(iwen_raising)begin
+            redm    <= 1'b0;
+        end else begin
+            redm    <= redm;
+        end
+    end
+end
+//----<< REDMAIN >>----------------------
 always@(posedge clock/*,negedge rst_n*/)begin
     if(~rst_n)  owr_reg <= 1'b0;
     else begin
         // if(loint != (CNUM-1))begin
         // if((loint != (CNUM-1) && O_L==0) ||
         //    (loint != (1     ) && O_L==1)   )begin
-        if(!speciel_line)begin
+        if(redm && ilast && MODE=="LINE")
+            owr_reg  <= 1'b1;
+        else if(!speciel_line)begin
             if(point == (MSIZE-1) && iwr_en)
                     owr_reg  <= 1'b1;
             else    owr_reg  <= 1'b0;
