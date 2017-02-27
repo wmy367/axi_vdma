@@ -130,8 +130,8 @@ module multiports_vdma_verb #(
 // /*	output[DSIZE-1:0]	*/	.q
 // );
 
-localparam  WR_THRESHOLD    = 128,
-            RD_THRESHOLD    = 128,
+localparam  WR_THRESHOLD    = 256,
+            RD_THRESHOLD    = 256,
             BURST_LEN_SIZE  = 8;
 
 //----->> port 0 <<------------------

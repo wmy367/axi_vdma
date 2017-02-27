@@ -199,7 +199,8 @@ always@(*)
         //         tnstate = CATCHT;
         // else    tnstate = IDLE;
 
-        if(line_tail_raising && tail_leave)
+        // if(line_tail_raising && tail_leave)
+        if(tail_leave && (count>=tail_len))
                 tnstate = CATCHT;
         else    tnstate = TIDLE;
 

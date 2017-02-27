@@ -426,8 +426,8 @@ write_line_len_sum #(
 /*  input [15:0]      */  .vactive              (vactive             ), //calculate line length
 /*  input [15:0]      */  .hactive              (hactive             ), //calculate line length
 /*  input             */  .fsync                (in_port_falign_bc || tail_req ),
-/*  input             */  .burst_done           (burst_done          ),
-/*  input             */  .tail_done            (tail_done           ),
+/*  input             */  .burst_done           (/*burst_done*/burst_req           ),
+/*  input             */  .tail_done            (/*tail_done */tail_req            ),
 /*  output            */  .tail_status          (                    ),
 /*  output[LSIZE-1:0] */  .tail_len             (tail_len            ),
 /*  output            */  .tail_leave           (tail_leave          )

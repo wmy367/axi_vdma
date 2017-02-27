@@ -101,7 +101,7 @@ int tmp_data;
     // end
 end
 
-assign inf.data = test_data;
+// assign inf.data = test_data;
 // // assign inf.data = 1023;
 
 gen_test #(
@@ -117,9 +117,9 @@ gen_test #(
 /*	output					*/  .vs         (inf.vsync           ),
 /*	output					*/  .hs         (inf.hsync           ),
 /*	output					*/  .de         (inf.de              ),
-/*	output[DSIZE-1:0]		*/  .rdata      (/*inf.data[23:16] */    ),
-/*	output[DSIZE-1:0]		*/  .gdata      (/*inf.data[15:8]  */    ),
-/*	output[DSIZE-1:0]		*/  .bdata      (/*inf.data[7:0]   */    ),
+/*	output[DSIZE-1:0]		*/  .rdata      (inf.data[23:16]     ),
+/*	output[DSIZE-1:0]		*/  .gdata      (inf.data[15:8]      ),
+/*	output[DSIZE-1:0]		*/  .bdata      (inf.data[7:0]       ),
 /*  output                  */  .select     (                    )
 );
 

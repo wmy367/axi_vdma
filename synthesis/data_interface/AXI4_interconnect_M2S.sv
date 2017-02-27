@@ -16,12 +16,14 @@ module AXI4_interconnect_M2S #(
     axi_inf.master     m00
 );
 localparam NSIZE =  $clog2(NUM);
-
+(* dont_touch = "true" *)
 logic[NSIZE-1:0]    waddr;
+(* dont_touch = "true" *)
 logic               waddr_vld;
 logic[NSIZE-1:0]    curr_waddr;
-
+(* dont_touch = "true" *)
 logic[NSIZE-1:0]    raddr;
+(* dont_touch = "true" *)
 logic               raddr_vld;
 logic[NSIZE-1:0]    curr_raddr;
 
@@ -190,15 +192,33 @@ assign m00.axi_arvalid           = m00_raddr_inf.valid;
 assign m00_raddr_inf.ready       = m00.axi_arready;
 //---<< AXI4 RADDR >>-----------------------
 //--->> AXI4 WDATA <<-----------------------
+(* dont_touch = "true" *)
+logic [NUM-1:0] wr_stream_en;
+
+generate
+for(KK=0;KK<NUM;KK++)begin:WRITE_STREAM_EN_BLOCK
+always@(posedge m00.axi_aclk)begin
+    if(~m00.axi_resetn) wr_stream_en[KK]    <= '0;
+    else begin
+        if(s00[KK].axi_awvalid && s00[KK].axi_awready)
+                wr_stream_en[KK]    <= 1'b1;
+        else if(s00[KK].axi_bvalid && s00[KK].axi_bready)
+                wr_stream_en[KK]    <= 1'b0;
+        else    wr_stream_en[KK]    <= wr_stream_en[KK];
+    end
+end
+end
+endgenerate
+
 data_inf #(.DSIZE(m00.DSIZE+1) ) s00_wdata_inf [NUM-1:0] ();
 data_inf #(.DSIZE(m00.DSIZE+1) ) m00_wdata_inf ();
 
 
 generate
 for(KK=0;KK<NUM;KK++)begin
-assign s00_wdata_inf[KK].valid                           = s00[KK].axi_wvalid;
-assign s00_wdata_inf[KK].data                            = {s00[KK].axi_wlast,s00[KK].axi_wdata};
-assign s00[KK].axi_wready                               = s00_wdata_inf[KK].ready;
+assign s00_wdata_inf[KK].valid           = s00[KK].axi_wvalid && wr_stream_en[KK];
+assign s00_wdata_inf[KK].data            = {s00[KK].axi_wlast,s00[KK].axi_wdata};
+assign s00[KK].axi_wready                = s00_wdata_inf[KK].ready && wr_stream_en[KK];
 end
 endgenerate
 
