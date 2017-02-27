@@ -90,7 +90,8 @@ always@(*)
             else    nstate  = SET_VLD;
         end else    nstate  = IDLE;
     PEND:
-        if(write_req && !pend_in && axi_awready)
+        // if(write_req && !pend_in && axi_awready)
+        if(write_req && !pend_in)
                 nstate  = SET_VLD;
         else    nstate  = PEND;
     SET_VLD:
@@ -330,7 +331,9 @@ always@(*)
     PEND:
         /*if(fsync)
             nstate = IDLE;
-        else */if(read_req && !pend_in && axi_arready)
+        else */
+        // if(read_req && !pend_in && axi_arready)
+        if(read_req && !pend_in)
                 nstate = SET_VLD;
         else    nstate = PEND;
     SET_VLD:
