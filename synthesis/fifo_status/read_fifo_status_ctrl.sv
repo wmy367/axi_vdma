@@ -35,7 +35,7 @@ module read_fifo_status_ctrl #(
     output                  tail_done,
     input                   resp,
     input                   done,
-    output[LSIZE-1:0]       req_len
+    output logic[LSIZE-1:0]       req_len
 );
 
 
@@ -215,16 +215,30 @@ assign tail_req     = tail_req_reg;
 reg [LSIZE-1:0]     length;
 
 always@(posedge clock/*,negedge rst_n*/)
-    if(~rst_n)  length   <= {LSIZE{1'b0}};
-    else
+    if(~rst_n)  length   <= BURST_LEN;
+    else begin
         case(nstate)
+        // W_A_RST:length   <= BURST_LEN;
         NEED_RD:length   <= BURST_LEN;
         RD_TAIL,LAST_RD:
                 length   <= tail_len;
         default:length   <= length;
         endcase
-
+    end
+//
 assign req_len  = length;
+
+// always@(posedge clock/*,negedge rst_n*/)
+//     if(~rst_n)  req_len   <= BURST_LEN;
+//     else begin
+//         case(nstate)
+//         W_A_RST:req_len   <= BURST_LEN;
+//         NEED_RD:req_len   <= BURST_LEN;
+//         RD_TAIL,LAST_RD:
+//                 req_len   <= tail_len;
+//         default:req_len   <= req_len;
+//         endcase
+//     end
 //---<< length >>---------------
 //--->> DONE SIGNAL <<----------
 reg         burst_done_reg;

@@ -17,11 +17,10 @@ module multiports_vdma_wrap_verb #(
     input               axi_aclk                ,
     input               axi_resetn              ,
     //--->> channal  <<-------
-    // input [15:0]        ch_vactive           [7:0]  ,
-    // input [15:0]        ch_hactive           [7:0]  ,
-    input               ch_rev_enable        [7:0]  ,
-    input [ASIZE-1:0]   test_wr_addr,
-    input [ASIZE-1:0]   test_rd_addr,
+    input  [7:0]        ch_rev_enable         ,
+    input  [7:0]        ch_trs_enable         ,
+    input [ASIZE-1:0]   wr_addr              [7:0],
+    input [ASIZE-1:0]   rd_addr              [7:0],
     video_native_inf.compact_in     ch0_vin  ,   //native input port
     video_native_inf.compact_in     ch0_vex  ,   //native output ex driver
     video_native_inf.compact_out    ch0_vout ,   //native output
@@ -77,23 +76,29 @@ localparam  A_FRAME_ADDR_STEP_LINE = 256*8*1080;
 
 // assign wr_baseaddr[0]   = 0;
 // assign rd_baseaddr[0]   = 0 + A_FRAME_ADDR_STEP_LINE/2;
-assign wr_baseaddr[0] = test_wr_addr<<11;
-assign rd_baseaddr[0] = test_rd_addr<<11;
-assign wr_baseaddr[1]   = A_FRAME_ADDR_STEP_LINE;
-assign rd_baseaddr[1]   = A_FRAME_ADDR_STEP_LINE;
-assign wr_baseaddr[2]   = A_FRAME_ADDR_STEP_LINE*2;
-assign rd_baseaddr[2]   = 0;
-assign wr_baseaddr[3]   = 0;
-assign rd_baseaddr[3]   = 0;
-
-assign wr_baseaddr[4]   = 0;
-assign rd_baseaddr[4]   = 0;
-assign wr_baseaddr[5]   = 0;
-assign rd_baseaddr[5]   = 0;
-assign wr_baseaddr[6]   = 0;
-assign rd_baseaddr[6]   = 0;
-assign wr_baseaddr[7]   = 0;
-assign rd_baseaddr[7]   = 0;
+// assign wr_baseaddr[0] = test_wr_addr<<11;
+// assign rd_baseaddr[0] = test_rd_addr<<11;
+// assign wr_baseaddr[1]   = A_FRAME_ADDR_STEP_LINE;
+// assign rd_baseaddr[1]   = A_FRAME_ADDR_STEP_LINE;
+// assign wr_baseaddr[2]   = A_FRAME_ADDR_STEP_LINE*2;
+// assign rd_baseaddr[2]   = 0;
+// assign wr_baseaddr[3]   = 0;
+// assign rd_baseaddr[3]   = 0;
+//
+// assign wr_baseaddr[4]   = 0;
+// assign rd_baseaddr[4]   = 0;
+// assign wr_baseaddr[5]   = 0;
+// assign rd_baseaddr[5]   = 0;
+// assign wr_baseaddr[6]   = 0;
+// assign rd_baseaddr[6]   = 0;
+// assign wr_baseaddr[7]   = 0;
+// assign rd_baseaddr[7]   = 0;
+always_comb begin
+    foreach(wr_baseaddr[i])
+        wr_baseaddr[i]  = wr_addr[i];
+    foreach(rd_baseaddr[i])
+        rd_baseaddr[i]  = rd_addr[i];
+end
 
 multiports_vdma_verb #(
     .ASIZE                 (ASIZE       ),
@@ -101,10 +106,10 @@ multiports_vdma_verb #(
     .CH0_ENABLE            (1      ),
     .CH1_ENABLE            (1      ),
     .CH2_ENABLE            (1      ),
-    .CH3_ENABLE            (0      ),
-    .CH4_ENABLE            (0      ),
-    .CH5_ENABLE            (0      ),
-    .CH6_ENABLE            (0      ),
+    .CH3_ENABLE            (1      ),
+    .CH4_ENABLE            (1      ),
+    .CH5_ENABLE            (1      ),
+    .CH6_ENABLE            (1      ),
     .CH7_ENABLE            (0      ),
     //--->> channal 0 <<--------------
     .CH0_STORAGE_MODE      ("LINE"          ),
@@ -114,9 +119,9 @@ multiports_vdma_verb #(
     //---<< channal 0 >>--------------
     //--->> channal 1 <<--------------
     .CH1_STORAGE_MODE      ("LINE"          ),
-    .CH1_EX_SYNC           ("OFF"           ),    //external sync
+    .CH1_EX_SYNC           ("ON"           ),    //external sync
     .CH1_VIDEO_FORMAT      ("1080P@60"      ),   //just for read of vdma and internal sync
-    .CH1_PORT_MODE         ("WRITE"          ),       //READ WRITE BOTH
+    .CH1_PORT_MODE         ("BOTH"          ),       //READ WRITE BOTH
     //---<< channal 1 >>--------------
     //--->> channal 2 <<--------------
     .CH2_STORAGE_MODE      ("LINE"          ),
@@ -125,34 +130,34 @@ multiports_vdma_verb #(
     .CH2_PORT_MODE         ("WRITE"          ),       //READ WRITE BOTH
     //---<< channal 2 >>--------------
     //--->> channal 3 <<--------------
-    .CH3_STORAGE_MODE      ("ONCE"          ),
+    .CH3_STORAGE_MODE      ("LINE"          ),
     .CH3_EX_SYNC           ("OFF"           ),    //external sync
     .CH3_VIDEO_FORMAT      ("1080P@60"      ),   //just for read of vdma and internal sync
-    .CH3_PORT_MODE         ("BOTH"          ),       //READ WRITE BOTH
+    .CH3_PORT_MODE         ("WRITE"          ),       //READ WRITE BOTH
     //---<< channal 3 >>--------------
     //--->> channal 4 <<--------------
-    .CH4_STORAGE_MODE      ("ONCE"          ),
+    .CH4_STORAGE_MODE      ("LINE"          ),
     .CH4_EX_SYNC           ("OFF"           ),    //external sync
     .CH4_VIDEO_FORMAT      ("1080P@60"      ),   //just for read of vdma and internal sync
-    .CH4_PORT_MODE         ("BOTH"          ),       //READ WRITE BOTH
+    .CH4_PORT_MODE         ("WRITE"          ),       //READ WRITE BOTH
     //---<< channal 4 >>--------------
     //--->> channal 5 <<--------------
-    .CH5_STORAGE_MODE      ("ONCE"          ),
+    .CH5_STORAGE_MODE      ("LINE"          ),
     .CH5_EX_SYNC           ("OFF"           ),    //external sync
     .CH5_VIDEO_FORMAT      ("1080P@60"      ),   //just for read of vdma and internal sync
-    .CH5_PORT_MODE         ("BOTH"          ),       //READ WRITE BOTH
+    .CH5_PORT_MODE         ("WRITE"          ),       //READ WRITE BOTH
     //---<< channal 5 >>--------------
     //--->> channal 6 <<--------------
-    .CH6_STORAGE_MODE      ("ONCE"          ),
+    .CH6_STORAGE_MODE      ("LINE"          ),
     .CH6_EX_SYNC           ("OFF"           ),    //external sync
     .CH6_VIDEO_FORMAT      ("1080P@60"      ),   //just for read of vdma and internal sync
-    .CH6_PORT_MODE         ("BOTH"          ),       //READ WRITE BOTH
+    .CH6_PORT_MODE         ("WRITE"          ),       //READ WRITE BOTH
     //---<< channal 6 >>--------------
     //--->> channal 7 <<--------------
-    .CH7_STORAGE_MODE      ("ONCE"          ),
+    .CH7_STORAGE_MODE      ("LINE"          ),
     .CH7_EX_SYNC           ("OFF"           ),    //external sync
     .CH7_VIDEO_FORMAT      ("1080P@60"      ),   //just for read of vdma and internal sync
-    .CH7_PORT_MODE         ("BOTH"          )      //READ WRITE BOTH
+    .CH7_PORT_MODE         ("WRITE"          )      //READ WRITE BOTH
     //---<< channal 7 >>--------------
 )multiports_vdma_inst(
     .axi_aclk              (axi_aclk        ),
@@ -161,6 +166,7 @@ multiports_vdma_verb #(
     // .ch_vactive            (ch_vactive     ),
     // .ch_hactive            (ch_hactive     ),
     .ch_rev_enable         (ch_rev_enable  ),
+    .ch_trs_enable         (ch_trs_enable  ),
     .wr_baseaddr           (wr_baseaddr    ),
     .rd_baseaddr           (rd_baseaddr    ),
     .ch0_vin               (ch0_vin         ),   //native input port

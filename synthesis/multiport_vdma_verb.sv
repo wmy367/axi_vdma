@@ -76,7 +76,8 @@ module multiports_vdma_verb #(
     //--->> channal  <<-------
     // input [15:0]        ch_vactive           [7:0]  ,
     // input [15:0]        ch_hactive           [7:0]  ,
-    input               ch_rev_enable        [7:0]  ,
+    input [7:0]        ch_rev_enable        ,
+    input [7:0]        ch_trs_enable        ,
     input [ASIZE-1:0]   wr_baseaddr          [7:0]  ,
     input [ASIZE-1:0]   rd_baseaddr          [7:0]  ,
     video_native_inf.compact_in     ch0_vin  ,   //native input port
@@ -163,7 +164,7 @@ vdma_compact_port_verb #(
 // /*  input [15:0]   */   .vactive                (   ch_vactive   [0]  ),
 // /*  input [15:0]   */   .hactive                (   ch_hactive   [0]  ),
 /*  input          */   .rev_enable             (   ch_rev_enable[0]  ),
-/*  input          */   .trs_enable             (init_calib_complete),
+/*  input          */   .trs_enable             (   ch_trs_enable[0]  ),
 /*  input [ASIZE-1:0]*/ .wr_baseaddr            (wr_baseaddr[0]       ),
 /*  input [ASIZE-1:0]*/ .rd_baseaddr            (rd_baseaddr[0]       ),
     //native input port
@@ -204,7 +205,7 @@ vdma_compact_port_verb #(
 // /*  input [15:0]   */   .vactive                (   ch_vactive   [1]  ),
 // /*  input [15:0]   */   .hactive                (   ch_hactive   [1]  ),
 /*  input          */   .rev_enable             (   ch_rev_enable[1]  ),
-/*  input          */   .trs_enable             (init_calib_complete),
+/*  input          */   .trs_enable             (   ch_trs_enable[1]  ),
 /*  input [ASIZE-1:0]*/ .wr_baseaddr            (wr_baseaddr[1]       ),
 /*  input [ASIZE-1:0]*/ .rd_baseaddr            (rd_baseaddr[1]       ),
     //native input port
@@ -244,7 +245,7 @@ vdma_compact_port_verb #(
 // /*  input [15:0]   */   .vactive                (   ch_vactive   [2]  ),
 // /*  input [15:0]   */   .hactive                (   ch_hactive   [2]  ),
 /*  input          */   .rev_enable             (   ch_rev_enable[2]  ),
-/*  input          */   .trs_enable             (init_calib_complete),
+/*  input          */   .trs_enable             (   ch_trs_enable[2]  ),
 /*  input [ASIZE-1:0]*/ .wr_baseaddr            (wr_baseaddr[2]       ),
 /*  input [ASIZE-1:0]*/ .rd_baseaddr            (rd_baseaddr[2]       ),
     //native input port
@@ -284,7 +285,7 @@ vdma_compact_port_verb #(
 // /*  input [15:0]   */   .vactive                (   ch_vactive   [3]  ),
 // /*  input [15:0]   */   .hactive                (   ch_hactive   [3]  ),
 /*  input          */   .rev_enable             (   ch_rev_enable[3]  ),
-/*  input          */   .trs_enable             (init_calib_complete),
+/*  input          */   .trs_enable             (   ch_trs_enable[3]  ),
 /*  input [ASIZE-1:0]*/ .wr_baseaddr            (wr_baseaddr[3]       ),
 /*  input [ASIZE-1:0]*/ .rd_baseaddr            (rd_baseaddr[3]       ),
     //native input port
@@ -324,7 +325,7 @@ vdma_compact_port_verb #(
 // /*  input [15:0]   */   .vactive                (   ch_vactive   [4]  ),
 // /*  input [15:0]   */   .hactive                (   ch_hactive   [4]  ),
 /*  input          */   .rev_enable             (   ch_rev_enable[4]  ),
-/*  input          */   .trs_enable             (init_calib_complete),
+/*  input          */   .trs_enable             (   ch_trs_enable[4]  ),
 /*  input [ASIZE-1:0]*/ .wr_baseaddr            (wr_baseaddr[4]       ),
 /*  input [ASIZE-1:0]*/ .rd_baseaddr            (rd_baseaddr[4]       ),
     //native input port
@@ -364,7 +365,7 @@ vdma_compact_port_verb #(
 // /*  input [15:0]   */   .vactive                (   ch_vactive   [5]  ),
 // /*  input [15:0]   */   .hactive                (   ch_hactive   [5]  ),
 /*  input          */   .rev_enable             (   ch_rev_enable[5]  ),
-/*  input          */   .trs_enable             (init_calib_complete),
+/*  input          */   .trs_enable             (   ch_trs_enable[5]  ),
 /*  input [ASIZE-1:0]*/ .wr_baseaddr            (wr_baseaddr[5]       ),
 /*  input [ASIZE-1:0]*/ .rd_baseaddr            (rd_baseaddr[5]       ),
     //native input port
@@ -404,7 +405,7 @@ vdma_compact_port_verb #(
 // /*  input [15:0]   */   .vactive                (   ch_vactive   [6]  ),
 // /*  input [15:0]   */   .hactive                (   ch_hactive   [6]  ),
 /*  input          */   .rev_enable             (   ch_rev_enable[6]  ),
-/*  input          */   .trs_enable             (init_calib_complete),
+/*  input          */   .trs_enable             (   ch_trs_enable[6]  ),
 /*  input [ASIZE-1:0]*/ .wr_baseaddr            (wr_baseaddr[5]       ),
 /*  input [ASIZE-1:0]*/ .rd_baseaddr            (rd_baseaddr[5]       ),
     //native input port
@@ -445,7 +446,7 @@ vdma_compact_port_verb #(
 // /*  input [15:0]   */   .vactive                (   ch_vactive   [7]  ),
 // /*  input [15:0]   */   .hactive                (   ch_hactive   [7]  ),
 /*  input          */   .rev_enable             (   ch_rev_enable[7]  ),
-/*  input          */   .trs_enable             (init_calib_complete),
+/*  input          */   .trs_enable             (   ch_trs_enable[7]  ),
 /*  input [ASIZE-1:0]*/ .wr_baseaddr            (wr_baseaddr[7]       ),
 /*  input [ASIZE-1:0]*/ .rd_baseaddr            (rd_baseaddr[7]       ),
     //native input port
