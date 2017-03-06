@@ -173,6 +173,7 @@ endtask:read_resp_direct
 always@(posedge clock)begin
     if(app_en && app_rdy && app_cmd == 2'b01)begin
             app_rd_data_valid   = 1;
+            app_rd_data         = $urandom_range(15,0);
     end else begin
             app_rd_data_valid   = 0;
     end

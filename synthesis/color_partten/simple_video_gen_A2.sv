@@ -20,6 +20,7 @@ module simple_video_gen_A2 #(
     video_native_inf.compact_out    inf
 
 );
+import SystemPkg::*;
 
 logic[15:0]      vactive;
 logic[15:0]      hactive;
@@ -101,9 +102,9 @@ int tmp_data;
     // end
 end
 
-// assign inf.data = test_data;
-// // assign inf.data = 1023;
 
+generate
+if(SIM=="OFF"||SIM=="FALSE")begin
 gen_test #(
 	.DSIZE     (DSIZE/3    ),
 	.DEPTH     (9          ),
@@ -123,5 +124,18 @@ gen_test #(
 /*  output                  */  .select     (                    )
 );
 
+if(inf.DSIZE > DSIZE)
+    assign inf.data[inf.DSIZE-1:DSIZE] = '0;
+
+end else begin
+
+assign inf.data     = test_data;
+
+assign inf.vsync    = vsync  ;
+assign inf.hsync    = hsync  ;
+assign inf.de       = de     ;
+
+end
+endgenerate
 
 endmodule
