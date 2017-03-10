@@ -71,9 +71,19 @@ gen_test #(
 /*  output                  */  .select     (                    )
 );
 
-assign  vs          = lw_vs      ;
-assign  hs          = lw_hs      ;
-assign  de_1080p    = lw_de_1080p;
-assign  de          = lw_de      ;
+// assign  vs          = lw_vs      ;
+// assign  hs          = lw_hs      ;
+// assign  de_1080p    = lw_de_1080p;
+// assign  de          = lw_de      ;
+
+latency #(
+    .LAT        (1  ),
+    .DSIZE      (4          )
+)latency_inst(
+    pclk    ,
+    prst_n  ,
+    {lw_vs,lw_hs,lw_de_1080p,lw_de},
+    {vs,   hs,   de_1080p,   de}
+);
 
 endmodule

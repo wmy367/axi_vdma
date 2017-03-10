@@ -8,7 +8,9 @@ Version: VERA.0.0
 creaded: 2017/2/19 下午10:16:24
 madified:
 ***********************************************/
-module little_window_partten_wrapper (
+module little_window_partten_wrapper_verb #(
+    parameter LAT_1080P   = 1
+)(
     input           enable,
     //---coeff---
     input[11:0]                     top     ,
@@ -16,7 +18,7 @@ module little_window_partten_wrapper (
     input[11:0]                     width   ,
     input[11:0]                     height  ,
     video_native_inf.compact_out    inf,
-    output                          de_1080p
+    video_native_inf.compact_out    inf_1080p_sync
 );
 
 little_window_partten little_window_partten_inst(
@@ -55,4 +57,18 @@ always@(posedge inf.pclk,negedge inf.prst_n)
                 inf.hactive <= inf.h_index;
         else    inf.hactive <= inf.hactive;
     end
+
+latency #(
+    .LAT        (LAT_1080P+2  ),
+    .DSIZE      (3          )
+)latency_inst(
+    inf.pclk    ,
+    inf.prst_n  ,
+    {inf.vsync,inf.hsync,de_1080p},
+    {inf_1080p_sync.vsync,inf_1080p_sync.hsync,inf_1080p_sync.de}
+);
+
+assign inf_1080p_sync.vactive  = {4'b0000,height};
+assign inf_1080p_sync.hactive  = {4'b0000,width};
+
 endmodule

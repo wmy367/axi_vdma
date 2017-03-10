@@ -47,6 +47,7 @@ int     rt;
             data    = 0;
         end
         @(posedge clock);
+        #(1ps);
     end
 endtask:ramdon_signal
 
@@ -93,6 +94,51 @@ initial begin
     // read_resp_simple();
     // read_resp_direct();
 end
+
+logic [DATA_WIDTH-1:0]      data_mem [logic[ADDR_WIDTH-1:0]];
+logic [ADDR_WIDTH-1:0]      addr_queue [$];
+logic [DATA_WIDTH-1:0]      data_queue [$];
+
+task automatic write_cmd ();
+    fork
+        forever begin
+            forever begin
+                @(negedge clock);
+                if(app_en && app_rdy && app_cmd == 2'b00)
+                    break;
+            end
+            addr_queue.push_back(app_addr);
+        end
+    join_none
+endtask:write_cmd
+
+task automatic write_data ();
+logic [ADDR_WIDTH-1:0]      addr;
+logic [DATA_WIDTH-1:0]      data;
+    fork
+        forever begin
+            forever begin
+                @(negedge clock);
+                if(app_wdf_rdy && app_wdf_wren)
+                    break;
+            end
+            data_queue.push_back(app_wdf_data);
+            if(app_wdf_data==29'h0378)
+                $stop;
+        end
+
+        forever begin
+            forever begin
+                @(negedge clock);
+                if(data_queue.size() > 0  && addr_queue.size() > 0)
+                    break;
+            end
+            addr    = addr_queue.pop_front();
+            data    = data_queue.pop_front();
+            data_mem[addr]  = data;
+        end
+    join_none
+endtask : write_data
 
 task automatic read_cmd();
     mbx = {};
@@ -173,12 +219,17 @@ endtask:read_resp_direct
 always@(posedge clock)begin
     if(app_en && app_rdy && app_cmd == 2'b01)begin
             app_rd_data_valid   = 1;
-            app_rd_data         = $urandom_range(15,0);
+            // app_rd_data         = $urandom_range(15,0);
+            app_rd_data         = data_mem[app_addr];
     end else begin
             app_rd_data_valid   = 0;
     end
 end
 
+initial begin
+    write_cmd ();
+    write_data ();
+end
 
 
 endmodule

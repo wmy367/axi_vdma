@@ -561,7 +561,7 @@ logic [5:0]        app_cnt_delta;
 always@(posedge clock,posedge rst)
     if(rst)     app_wr_cmd_cnt  <= '0;
     else begin
-        if(app_en && app_rdy && app_cmd == 2'b01)
+        if(app_en && app_rdy && app_cmd == 2'b00)
                 app_wr_cmd_cnt  <= app_wr_cmd_cnt + 1'b1;
         else    app_wr_cmd_cnt  <= app_wr_cmd_cnt;
     end
@@ -569,8 +569,8 @@ always@(posedge clock,posedge rst)
 always@(posedge clock,posedge rst)
     if(rst)     app_wr_data_cnt  <= '0;
     else begin
-        // if(app_wdf_wren && app_wdf_rdy)
-        if(app_rd_data_valid)
+        if(app_wdf_wren && app_wdf_rdy)
+        // if(app_rd_data_valid)
                 app_wr_data_cnt  <= app_wr_data_cnt + 1'b1;
         else    app_wr_data_cnt  <= app_wr_data_cnt;
     end
@@ -578,8 +578,8 @@ always@(posedge clock,posedge rst)
 always@(posedge clock,posedge rst)
     if(rst)     app_cnt_delta   <= '0;
     else begin
-        // if(!app_wdf_wren && !app_en)
-        if(!app_rd_data_valid && !app_en)
+        if(!app_wdf_wren && !app_en)
+        // if(!app_rd_data_valid && !app_en)
                 app_cnt_delta   <= app_wr_cmd_cnt-app_wr_data_cnt;
         else    app_cnt_delta   <= app_cnt_delta;
     end

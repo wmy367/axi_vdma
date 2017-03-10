@@ -39,6 +39,8 @@ typedef enum {
         WIDLE,
         RIDLE,
         WR_BURST_APP,
+        WAIT_AXI_LAST,
+        WAIT_APP_LAST,
         WR_AXI_RESP,
         RD_BURST_APP
         } MASTER_STATE;
@@ -78,9 +80,21 @@ always@(*)
                 mnstate = RD_BURST_APP;
         else    mnstate = WIDLE;
     WR_BURST_APP:
+        if((app_cmd_last && app_en && app_rdy) && (axi_inf.axi_wlast && axi_inf.axi_wvalid && axi_inf.axi_wready))
+                mnstate = WR_AXI_RESP;
+        else if(app_cmd_last && app_en && app_rdy)
+                mnstate = WAIT_AXI_LAST;
+        else if(axi_inf.axi_wlast && axi_inf.axi_wvalid && axi_inf.axi_wready)
+                mnstate = WAIT_APP_LAST;
+        else    mnstate = WR_BURST_APP;
+    WAIT_AXI_LAST:
         if(axi_inf.axi_wlast && axi_inf.axi_wvalid && axi_inf.axi_wready)
                 mnstate = WR_AXI_RESP;
-        else    mnstate = WR_BURST_APP;
+        else    mnstate = WAIT_AXI_LAST;
+    WAIT_APP_LAST:
+        if(app_cmd_last && app_en && app_rdy)
+                mnstate = WR_AXI_RESP;
+        else    mnstate = WAIT_APP_LAST;
     WR_AXI_RESP:
         if(axi_inf.axi_bready && axi_inf.axi_bvalid)begin
             if(axi_rd_idle)
@@ -99,7 +113,8 @@ always@(posedge clock,posedge rst)
     if(rst)     app_cmd <= 3'b111;
     else begin
         case(mnstate)
-        WR_BURST_APP:   app_cmd <= 3'd0;
+        WR_BURST_APP,WAIT_APP_LAST:
+                        app_cmd <= 3'd0;
         RD_BURST_APP:   app_cmd <= 3'd1;
         default:        app_cmd <= 3'b111;
         endcase
@@ -109,28 +124,28 @@ always@(posedge clock,posedge rst)
     if(rst)     app_en  <= 1'b0;
     else
         case(mnstate)
-        WR_BURST_APP:begin
+        WR_BURST_APP,WAIT_APP_LAST:begin
             if(app_en && app_rdy && app_cmd_last)
-                    app_en  <= 1'b0;
+                    app_en  <= #(1ps) 1'b0;
             else if(app_len == '0)
-                    app_en  <= 1'b1;
-            else    app_en  <= 1'b1;
+                    app_en  <= #(1ps) 1'b1;
+            else    app_en  <= #(1ps) 1'b1;
         end
         RD_BURST_APP:begin
             if(app_en && app_rdy && app_cmd_last)
-                    app_en  <= 1'b0;
+                    app_en  <= #(1ps) 1'b0;
             else if(app_len == '0)
-                    app_en  <= 1'b1;
-            else    app_en  <= 1'b1;
+                    app_en  <= #(1ps) 1'b1;
+            else    app_en  <= #(1ps) 1'b1;
         end
-        default:app_en  <= 1'b0;
+        default:app_en  <= #(1ps) 1'b0;
         endcase
 
 always@(posedge clock,posedge rst)
     if(rst) app_cmd_cnt     <= '0;
     else begin
         case(mnstate)
-        WR_BURST_APP,
+        WR_BURST_APP,WAIT_APP_LAST,
         RD_BURST_APP:begin
             if(app_en && app_rdy)
                     app_cmd_cnt <= app_cmd_cnt + 1'b1;
@@ -140,11 +155,18 @@ always@(posedge clock,posedge rst)
         endcase
     end
 
+logic   axi_aux_req;
+
+always@(posedge clock,posedge rst)
+    if(rst) axi_aux_req <= 1'b0;
+    else begin
+        axi_aux_req <= (axi_inf.axi_awvalid && axi_inf.axi_awready) || (axi_inf.axi_arvalid && axi_inf.axi_arready);
+    end
 
 always@(posedge clock,posedge rst)
     if(rst) app_cmd_last    <= 1'b0;
     else begin
-        if(app_len  == '0)
+        if(app_len  == '0 && axi_aux_req)
                 app_cmd_last    <= 1'b1;
         else if(app_en && app_rdy && app_cmd_last && app_cmd_last)
                 app_cmd_last    <= 1'b0;
@@ -214,7 +236,7 @@ always@(posedge clock,posedge rst)
     if(rst) en_wdy_ready     <= 1'b0;
     else begin
         case(mnstate)
-        WR_BURST_APP:
+        WR_BURST_APP,WAIT_AXI_LAST:
                 en_wdy_ready    <= 1'b1;
         default:en_wdy_ready    <= 1'b0;
         endcase
@@ -278,6 +300,39 @@ end
 
 assign axi_inf.axi_rresp    = 2'b00;
 //--->> WR ID <<--------------------------
+//--->> APP WRITE CNT <<------------------
+(* dont_touch="true" *)
+logic [5:0]        app_wr_cmd_cnt;
+(* dont_touch="true" *)
+logic [5:0]        app_wr_data_cnt;
+(* dont_touch="true" *)
+logic [5:0]        app_cnt_delta;
 
+always@(posedge clock,posedge rst)
+    if(rst)     app_wr_cmd_cnt  <= '0;
+    else begin
+        if(app_en && app_rdy && app_cmd == 2'b00)
+                app_wr_cmd_cnt  <= app_wr_cmd_cnt + 1'b1;
+        else    app_wr_cmd_cnt  <= app_wr_cmd_cnt;
+    end
+
+always@(posedge clock,posedge rst)
+    if(rst)     app_wr_data_cnt  <= '0;
+    else begin
+        if(app_wdf_wren && app_wdf_rdy)
+        // if(app_rd_data_valid)
+                app_wr_data_cnt  <= app_wr_data_cnt + 1'b1;
+        else    app_wr_data_cnt  <= app_wr_data_cnt;
+    end
+
+always@(posedge clock,posedge rst)
+    if(rst)     app_cnt_delta   <= '0;
+    else begin
+        if(!app_wdf_wren && !app_en)
+        // if(!app_rd_data_valid && !app_en)
+                app_cnt_delta   <= app_wr_cmd_cnt-app_wr_data_cnt;
+        else    app_cnt_delta   <= app_cnt_delta;
+    end
+//---<< APP WRITE CNT >>------------------
 
 endmodule

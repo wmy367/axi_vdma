@@ -519,7 +519,7 @@ generate
 // if(SIM == "OFF" || SIM == "FALSE")begin:AXI_SIM_SW
 if(1)begin:AXI_SIM_SW
 //------------------------------------------------------------------------------
-axi4_to_native_for_ddr_ip #(
+axi4_to_native_for_ddr_ip_verb #(
     .ADDR_WIDTH     (ASIZE         ),
     .DATA_WIDTH     (AXI_DSIZE     )
 )axi4_to_native_for_ddr_ip_inst(

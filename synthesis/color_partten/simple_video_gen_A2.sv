@@ -104,7 +104,8 @@ end
 
 
 generate
-if(SIM=="OFF"||SIM=="FALSE")begin
+// if(SIM=="OFF"||SIM=="FALSE")begin
+if(0)begin
 gen_test #(
 	.DSIZE     (DSIZE/3    ),
 	.DEPTH     (9          ),
